@@ -45,7 +45,7 @@ Horizon <- 30
 
 
 #### Terminal fitness function - how do energy reserves at time T and location 10 relate to probability of
-#    surving to a returning adult? More final energy reserves, more likely to survive to adult.
+#    surviving to a returning adult? More final energy reserves, more likely to survive to adult.
 #    Terminal fitness can only range between 0 and 1.
 
 #ONLY applicable if location is 10 at time T!!!! Otherwise, fitness is 0!
@@ -76,7 +76,7 @@ FITNESS <- function(B, X, Xmax, L, Lmax, e, e10, c, b, F.vec){
 }
 
 # check fitness function works.
-# FITNESS(B[1], X=7, Xmax, L=10, Lmax, e[1], e10, c[1], b[1], F.vec)
+## FITNESS(B[1], X=7, Xmax, L=10, Lmax, e[1], e10, c[1], b[1], F.vec)
 
 
 #### Function to get maximum fitness and best behavioral choice for any state and location. Save in Temporary array (Temp.out) to bring to next function/loop.
@@ -119,7 +119,7 @@ OVER.STATES <- function(B, X, Xmax, L, Lmax, e, e10, c, b, F.vec){
       Temp.out <- OVER.BEH(B, X, Xmax, L, Lmax, e, e10, c, b, F.vec) # returns Temp.out from OVER.BEH, which as the updated F.vec AND W.best and Beh.best in the last row.
       
       n <- nrow(Temp.out) - 1  # get number of states by subtracting the last row to store W.best and Beh.best (this should be 10)
-      F.vec <- Temp.out[1:n,,] # get F.vec back solo by subsetting Temp.out wihout the stored last row with W.best and Beh.best.
+      F.vec <- Temp.out[1:n,,] # get F.vec back solo by subsetting Temp.out without the stored last row with W.best and Beh.best.
       
       best.W.beh <- c(Temp.out[n+1,1,1], Temp.out[n+1,2,1]) # get only stored values W.best and Beh.best (last row of Temp.out)
       Store[X,,L] <- best.W.beh # put best W and best beh in Store.
@@ -146,7 +146,7 @@ Best.beh # (rows: time, cols: state, matricies: location)
 # Start iterations over time
 Time <- Horizon # time starts with 30 time steps.
 
-# Use a while loop startig at Time = 30, decrement with each loop, until time is 1 and then exit the loop.
+# Use a while loop starting at Time = 30, decrement with each loop, until time is 1 and then exit the loop.
 while(Time > 1) {
   Time <- Time - 1 # calculate fitness and behavioral choices for the previous time step.
   
