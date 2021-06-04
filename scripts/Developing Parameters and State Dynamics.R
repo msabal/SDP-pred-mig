@@ -28,3 +28,58 @@ x <- runif(30, 0, 10)
 y <- 1 + 2 * x + rnorm(30, 0, 3)
 mod <- lm(y~x)
 predict(mod, newdata = data.frame(x = 5), interval = "pre")
+
+
+
+
+# Plotting functions while exploring state dynamic relationships
+
+## X(t+1) = X(t) + energy gained - metabolic costs
+## Metabolic costs: two components, standard metabolic rate (SMR) and active swimming
+
+### SMR: a*W^b (Claireaux et al. 2018; Healey et al. 2000; Enders et al.2003)
+
+SMR <- function(X, a, b){  a*X^b }
+curve(SMR(X, a=0.2, b=0.6), xlim=c(10, 50), ylab="SMR (mg O2*h-1)",
+      xlab="Body weight (g)", main="Body weight influences SMR",
+      xname = "X")
+      #a=0.227 and b=0.653 from Enders et al. 2003: juvenile sockeye btw 4-10 g at 15C.
+
+SWIM.COST <- function(v, U) {exp(v*U)}
+curve(SWIM.COST(U, v=0.02), xlim=c(0,50), ylab="Metabolic cost",
+      xlab="U swimming speed (cm/s)", main="Swimming speed (U) influences metabolic cost",
+      xname = "U")
+abline(h=0, v=0, col = "mediumslateblue", lty="dashed")
+abline(h=0, v=20, col = "mediumslateblue", lty="dashed")
+abline(h=0, v=40, col = "mediumslateblue", lty="dashed")
+
+
+### Ocean foraging gain: starts low, rapidly increases, but with tail that is more gradual
+    # match pattern from (Satterthwaite et al. match-mismatch)
+
+# Try beta distribution
+e.vec <- seq(0, 7, by=0.01)
+OCEAN.ENERGY.BETA <- dbeta(e.vec, shape1=2.2, shape2=3.5)
+plot(OCEAN.ENERGY.BETA, ylab="ocean energy gained per day", xlim=c(0,60),
+     xlab="time (days since start of simulation)")
+
+# Try Gamma distribution - this is pretty darn good.
+OCEAN.ENERGY.GAMMA <- dgamma(e.vec, shape = 3, rate = 5)
+plot(OCEAN.ENERGY.GAMMA, ylab="ocean energy gained per day", xlim=c(0,60),
+     xlab="time (days since start of simulation)")
+# make 
+
+# Try lognormal distribution
+
+
+
+# Try normal distribution
+timeseq <- seq(0,60, by=1)
+
+OCEAN.ENERGY.GAUS <- dnorm(timeseq, mean = 30, sd = 10)
+plot(OCEAN.ENERGY.GAUS, ylab="density",
+     xlab="time (days since start of simulation)")
+# would make mean stochastic...
+
+# can 
+
