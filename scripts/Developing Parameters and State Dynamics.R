@@ -81,5 +81,18 @@ plot(OCEAN.ENERGY.GAUS, ylab="density",
      xlab="time (days since start of simulation)")
 # would make mean stochastic...
 
-# can 
 
+# Let's try to find algebraic functions instead of distributions...not sure I understand the difference completely.
+# See bell curve equations  here: https://en.wikipedia.org/wiki/Bell_shaped_function#:~:text=Gaussian%20function%2C%20the%20probability%20density,of%20the%20central%20limit%20theorem.
+
+# Gaussian function - this seems promising!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+OCEAN.ENERGY.GAUS2 <- function(X, a, b, c){  a*exp(-(X-b)^2/2*c^2) }
+curve(OCEAN.ENERGY.GAUS2(X, a=2, b=40, c=0.08), xlim=c(0, 60), ylab="Daily energy gained by a salmon (g/day)",
+      xlab="Time (days)", main="Ocean food over time",
+      xname = "X")
+
+# ooo this is good! a parameter shits the y max, b parameter shifts the mean along the x-axis, c parameter shifts the width!!!
+# would need to make parameter b stochastic!!
+
+# another one to try...from (Archontoulis and Miguez 2015)
+# OCEAN.ENERGY.BELL <- function(.....){  .... }
