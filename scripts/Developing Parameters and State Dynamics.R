@@ -41,7 +41,7 @@ predict(mod, newdata = data.frame(x = 5), interval = "pre")
 
 SMR <- function(X, a, b){  a*X^b }
 curve(SMR(X, a=0.2, b=0.6), xlim=c(10, 50), ylab="SMR (mg O2*h-1)",
-      xlab="Body weight (g)", main="Body weight influences SMR",
+      xlab="Body weight (g)", main="Body weight influences SMR\n(Enders et al. 2003) juvenile sockeye",
       xname = "X")
       #a=0.227 and b=0.653 from Enders et al. 2003: juvenile sockeye btw 4-10 g at 15C.
 
@@ -90,6 +90,11 @@ OCEAN.ENERGY.GAUS2 <- function(X, a, b, c){  a*exp(-(X-b)^2/2*c^2) }
 curve(OCEAN.ENERGY.GAUS2(X, a=2, b=40, c=0.08), xlim=c(0, 60), ylab="Daily energy gained by a salmon (g/day)",
       xlab="Time (days)", main="Ocean food over time",
       xname = "X")
+curve(OCEAN.ENERGY.GAUS2(X, a=2, b=35, c=0.08), xlim=c(0, 60), ylab="Daily energy gained by a salmon (g/day)",
+      xlab="Time (days)", main="Ocean food over time",
+      xname = "X", add=TRUE, col="mediumslateblue")
+abline(h=0.9, col="gray24", lty="dashed") #river 3.5% body weight for 26 g fish (YOLO max)
+
 
 # ooo this is good! a parameter shits the y max, b parameter shifts the mean along the x-axis, c parameter shifts the width!!!
 # would need to make parameter b stochastic!!
