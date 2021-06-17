@@ -1,36 +1,85 @@
  # Developing Parameters and State Dynamics
   ## background code in figuring out how to choose final model parameters and dynamics
 
+library(ggplot2)
+
+#####################################################################################
+# EQUATION 3 - Xcrit is a function of individual prior maximum body size (X)
+##  I need to estimate range of body weights (g) for a given fork length
+##  I need to plot WT by FL, determine the 95% prediction interval
+##  (NOT confidence interval) and then plot the predicted xmax against the xcrit
+
+# EQUATION 3:
+# Steps I think we need to do to figure out Eq. 3
+  # 1: Get dataset with migrating salmon length-weight relationships
+  # 2: Plot Weight by Length
+  # 3: Fit function to the data (exponential, non-linear)
+  # 4: Use function to estimate prediction intervals (not confidence intervals) to capture the range
+      # of weights that a single length salmon can be. These bounds are estimates of Xcrit and Xmax in my model.
+  # 5: Plot the minimum prediction interval values (Xcrit) by the maximum prediction interval values (Xmax)
+  # 6: Fit function to this relationship - use this function as Equation 3. Aka how once a salmon reaches an
+      # Xmax value this will determine its Xcrit value in the model.
 
 
-# State variable X(t) body mass (g)
-##  For two scenarios (160 mm) and (220 mm), need to estimate range of body weights (g).
-##  I could do this with my salmon data from my field experiments and then extrapolate
-##  to the bigger sizes. I need to plot WT by FL, determine the 95% prediction interval
-##  (NOT confidence interval) and then predict the upper and lower estimates for 160 and 220.
-##  These values would be my xcrit and xmax for the model.
+# STEPS 1 & 2: Get dataset with migrating salmon length-weight relationships and plot the data.
+  # I have this dataset from Arnold that includes Release data (including weight and lengths) of ALL
+      # acoustically tagged fish (ALL species). I put this file in this SDP-pred-mig repository in the
+      # raw-data folder called "qry_ReleaseInfo".
 
-# Here is the code I used on my Big Enclosure dataset
+#Import salmon tagging release data (including weight and lengths)
+samdata<-read.csv("C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\raw-data\\qry_ReleaseInfo.txt", header=T, sep=",")
 
-# https://rpubs.com/Bio-Geek/71339
+plot(Weight_ ~ Length, data=samdata) #ALL species (including other than salmon) and ALL sizes
 
-WT<-data$WT
-FL<-data$FL
+#Subset data to what is relevant to our model: want fall-run, late-fall-run, spring-run, steelhead of outmigration sizes.
+  # To subset, make new column called "PopGroup" with only the first 7 characters from StudyID, I picked 7 so that I get  
+  # "Coleman" and "MillCk_" by themselves across all years.
+  # Coleman includes fall-run and late-fall, all of hatchery origin.
+  # MillCk_ includes spring-run and steelhead of wild origin.
+  # Both Coleman and Mill Creek fish are from/released near the Upper Sacramento River (similar to how our model is set up)
 
-mod1 <- lm(WT ~ FL)
-summary(mod1)
-predict(mod1, newdata = data.frame(FL = 220), interval = "prediction", level = 0.99)
+samdata$PopGroup <- substr(samdata$StudyID, 1, 7) #Make new column PopGroup with only first 7 characters from StudyID, I picked 7 so that I get "Coleman" and "MillCk_" by themselves.
 
-plot(data$WT ~ data$FL)
+coleman <- subset(samdata, PopGroup == "Coleman") #Subset Coleman fish from all years.
+millcreek <- subset(samdata, PopGroup == "MillCk_") #Subset Mill_Ck fish from all years.
+col.mill <- rbind(coleman, millcreek) # and here is them together.
+rm(coleman); rm(millcreek) #remove temp objects
 
-set.seed(4172018)
-x <- runif(30, 0, 10)
-y <- 1 + 2 * x + rnorm(30, 0, 3)
-mod <- lm(y~x)
-predict(mod, newdata = data.frame(x = 5), interval = "pre")
+# Now plot only the relevant data
+plot(Weight_ ~ Length, data=col.mill) # full relevant dataset
+plot(Weight_ ~ Length, data=subset(col.mill, Length > 150)) # to play around with looking at different subsets
+
+summary(col.mill$Length)
+summary(col.mill$Weight_) # could use this to figure out what range of mass (X) we want to run the model for (aka create the decision matrix for)
+
+# STEP 3: Fit function to the data (exponential, non-linear)?
+  # Do I need to use the function nls? To what formula?
+
+# Try nls model with form Weight = e^b*Length - What is the right formula to use?
+lt.wt.mod <- nls(Weight_ ~ exp(b*Length), data = col.mill, start = list(b=0.2))
+summary(lt.wt.mod)
+coef(lt.wt.mod) # b=0.02274157 fitted parameter value
+
+#Plot fitted function on top of raw data
+lt.wt.fun <- function(Length, b){  exp(Length*b) }
+curve(lt.wt.fun(Length, b=0.023), xlim=c(50, 260), ylab="Weight",
+      xlab="Length", xname = "Length",col="blue")
+points(Weight_ ~ Length, data=col.mill, col="gray50") # Hmm is this the best we can do?
+
+
+# STEP 4: Use function to estimate prediction intervals (not confidence intervals) to capture the range
+    # of weights that a single length salmon can be. These bounds are estimates of Xcrit and Xmax in my model.r)
+
+# Some resources for calculating non-linear prediction intervals
+    # https://www.r-bloggers.com/2018/05/monte-carlo-based-prediction-intervals-for-nonlinear-regression/
+    # http://sia.webpopix.org/nonlinearRegression.html#confidence-intervals-and-prediction-intervals
 
 
 
+
+
+#####################################################################################
+## EQUATION 6: TOTAL METABOLIC COSTS
 
 # Plotting functions while exploring state dynamic relationships
 
@@ -53,6 +102,8 @@ abline(h=0, v=0, col = "mediumslateblue", lty="dashed")
 abline(h=0, v=20, col = "mediumslateblue", lty="dashed")
 abline(h=0, v=40, col = "mediumslateblue", lty="dashed")
 
+#####################################################################################
+## EQUATION 5: Ocean daily foraging gain
 
 ### Ocean foraging gain: starts low, rapidly increases, but with tail that is more gradual
     # match pattern from (Satterthwaite et al. match-mismatch)
