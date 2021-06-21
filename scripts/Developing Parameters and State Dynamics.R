@@ -99,12 +99,18 @@ ggplot(data=bigfish, aes(x=Length, y=Weight_, color=StudyID)) + theme_classic() 
 # in package tolerance, function nlregtol.int: "provides 1-sided or 2-sided nonlinear
   #regression tolerance bounds." This is what I want! Now how to do it...
 
+
+x <- bigfish$Length
+y <- bigfish$Weight_
+
 formula <- as.formula(y ~ a*x^b)
 xy.data <- data.frame(cbind(bigfish$Weight_, bigfish$Length))
 colnames(xy.data) <- c("y", "x")
 
+
 out2 <- nlregtol.int(formula, xy.data = xy.data, x.new=cbind(c(100, 150)), 
                      side = 2, alpha = 0.05, P = 0.95, start = list(a=0.00002, b=3))
+
 head(out2)
 # ISSUES: Error if don't use x.new argument (Error in P.mat[i, ] : subscript out of bounds)
         #If use x.new = cbind(c(10, 20)), Why are tolerance bounds so huge?! Not right.
