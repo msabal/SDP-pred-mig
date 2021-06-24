@@ -239,7 +239,53 @@ curve(E.size(X, a=1.5, b=12), xlim=c(0, 150), ylim=c(0, 1.8), ylab="E (g/day)",
 abline(h=1.5, col = "mediumslateblue", lty="dashed")
 # a defines maximum value (1.5 g/d)
 
+# linear function from (Handeland et al. 2008) relationships between Atlantic salmon smolt size and daily % growth rate.
+E.size.Hand <- function(X, a, b){  b + a*X }
+curve(E.size.Hand(X, a=0.0006, b=3), xlim=c(0, 200), ylab="E (% X/day)",
+      xlab="Body weight (g)",
+      xname = "X")
+  # a (slope) is pretty consistent across temp treatments in (Handeland et al. 2008): 0.004, 0.004, 0.006, 0.007 (mean= 0.005!)
+    # use 0.005 as the parameter in this model to account for size relationship to percent energy gained daily.
+  # b (intercept) is going to be a function of shoreline habitat (and maybe temp if I add that in)
 
+# now plot same function converted to grams/day
+E.size.Hand.g <- function(X, a, b){  ((b + a*X)/100)*X }
+curve(E.size.Hand.g(X, a=0.006, b=0.253), xlim=c(0, 200), ylab="E (g/day)",
+      xlab="Body weight (g)",
+      xname = "X")
+  # Hmm but food/biology limits the amount an animal can put on a day?? right?
+    # But the maximum here is our biggest fish will be putting on 3 g/day?? NO becuase habitat is more important!? 
+
+# Try logistic curve - maybe gets too confusing?
+E.size.log <- function(X, k, L, b){  L/(1+exp(-k*(X-b))) }
+curve(E.size.log(X, k=0.018, L=1.5, b=150), xlim=c(0, 200), ylab="E (g/day)",
+      xlab="Body weight (g)",
+      xname = "X")
+
+curve(E.size.log(X, k=0.05, L=3, b=150), xlim=c(0, 200), ylab="E (g/day)",
+      xlab="Body weight (g)",
+      xname = "X", add=TRUE, col="mediumslateblue")
+
+# Okay stop over thinking and keep it simple based on the biology I want in my model
+
+E.size.Hand <- function(X, a, b){  b + a*X }
+curve(E.size.Hand(X, a=0.005, b=3.5), xlim=c(0, 200), ylim=c(0, 5), ylab="E (% X/day)",
+      xlab="Body weight (g)", xname = "X", lwd=2, col="limegreen")
+
+curve(E.size.Hand(X, a=0.005, b=1), xlim=c(0, 200), ylim=c(0, 5), ylab="E (% X/day)",
+      xlab="Body weight (g)", xname = "X", lwd=2, col="mediumslateblue", add=TRUE)
+
+# there is a linear relationship between salmon size (X) and percent body weight gained (Handeland et al. 2008)
+  # at satiation there can be a difference in 0.5 %wt/day between a 100g and 200g salmon! (slope = 0.005) 
+# maximum river growth in percent body weight is 3.5% at floodplains, salmon ~80 mm FL (~7 g) (intercept = 3.5) (Henery et al. 2010)
+
+
+# Okay, but now does this make sense for actual g/day??
+curve(E.size.Hand.g(X, a=0.005, b=3.5), xlim=c(0, 200), ylab="E (g/day)",
+      xlab="Body weight (g)", xname = "X", lwd=2, col="limegreen")
+curve(E.size.Hand.g(X, a=0.005, b=1), xlim=c(0, 200), ylab="E (g/day)",
+      xlab="Body weight (g)", xname = "X", lwd=2, col="mediumslateblue", add=TRUE)
+  # Hmmm, this seems like too high of grams per day?! MacFarlane observes only up to 1.5 or 2 grams/day in summer ocean salmon?!!!?!
 
 
 #####################################################################################
