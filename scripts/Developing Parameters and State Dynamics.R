@@ -279,6 +279,12 @@ curve(E.size.Hand(X, a=0.005, b=1), xlim=c(0, 200), ylim=c(0, 5), ylab="E (% X/d
   # at satiation there can be a difference in 0.5 %wt/day between a 100g and 200g salmon! (slope = 0.005) 
 # maximum river growth in percent body weight is 3.5% at floodplains, salmon ~80 mm FL (~7 g) (intercept = 3.5) (Henery et al. 2010)
 
+# Okay, but now does this make sense for actual g/day??
+curve(E.size.Hand.g(X, a=0.005, b=3.5), xlim=c(0, 200), ylab="E (g/day)",
+      xlab="Body weight (g)", xname = "X", lwd=2, col="limegreen")
+curve(E.size.Hand.g(X, a=0.005, b=1), xlim=c(0, 200), ylab="E (g/day)",
+      xlab="Body weight (g)", xname = "X", lwd=2, col="mediumslateblue", add=TRUE)
+  # Hmmm, this seems like too high of grams per day?! MacFarlane observes only up to 1.5 or 2 grams/day in summer ocean salmon?!!!?!
 
 # Okay, but now does this make sense for actual g/day??
 curve(E.size.Hand.g(X, a=0.005, b=3.5), xlim=c(0, 200), ylab="E (g/day)",
