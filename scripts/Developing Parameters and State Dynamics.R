@@ -300,7 +300,7 @@ curve(E.size.Hand.g(X, a=0.005, b=1), xlim=c(0, 200), ylab="E (g/day)",
 
 
 E.size.Satt2008 <- function(X, a, q){  q*X^a }
-curve(E.size.Satt2008(X, a=0.86, q=0.1), xlim=c(0, 200), ylab="Anabolic gains (g/day)",
+curve(E.size.Satt2008(X, a=0.86, q=0.05), xlim=c(0, 200), ylab="Anabolic gains (g/day)",
       xlab="Body weight (g)", xname = "X", lwd=2, col="limegreen")
   # What is q? what units? What does it represent biologically?
 
