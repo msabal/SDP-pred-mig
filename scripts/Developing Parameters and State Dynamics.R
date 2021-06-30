@@ -221,6 +221,28 @@ summary(lm(lower.tol ~ upper.tol, tol.dat))
 #####################################################################################
 ## EQUATION 4: ENERGY GAINED IN THE RIVER IS A FUNCTION OF CURRENT BODY SIZE
 
+# make dataframe with points I know from the literature for final checks that models make sense
+gday.dat <- data.frame(g.per.day = c(NA,NA, 0.07, 0.79, 1.47), 
+                       p.wt.per.day = c(0.035, 0.028, NA, NA, NA), 
+                       mean.X = c(2.1, 2.4, 6.8, 7.4, 117), 
+                       source = c("Henery: floodplain free-ranging chinook", 
+                                  "Henery: Sac river free-ranging chinook",
+                                  "MacFarlane: chinook estuary entry-exit",
+                                  "MacFarlane: chinook estuary exit-ocean summer",
+                                  "MacFarlane: chinook summer-fall ocean"))
+
+gday.dat$g.per.day[1:2] <-gday.dat$mean.X[1:2] * gday.dat$p.wt.per.day[1:2] # estimate g/day for Henery from reported percent body weight and mean body weights.
+    # *MacFarlane salmon weight entering the estuary was calculated from reported FL (82.5 mm FL) using our nls model above = 6.8
+    #  These values are also heavily influenced by the environment aka food availability, BUT they give us a good check to see if we are in the right universe with our models.
+
+plot(g.per.day ~ mean.X, gday.dat)
+lines(g.per.day ~ mean.X, gday.dat)
+  # okay, take away is that GROWTH should look like this, which INCLUDES metabolic costs. Perhaps need to
+    # put all of Equation 1 together (or at least Equations 5 and 6 together) before checking to see if the shape is right.
+
+
+
+#### trying to simulate other data...
 simfish4 <- seq(15, 180, by=2)
 ehab_per <- seq(0, .08, by=0.02)
 
@@ -312,6 +334,16 @@ E.size.meg <- function(X, a, b){  a-b/X }
 curve(E.size.meg(X, a=2, b=20), xlim=c(0, 150), ylim=c(0, 2), ylab="coefficient q (% of baseline Energy gained)",
       xlab="Body weight (g)", xname = "X")
 abline(h=1.5, col = "mediumslateblue", lty="dashed")
+
+
+# Try a FULL dX/dt equation because THAT is what should match my observed g/day growth.
+Full.dxdt <- function(X, q, a, A, B, f, S, v, U){q*X^a - A*X^B*exp(f*S)*exp(v*U)}
+curve(Full.dxdt(X, q=0.04, a=0.86, A=0.000525, B=1, f=0.071, S=12, v=0.027, U=20),
+      ylab="g.per.day", xlab="Body weight (g): X", xname="X",
+      xlim=c(0,200))
+points(g.per.day ~ mean.X, gday.dat, pch=16)
+# q values around 0.04 are somewhat near the data from the papers?!
+
 
 
 #####################################################################################
