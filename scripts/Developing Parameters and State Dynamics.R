@@ -6,10 +6,14 @@ library(ggplot2); library(investr); library(tolerance)
 options(scipen=999)
 
 #####################################################################################
-# EQUATION 3 - Xcrit is a function of individual prior maximum body size (X)
+# EQUATION NA - Xcrit is a function of individual prior maximum body size (X)
 ##  I need to estimate range of body weights (g) for a given fork length
 ##  I need to plot WT by FL, determine the Tolerance Interval
 ##  (NOT confidence interval or prediction interval) and then plot the predicted xmax against the xcrit
+
+
+###  DECIDED I DO NOT NEED XCRIT TO BE A FUNCTION!
+
 
 # EQUATION 3:
 # Steps I think I need to do to figure out Eq. 3
@@ -219,7 +223,7 @@ summary(lm(lower.tol ~ upper.tol, tol.dat))
 
 
 #####################################################################################
-## EQUATION 4: ENERGY GAINED IN THE RIVER IS A FUNCTION OF CURRENT BODY SIZE
+## EQUATION 3: ENERGY GAINED IN THE RIVER IS A FUNCTION OF CURRENT BODY SIZE
 
 # make dataframe with points I know from the literature for final checks that models make sense
 gday.dat <- data.frame(g.per.day = c(NA,NA, 0.07, 0.79, 1.47), 
@@ -241,19 +245,7 @@ lines(g.per.day ~ mean.X, gday.dat)
     # put all of Equation 1 together (or at least Equations 5 and 6 together) before checking to see if the shape is right.
 
 
-
-#### trying to simulate other data...
-simfish4 <- seq(15, 180, by=2)
-ehab_per <- seq(0, .08, by=0.02)
-
-Ehab_g <- simfish4*0.08 # 8%
-
-plot(simfish4, Ehab_g)
-
-# Can a 180 g salmon gain 14 grams per day??? NO.
-    # (MacFarlane 2020) salmon max gain in the ocean in the summer is 1.5 g/day
-      # so function asymptotes to 1.5 g/day
-
+# Trying different functions.
 E.size <- function(X, a, b){  a-b/X }
 curve(E.size(X, a=1.5, b=12), xlim=c(0, 150), ylim=c(0, 1.8), ylab="E (g/day)",
       xlab="Body weight (g)", main="Body weight influences Daily energy gained",
@@ -347,7 +339,7 @@ points(g.per.day ~ mean.X, gday.dat, pch=16)
 
 
 #####################################################################################
-## EQUATION 6: TOTAL METABOLIC COSTS
+## EQUATION 5: TOTAL METABOLIC COSTS
 
 # Plotting functions while exploring state dynamic relationships
 
@@ -371,7 +363,131 @@ abline(h=0, v=20, col = "mediumslateblue", lty="dashed")
 abline(h=0, v=40, col = "mediumslateblue", lty="dashed")
 
 #####################################################################################
-## EQUATION 5: Ocean daily foraging gain
+## EQUATIONS 3+4 TOGETHER: Total daily growth dX/dt
+
+#a <- 0.86       # 0.86 (Satterthwaite et al. 2009 Evo Apps - Central Valley steelhead)
+#A <- 0.000525   # Values used for coefficient 𝞪 include 0.00143 (g O2/d) (Beauchamp et al. 1989). We need values in grams (Carbon), so I converted 0.00143 g O2/day / 32 g [atomic weight of 2 O molecules] O2 per mole * 12 g C [atomic weight of C and definition of a mole] = 0.000525 g C/day.
+#v <- 0.027      # Values used for swimming speed coefficient v include 0.0234 (s/cm) (Healey et al. 2000). We use speeds in km/day, so I converted 0.0234 s/cm * 100000 cm per km / 86400 s per day = 0.027 d/km.
+
+
+GROWTH.FUN <- function(X, a, q, A, v, U) {X^a*q - A*X*exp(v*U) }
+
+# Check to see if q changes shape aka if salmon are in different habitats does
+  # it change their growth rates? Yes.
+
+curve(GROWTH.FUN(X, a=0.86, A=0.00607, v=0.027, q=0.02, U=20),
+      xname="X", ylab = "g/day", col="red", xlim=c(10,13), ylim=c(-0.1,1))
+
+curve(GROWTH.FUN(X, a=0.86, A=0.00607, v=0.027, q=0.025, U=20),
+      xname="X", ylab = "g/day", add=T, col="limegreen")
+
+curve(GROWTH.FUN(X, a=0.86, A=0.00607, v=0.027, q=0.02, U=40),
+      xname="X", ylab = "g/day", add=T, col="red", lty="dashed")
+
+curve(GROWTH.FUN(X, a=0.86, A=0.00607, v=0.027, q=0.025, U=40),
+      xname="X", ylab = "g/day", add=T, col="limegreen", lty="dashed")
+
+curve(GROWTH.FUN(X, a=0.86, A=0.00607, v=0.027, q=0.02, U=0),
+      xname="X", ylab = "g/day", add=T, col="red", lty="dotted")
+
+curve(GROWTH.FUN(X, a=0.86, A=0.00607, v=0.027, q=0.025, U=0),
+      xname="X", ylab = "g/day", add=T, col="limegreen", lty="dotted")
+
+
+
+
+### Okay. Let's simulate some salmon growth in the river only.
+  # use for loops!
+
+sim.move0 <- data.frame(t=seq(1,30, by=1), X=rep(NA, 30), 
+                        h=rep("a", 30), U=rep(0, 30))     # set baseline values.
+
+sim.move0[1,2] <- 10 # set starting values for mass, 10g
+
+GROWTH.FUN2 <- function(X, a, q, A, v, U) {X + X^a*q - A*X*exp(v*U) }
+
+
+#for loop to simulate salmon mass over 30 days.
+for(t in 1:29){
+  sim.move0[t+1,2]<-GROWTH.FUN2(X = sim.move0[t,2], a=0.86, q=0.02, A=0.00607, 
+                                v=0.027, U=sim.move0[t,4])
+}
+
+# salmon that moves 1 each day
+sim.move20 <- data.frame(t=seq(1,30, by=1), X=rep(NA, 30), 
+                        h=rep("a", 30), U=rep(20, 30))     # set baseline values.
+
+sim.move20[1,2] <- 10 # set starting values for mass, 10g
+
+#for loop to simulate salmon mass over 30 days.
+for(t in 1:29){
+  sim.move20[t+1,2]<-GROWTH.FUN2(X = sim.move20[t,2], a=0.86, q=0.02, A=0.00607, 
+                                v=0.027, U=sim.move20[t,4])
+}
+
+# salmon that moves 2 each day
+sim.move40 <- data.frame(t=seq(1,30, by=1), X=rep(NA, 30), 
+                         h=rep("a", 30), U=rep(40, 30))     # set baseline values.
+
+sim.move40[1,2] <- 10 # set starting values for mass, 10g
+
+#for loop to simulate salmon mass over 30 days.
+for(t in 1:29){
+  sim.move40[t+1,2]<-GROWTH.FUN2(X = sim.move40[t,2], a=0.86, q=0.02, A=0.00607, 
+                                 v=0.027, U=sim.move40[t,4])
+}
+
+# salmon that moves 0 each day in natural
+sim.move0n <- data.frame(t=seq(1,30, by=1), X=rep(NA, 30), 
+                         h=rep("n", 30), U=rep(0, 30))     # set baseline values.
+
+sim.move0n[1,2] <- 10 # set starting values for mass, 10g
+
+#for loop to simulate salmon mass over 30 days.
+for(t in 1:29){
+  sim.move0n[t+1,2]<-GROWTH.FUN2(X = sim.move0n[t,2], a=0.86, q=0.025, A=0.00607, 
+                                 v=0.027, U=sim.move0n[t,4])
+}
+
+# salmon that moves 1 each day in natural
+sim.move20n <- data.frame(t=seq(1,30, by=1), X=rep(NA, 30), 
+                         h=rep("n", 30), U=rep(20, 30))     # set baseline values.
+
+sim.move20n[1,2] <- 10 # set starting values for mass, 10g
+
+#for loop to simulate salmon mass over 30 days.
+for(t in 1:29){
+  sim.move20n[t+1,2]<-GROWTH.FUN2(X = sim.move20n[t,2], a=0.86, q=0.025, A=0.00607, 
+                                 v=0.027, U=sim.move20n[t,4])
+}
+
+# salmon that moves 2 each day in natural
+sim.move40n <- data.frame(t=seq(1,30, by=1), X=rep(NA, 30), 
+                          h=rep("n", 30), U=rep(40, 30))     # set baseline values.
+
+sim.move40n[1,2] <- 10 # set starting values for mass, 10g
+
+#for loop to simulate salmon mass over 30 days.
+for(t in 1:29){
+  sim.move40n[t+1,2]<-GROWTH.FUN2(X = sim.move40n[t,2], a=0.86, q=0.025, A=0.00607, 
+                                  v=0.027, U=sim.move40n[t,4])
+}
+
+# compare plots!
+plot(X~t, sim.move0, col="red", ylim=c(9,20)) # growth over time of a salmon that never moves.
+points(X~t, sim.move20, col="orange") # growth over time of a salmon that moves 20km/day.
+points(X~t, sim.move40, col="limegreen") # growth over time of a salmon that moves 40km/day.
+points(X~t, sim.move0n, col="red", pch=16)
+points(X~t, sim.move20n, col="orange", pch=16)
+points(X~t, sim.move40n, col="limegreen", pch=16)
+
+
+### THOUGHTS: growth is too high. Should be flatter in the river, especially.
+
+
+
+#####################################################################################
+## EQUATION 4: Ocean daily foraging gain
 
 ### Ocean foraging gain: starts low, rapidly increases, but with tail that is more gradual
     # match pattern from (Satterthwaite et al. match-mismatch)
