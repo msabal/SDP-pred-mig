@@ -474,7 +474,7 @@ for(t in 1:29){
 }
 
 # compare plots!
-plot(X~t, sim.move0, col="red", ylim=c(9,20)) # growth over time of a salmon that never moves.
+plot(X~t, sim.move0, col="red", ylim=c(9,15)) # growth over time of a salmon that never moves.
 points(X~t, sim.move20, col="orange") # growth over time of a salmon that moves 20km/day.
 points(X~t, sim.move40, col="limegreen") # growth over time of a salmon that moves 40km/day.
 points(X~t, sim.move0n, col="red", pch=16)
@@ -482,7 +482,65 @@ points(X~t, sim.move20n, col="orange", pch=16)
 points(X~t, sim.move40n, col="limegreen", pch=16)
 
 
-### THOUGHTS: growth is too high. Should be flatter in the river, especially.
+### THOUGHTS: Maybe alpha = 0.00607 (from Satterthwaite et al. 2010 Appendix A), with
+    # q values around 0.02 are somewhat realistic?!
+    # Success that different movement choices and river shoreline habitats result in different
+      # growth trajectories.
+
+### Now let's add q for the ocean.
+OCEAN.Q <- function(t, a, b, c,d){  d+a*exp(-(t-b)^2/2*c^2) }
+curve(OCEAN.Q(t, a=0.07, b=40, c=0.07, d=0.02), xlim=c(0, 60), ylab="q (ocean)",
+      xlab="Time (days)", xname = "t")
+abline(h=0.0225, col="gray24", lty="dashed") #river value
+
+
+### Simulate a salmon in the ocean for 30 days
+# salmon that moves 0 each day in ocean
+sim.move0o <- data.frame(t=seq(20,49, by=1), X=rep(NA, 30), 
+                          h=rep("o", 30), U=rep(0, 30))     # set baseline values.
+
+sim.move0o[1,2] <- 12 # set starting values for mass, 10g
+
+#for loop to simulate salmon mass over 30 days.
+for(t in 1:29){
+  sim.move0o[t+1,2]<-GROWTH.FUN2(X = sim.move0o[t,2], a=0.86, 
+                                 q=OCEAN.Q(t=sim.move0o[t,1], a=0.07, b=40, c=0.07, d=0.02), A=0.00607, 
+                                  v=0.027, U=sim.move0o[t,4])
+}
+
+#compare plots
+plot(X~t, sim.move0o, col="slateblue", ylim=c(9,50), pch=16) # growth over time of a salmon in ocean days 1 to 30
+
+
+
+# Let's simulate a salmon with different habitats
+sim.mix <- data.frame(t=seq(1,60, by=1), X=rep(NA, 60), 
+                         h=rep(NA, 60), U=rep(NA, 60))     # set baseline values.
+
+sim.mix[1,2] <- 10 # set starting values for mass, 10g
+
+sim.mix[31:60, 3] <- rep("o", 30)   # final 30 days in ocean
+sim.mix[1:30, 3] <- sample(0:1, 30, replace=T, prob=c(0.5,0.5))  # first 30 days random between altered and natural
+sim.mix$h[sim.mix$h == "1"] <- "a"   # change 1 from sample function to "a"
+sim.mix$h[sim.mix$h == "0"] <- "n"   # change 0 from sample function to "n"
+
+sim.mix[31:60, 4] <- rep(0, 30)   # last 30 days move 0 in ocean
+sim.mix[1:30, 4] <- sample(0:2, 30, replace=T)  # first 30 days random sample between 0,1,2.
+sim.mix$U[sim.mix$U == "1"] <- 20  # change 1 from sample function to "20" km/day
+sim.mix$U[sim.mix$U == "2"] <- 40  # change 2 from sample function to "40" km/day
+
+
+#for loop to simulate salmon mass over 60 days in a mix of habitats.
+for(t in 1:59){
+  sim.mix[t+1,2]<-GROWTH.FUN2(X = sim.mix[t,2], a=0.86, 
+                                 q= ifelse(sim.mix[t,3] == "o", OCEAN.Q(t=sim.mix[t,1], a=0.07, b=40, c=0.07, d=0.02),
+                                           ifelse(sim.mix[t,3] == "a", 0.02, 0.025)), A=0.00607, 
+                                 v=0.027, U=sim.mix[t,4])
+}
+
+#compare plots
+plot(X~t, sim.mix, col="slateblue", ylim=c(9,50), pch=16) # growth over time of a salmon for 30 days in river, and 30 days in ocean
+
 
 
 
@@ -536,3 +594,17 @@ abline(h=0.9, col="gray24", lty="dashed") #river 3.5% body weight for 26 g fish 
 
 # another one to try...from (Archontoulis and Miguez 2015)
 # OCEAN.ENERGY.BELL <- function(.....){  .... }
+
+
+#####################################################################################
+## EQUATION 6,7,9: RISK EQUATIONS
+
+# Plot (Nobriga et al. 2021) equation for CAP (capture probability kind of like my Beta)
+CAP <- function(X){  0.861-(1.82*X/236) }
+curve(CAP(X), xname = "X", xlim=c(0,150))
+
+
+
+
+
+
