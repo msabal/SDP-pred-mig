@@ -603,8 +603,21 @@ abline(h=0.9, col="gray24", lty="dashed") #river 3.5% body weight for 26 g fish 
 CAP <- function(X){  0.861-(1.82*X/236) }
 curve(CAP(X), xname = "X", xlim=c(0,150))
 
+# Plot (Abrahams & Mangel 2007) equation for weekly mortality rates
+Mtrout <- function(X){ 0.01 + 0.03*X^-0.37 }
+curve(Mtrout(X), xname="X", xlim=c(0,150))
+
+# Plot (Satterthwaite et al. 2010) equation for length-dependent ocean survival
+Satt.surv <- function(X){ 0.84*((exp(-8.657+0.0369*X)/(1+exp(-8.657+0.0369*X)))) }
+curve(Satt.surv(X), xname="X", xlim=c(0,150))
+
+# Plot (Mangel & Satterthwaite 2008) equation for mortality rate
+Mangel.mort <- function(X){ 0.2 + 2/X }
+curve(Mangel.mort(X), xname="X", xlim=c(0,150))
 
 
-
-
+# My adjustments/combinations
+Meg.mort <- function(X, mh, mu){ mh + mu + 0.03*X^-0.37 }
+curve(Meg.mort(X, mh=0.01, mu=0.01), xname="X", xlim=c(0,20), ylim=c(0,0.1), ylab="daily mortality rate")
+curve(Meg.mort(X, mh=0.02, mu=0.02), xname="X", ylab="daily mortality rate", add=T, col="slateblue")
 
