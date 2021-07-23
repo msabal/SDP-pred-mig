@@ -362,6 +362,26 @@ abline(h=0, v=0, col = "mediumslateblue", lty="dashed")
 abline(h=0, v=20, col = "mediumslateblue", lty="dashed")
 abline(h=0, v=40, col = "mediumslateblue", lty="dashed")
 
+
+
+### add that parameter v is a function of shoreline habitat!
+
+cost.Uh.FUN <- function(v, U) { exp(v*U) }
+
+curve(cost.Uh.FUN(U, v=0.027),
+      xname="U", ylab = "g/day", col="purple", xlim=c(0,40))
+
+curve(cost.Uh.FUN(U, v=0.037),
+      xname="U", ylab = "g/day", col="purple", lty="dashed", add=T)
+
+curve(cost.Uh.FUN(U, v=0.017),
+      xname="U", ylab = "g/day", col="purple", lty="dotted", add=T)
+
+
+
+
+
+
 #####################################################################################
 ## EQUATIONS 3+4 TOGETHER: Total daily growth dX/dt
 
