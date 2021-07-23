@@ -229,6 +229,7 @@ summary(lm(lower.tol ~ upper.tol, tol.dat))
 gday.dat <- data.frame(g.per.day = c(NA,NA, 0.07, 0.79, 1.47), 
                        p.wt.per.day = c(0.035, 0.028, NA, NA, NA), 
                        mean.X = c(2.1, 2.4, 6.8, 7.4, 117), 
+                       t = c(5, 10, 30, 60, 90),
                        source = c("Henery: floodplain free-ranging chinook", 
                                   "Henery: Sac river free-ranging chinook",
                                   "MacFarlane: chinook estuary entry-exit",
@@ -377,9 +378,17 @@ curve(cost.Uh.FUN(U, v=0.037),
 curve(cost.Uh.FUN(U, v=0.017),
       xname="U", ylab = "g/day", col="purple", lty="dotted", add=T)
 
+ # Notes: v changes the slope differently by speed. Increases costs for go fast, but NO change for move 0.
+    # and I want the exact opposite. Energy benefit from going move 0 AT natural sites.
 
+# Try changing alpha ONLY for when move 0 at altered sites.
+costs.FUN <- function(A, v, U) { A*X*exp(v*U) }
 
+curve(costs.FUN(U, v=0.017, A=0.00607),
+      xname="U", ylab = "g/day", col="purple", xlim=c(0,40), ylim=c(0,0.13))
 
+curve(costs.FUN(U, v=0.017, A=0.00507),
+      xname="U", ylab = "g/day", col="purple", lty="dashed", add=T)
 
 
 #####################################################################################
@@ -554,13 +563,16 @@ sim.mix$U[sim.mix$U == "2"] <- 40  # change 2 from sample function to "40" km/da
 for(t in 1:59){
   sim.mix[t+1,2]<-GROWTH.FUN2(X = sim.mix[t,2], a=0.86, 
                                  q= ifelse(sim.mix[t,3] == "o", OCEAN.Q(t=sim.mix[t,1], a=0.07, b=40, c=0.07, d=0.02),
-                                           ifelse(sim.mix[t,3] == "a", 0.02, 0.025)), A=0.00607, 
+                                           ifelse(sim.mix[t,3] == "a", 0.02, 0.025)), 
+                              A= ifelse(sim.mix[t,3] == "n" & sim.mix[t,4] == 0, 0.00407, 0.00607), 
                                  v=0.027, U=sim.mix[t,4])
 }
 
 #compare plots
 plot(X~t, sim.mix, col="slateblue", ylim=c(9,50), pch=16) # growth over time of a salmon for 30 days in river, and 30 days in ocean
+points(mean.X~t, gday.dat)
 
+plot(X~t, sim.mix, col="slateblue", ylim=c(9,12), xlim=c(0,30), pch=16) # growth over time of a salmon for 30 days in river, and 30 days in ocean
 
 
 
@@ -637,7 +649,7 @@ curve(Mangel.mort(X), xname="X", xlim=c(0,150))
 
 
 # My adjustments/combinations
-Meg.mort <- function(X, mh, mu){ mh + mu + 0.03*X^-0.37 }
-curve(Meg.mort(X, mh=0.01, mu=0.01), xname="X", xlim=c(0,20), ylim=c(0,0.1), ylab="daily mortality rate")
+Meg.mort <- function(X, mh, mu){ mh + mu + 0.001*X^-0.37 }
+curve(Meg.mort(X, mh=0.0003, mu=0.0003), xname="X", xlim=c(0,20), ylim=c(0,0.1), ylab="daily mortality rate")
 curve(Meg.mort(X, mh=0.02, mu=0.02), xname="X", ylab="daily mortality rate", add=T, col="slateblue")
 
