@@ -661,3 +661,60 @@ Meg.mort <- function(X, mh, mu){ mh + mu + 0.001*X^-0.37 }
 curve(Meg.mort(X, mh=0.0003, mu=0.0003), xname="X", xlim=c(0,20), ylim=c(0,0.1), ylab="daily mortality rate")
 curve(Meg.mort(X, mh=0.02, mu=0.02), xname="X", ylab="daily mortality rate", add=T, col="slateblue")
 
+
+################# MY RISK EQUATIONS ######################
+Beta.W <- function(X, m){ m*X^-0.37 }
+curve(Beta.W(X, m=0.004), xname="X", xlim=c(7,20), ylim=c(0,0.003), ylab="contrib. daily mortality rate")
+curve(Beta.W(X, m=0.004), xname="X", add=T, col="slateblue")
+abline(h=0.001666,lty="dashed")
+
+
+###### FULL RISK FUNCTION (1-Beta)^P
+RISK.FUN <- function(X, Bu, Bh, m, P){ (1-(Bu + Bh + m*X^-0.37))^P }
+
+
+# Simulate survival from sim.mix dataset
+head(sim.mix) # make sure this is populated from above.
+
+sim.mix$Surv.day <- NA  # Add column for Survival per day.
+sim.mix$Surv.cum <- NA  # Add column for cumulative survival.
+
+
+#for loop to calculate daily survival probability in each time step/habitat/U/W combination
+for(t in 1:60){
+  sim.mix[t,5]<-RISK.FUN(X = sim.mix[t,2],
+                         Bu = ifelse(sim.mix[t,4] == 20, 0.003, 0.001),
+                         Bh = ifelse(sim.mix[t,3] == "n", 0.001, 0.003),
+                         m = 0.004,
+                         P = ifelse(sim.mix[t,3] == "n", 20, ifelse(sim.mix[t,3] == "a", 20, 20)))
+}
+
+sim.mix$Surv.cum[1] <- sim.mix$Surv.day[1] # set first Surv.cum to the same as the single day.
+
+# for loop to calculate cumulative survival
+for(t in 1:59){ sim.mix[t+1,6] <- prod(sim.mix[1:t+1,5])}
+
+
+#compare plots
+
+#color by U
+plot(Surv.cum~t, sim.mix, col=as.factor(U), pch=16)
+plot(Surv.cum~t, sim.mix, col=as.factor(h), pch=16)
+
+plot(Surv.day~t, sim.mix, col=as.factor(U), pch=16)
+plot(Surv.day~t, sim.mix, col=as.factor(h), pch=16)
+
+plot(Surv.day~t, sim.mix, col=c("red", "limegreen", "mediumslateblue")[as.factor(h)], pch=c(6,0,2)[as.numeric(as.factor(sim.mix$U))])
+
+# it makes a big difference what habitat you are in WAY more than what speed you go!
+
+
+
+
+
+
+
+
+
+
+
