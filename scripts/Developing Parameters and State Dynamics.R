@@ -387,7 +387,7 @@ costs.FUN <- function(A, v, U) { A*X*exp(v*U) }
 curve(costs.FUN(U, v=0.017, A=0.00607),
       xname="U", ylab = "g/day", col="purple", xlim=c(0,40), ylim=c(0,0.13))
 
-curve(costs.FUN(U, v=0.017, A=0.00507),
+curve(costs.FUN(U, v=0.017, A=0.00407),
       xname="U", ylab = "g/day", col="purple", lty="dashed", add=T)
 
 
@@ -405,21 +405,21 @@ GROWTH.FUN <- function(X, a, q, A, v, U) {X^a*q - A*X*exp(v*U) }
   # it change their growth rates? Yes.
 
 curve(GROWTH.FUN(X, a=0.86, A=0.00607, v=0.027, q=0.02, U=20),
-      xname="X", ylab = "g/day", col="red", xlim=c(10,13), ylim=c(-0.1,1))
+      xname="X", ylab = "g/day", col="red", xlim=c(7,20), ylim=c(-0.1,0.6))
 
-curve(GROWTH.FUN(X, a=0.86, A=0.00607, v=0.027, q=0.025, U=20),
+curve(GROWTH.FUN(X, a=0.86, A=0.00607, v=0.027, q=0.04, U=20),
       xname="X", ylab = "g/day", add=T, col="limegreen")
 
 curve(GROWTH.FUN(X, a=0.86, A=0.00607, v=0.027, q=0.02, U=40),
       xname="X", ylab = "g/day", add=T, col="red", lty="dashed")
 
-curve(GROWTH.FUN(X, a=0.86, A=0.00607, v=0.027, q=0.025, U=40),
+curve(GROWTH.FUN(X, a=0.86, A=0.00607, v=0.027, q=0.04, U=40),
       xname="X", ylab = "g/day", add=T, col="limegreen", lty="dashed")
 
 curve(GROWTH.FUN(X, a=0.86, A=0.00607, v=0.027, q=0.02, U=0),
       xname="X", ylab = "g/day", add=T, col="red", lty="dotted")
 
-curve(GROWTH.FUN(X, a=0.86, A=0.00607, v=0.027, q=0.025, U=0),
+curve(GROWTH.FUN(X, a=0.86, A=0.00407, v=0.027, q=0.04, U=0),
       xname="X", ylab = "g/day", add=T, col="limegreen", lty="dotted")
 
 
@@ -563,16 +563,24 @@ sim.mix$U[sim.mix$U == "2"] <- 40  # change 2 from sample function to "40" km/da
 for(t in 1:59){
   sim.mix[t+1,2]<-GROWTH.FUN2(X = sim.mix[t,2], a=0.86, 
                                  q= ifelse(sim.mix[t,3] == "o", OCEAN.Q(t=sim.mix[t,1], a=0.07, b=40, c=0.07, d=0.02),
-                                           ifelse(sim.mix[t,3] == "a", 0.02, 0.025)), 
+                                           ifelse(sim.mix[t,3] == "a", 0.02, 0.04)), 
                               A= ifelse(sim.mix[t,3] == "n" & sim.mix[t,4] == 0, 0.00407, 0.00607), 
                                  v=0.027, U=sim.mix[t,4])
 }
 
 #compare plots
-plot(X~t, sim.mix, col="slateblue", ylim=c(9,50), pch=16) # growth over time of a salmon for 30 days in river, and 30 days in ocean
+
+#color by U
+plot(X~t, sim.mix, col=as.factor(U), ylim=c(9,50), pch=16) # growth over time of a salmon for 30 days in river, and 30 days in ocean
 points(mean.X~t, gday.dat)
 
-plot(X~t, sim.mix, col="slateblue", ylim=c(9,12), xlim=c(0,30), pch=16) # growth over time of a salmon for 30 days in river, and 30 days in ocean
+plot(X~t, sim.mix, col=as.factor(U), ylim=c(9,15), xlim=c(0,30), pch=16) # growth over time of a salmon for 30 days in river, and 30 days in ocean
+
+# color by h
+plot(X~t, sim.mix, col=as.factor(h), ylim=c(9,50), pch=16) # growth over time of a salmon for 30 days in river, and 30 days in ocean
+points(mean.X~t, gday.dat)
+
+plot(X~t, sim.mix, col=as.factor(h), ylim=c(9,15), xlim=c(0,30), pch=16) # growth over time of a salmon for 30 days in river, and 30 days in ocean
 
 
 
