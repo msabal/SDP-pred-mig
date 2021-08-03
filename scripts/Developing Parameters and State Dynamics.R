@@ -710,7 +710,14 @@ plot(Surv.day~t, sim.mix, col=c("red", "limegreen", "mediumslateblue")[as.factor
 
 
 
+######################## TERMINAL FITNESS #####################################
+TERM.FUN <- function(X, g){ 1/(1 + exp(-X+g)) }
+curve(TERM.FUN(X, g=15), xname="X", xlim=c(10,50), ylab="Prob of returning as 3 yr old adult")
 
+T.FITNESS <- function(X, m){  1/(1+exp(-X+m)) }
+curve(T.FITNESS(X, m=5), xlim=c(0, 10), ylab="probability of surviving to adult",
+      xlab="X(T, L10), energy reserves at time T in last location", main="Terminal Fitness Function",
+      xname = "X")
 
 
 
