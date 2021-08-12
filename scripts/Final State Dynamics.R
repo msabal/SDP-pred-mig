@@ -63,9 +63,52 @@ for(t in 1:29){
 
 
 
+### EQUATIONS 4 & 5: RISK
+RISK.FUN <- function(W, Bu, Bh, Bw, M, m, y, P){ (1-M*(Bu + Bh + Bw*W^m))^(y*P) }
 
 
+# solving for Beta-W
+Beta.W <- function(X, Bw){ Bw*X^-0.37 }
+curve(Beta.W(X, Bw=2), xname="X", xlim=c(7,20), ylim=c(0,1.1), ylab="contrib. daily mortality rate")
+abline(h=1,lty="dashed")
 
+Beta.W(X=7, Bw=2)
+
+
+# simulations
+# Simulate survival from sim.mix dataset
+head(sim.mix) # make sure this is populated from above.
+
+sim.mix$Surv.day <- NA  # Add column for Survival per day.
+sim.mix$Surv.cum <- NA  # Add column for cumulative survival.
+
+
+#for loop to calculate daily survival probability in each time step/habitat/U/W combination
+for(t in 1:60){
+  sim.mix[t,5]<-RISK.FUN(W = sim.mix[t,2],
+                         Bu = ifelse(sim.mix[t,4] == 20, 1, 0.8),
+                         Bh = ifelse(sim.mix[t,3] == "n", 0.8, 1),
+                         Bw = 2,
+                         M = 0.002,
+                         m = -0.37,
+                         y = ifelse(sim.mix[t,3] == "n", 1, ifelse(sim.mix[t,3] == "a", 0.8, 1)),
+                         P = 20)}
+
+sim.mix$Surv.cum[1] <- sim.mix$Surv.day[1] # set first Surv.cum to the same as the single day.
+
+# for loop to calculate cumulative survival
+for(t in 1:59){ sim.mix[t+1,6] <- prod(sim.mix[1:t+1,5])}
+
+
+#compare plots
+
+#cum surv plots
+plot(Surv.cum~t, sim.mix, col=as.factor(U), pch=16)
+plot(Surv.cum~t, sim.mix, col=as.factor(h), pch=16)
+
+#surv.day plots
+plot(Surv.day~t, sim.mix, col=as.factor(U), pch=16)
+plot(Surv.day~t, sim.mix, col=as.factor(h), pch=16)
 
 
 

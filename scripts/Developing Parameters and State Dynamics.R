@@ -664,8 +664,8 @@ curve(Meg.mort(X, mh=0.02, mu=0.02), xname="X", ylab="daily mortality rate", add
 
 ################# MY RISK EQUATIONS ######################
 Beta.W <- function(X, m){ m*X^-0.37 }
-curve(Beta.W(X, m=0.004), xname="X", xlim=c(7,20), ylim=c(0,0.003), ylab="contrib. daily mortality rate")
-curve(Beta.W(X, m=0.004), xname="X", add=T, col="slateblue")
+curve(Beta.W(X, m=2), xname="X", xlim=c(7,20), ylab="contrib. daily mortality rate")
+curve(Beta.W(X, m=0.04), xname="X", add=T, col="slateblue")
 abline(h=0.001666,lty="dashed")
 
 
