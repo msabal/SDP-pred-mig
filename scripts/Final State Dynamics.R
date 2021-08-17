@@ -112,4 +112,15 @@ plot(Surv.day~t, sim.mix, col=as.factor(h), pch=16)
 
 
 
+### EQUATION 7: TERMINAL FITNESS
+TERM.FUN <- function(W, Ws, r, Smax){ Smax/(1+exp(-r*(W-Ws))) }
 
+# plot Terminal Fitness function
+curve(TERM.FUN(W, Ws=40 , r=0.1, Smax=0.3), xname="W", xlim=c(7,80), ylim=c(0,0.31), ylab="adult marine survival (to age 3)")
+
+# check relative values
+TERM.FUN(W=10, Ws=40 , r=0.1, Smax=0.3) # 10 g salmon 0.014 (1.4% survival)
+TERM.FUN(W=20, Ws=40 , r=0.1, Smax=0.3) # 20 g salmon 0.035 (3.5% survival)
+TERM.FUN(W=40, Ws=40 , r=0.1, Smax=0.3) # 40 g salmon 0.15 (15% survival)
+# 10 g to 20 g is a little more than 2x higher (2x her fits Duffy) 
+# 10 g to 40 g is almost exactly 10x higher (10x her fits Duffy!)
