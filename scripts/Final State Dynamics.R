@@ -64,8 +64,10 @@ for(t in 1:29){
 
 
 ### EQUATIONS 4 & 5: RISK
-RISK.FUN <- function(W, Bu, Bh, Bw, M, m, y, P){ (1-M*(Bu + Bh + Bw*W^m))^(y*P) }
+SURV.FUN <- function(W, Bu, Bh, Bw, M, m, y, P){ (1-M*(Bu + Bh + Bw*W^m))^(y*P) }
 
+#Test RISK.FUN
+SURV.FUN(W=12, Bu=1, Bh=1, Bw=2, M=0.002, m=-0.37, y=1, P=20) # good.
 
 # solving for Beta-W
 Beta.W <- function(X, Bw){ Bw*X^-0.37 }

@@ -18,7 +18,6 @@ Wmax <- 80 # make this small to start? Eventually want 80 or 100 g...
 Wstep <- 0.1 # discrete interval steps maybe try 0.05
 Wstep.n <- ((Wmax-Wmin)/Wstep)  # this results in a lot of discrete steps - yikes!
                       # Try linear interpolation? (See Clark & Mangel Ch 2)
-
 # A: salmon area
 Amin <- 1
 Amax <- 26
@@ -30,11 +29,38 @@ tmax <- 60
 
 
 
+#### Make functions to convert between W in grams and W in computer discrete indexing
+
+# Make a dataframe to covert between real W (grams) and computer discrete index (Wc)
+Wconvdf <- data.frame(W = seq(Wmin+Wstep, Wmax, 0.1), Wc = seq(1,Wstep.n,1))
+
+plot(W ~ Wc, Wconvdf)
+summary(lm(W ~ Wc, Wconvdf)) # y-int: 7, slope: 0.1
+m.Wc <- 0.1
+y.Wc <- 7
+
+plot(Wc ~ W, Wconvdf)
+summary(lm(Wc ~ W, Wconvdf)) # y-int: -70, slope: 10
+m.W <- 10
+y.W <- -70
+
+# Build functions to convert between W and Wc
+WtoWc <- function(W){ round(m.W*W + y.W, digits=Wstep) }
+WctoW <- function(Wc){ m.Wc*Wc + y.Wc }
+
+# Test
+WtoWc(10); WtoWc(10.1); WtoWc(10.11) # Good. 30, 31, 31.
+WctoW(30); WctoW(31) # Good.
+
+
+
+
 #### Simulate river habitats by area
 h.vec <- rep(NA, Amax) # create blank vector for habitats for each Area.
 
 h.vec[Amax] <- "o" # make the last area (Amax) the ocean: "o"
 
+set.seed(24)  # set.seed to keep altered and natural habitat distribution constant for now.
 h.vec[1:Amax-1] <- sample(0:1, Amax-1, replace=T, prob=c(0.5,0.5))  # randomly sample
         # Amax-1 number of values 0 or 1 with a 50% probability between the two values.
 
@@ -69,6 +95,42 @@ F.vec <- array(NA, dim=c(Wstep.n, 2, Amax))  #(rows: weight, cols: F(x,t), F(x, 
 
 
 
+#### Parameters
+
+# Behavioral choice
+U <- c(0, 1, 2)
+
+# Terminal fitness
+Ws    <- 40
+r     <- 0.1
+Smax  <- 0.3
+
+# Growth
+E     <- 0.04
+qa    <- 0.75 #can change
+qn    <- 0.75 # can change
+a     <- 0.86
+Alpha <- 0.00607
+d     <- 1
+dn0   <- 0.7 # or combine with d by concatenating? will loop over in OVER.BEH?
+v     <- 0.027
+f     <- 0.5
+g     <- 2
+c     <- 40
+j     <- 0.07
+
+# Risk
+Bu    <- c(0.7, 1, 0.7) # B0, B1, B2 (can concatenate because we will loop over behavior choices?)
+Ba    <- 1
+Bn    <- 0.7 #can change
+Bo    <- 1
+Bw    <- 2
+M     <- 0.002
+m     <- -0.37
+ya    <- 0.8 #can change
+yn    <- 1 #can change
+yo    <- 1  #can change
+P     <- 20
 
 #### Terminal fitness function - how does salmon weight at tmax and Amax relate to probability of
 #    surviving to a returning adult? Larger salmon more likely to survive to a returning adult.
@@ -76,11 +138,6 @@ F.vec <- array(NA, dim=c(Wstep.n, 2, Amax))  #(rows: weight, cols: F(x,t), F(x, 
 
 #ONLY applicable for salmon at A 26 at tmax!!!! Otherwise, fitness is 0!
 TERM.FUN <- function(W, Ws, r, Smax){ Smax/(1+exp(-r*(W-Ws))) }
-
-# Terminal fitness parameters
-Ws <- 40
-r <- 0.1
-Smax <- 0.3
 
 # plot Terminal Fitness function
 curve(TERM.FUN(W, Ws=Ws , r=r, Smax=Smax), xname="W", xlim=c(7,80), ylim=c(0,0.31), ylab="adult marine survival (to age 3)")
@@ -103,48 +160,143 @@ View(F.vec[,,1]) #check and see terminal values at Area 1 (should all be 0s)
 #### Fitness function - function to calculate fitness at any salmon weight,area,
           # and behavior (movement choice). Use state dynamics to calculate new
           # W(t+1) and new A(t+1). Calculate expected fitness for resulting new
-          # states from 2nd column of F.vec. Returns Fit (single value).
+          # states from 2nd column of F.vec. Returns Fit (matric with two values):
+          # Fit[,1] is expected fitness
+          # Fit[,2] is daily survival
 
 # Functions used inside the Fitness function (see Final State Dynamics.R for more details)
 GROWTH.FUN <- function(W, E, q, a, Alpha, d, v, U)    { q*E*W^a - d*Alpha*W*exp(v*U) }
 OCEAN.Q <-    function(t, f, g, c, j)             { f + g*exp(-(t-c)^2/2*j^2) }
-RISK.FUN <-   function(W, Bu, Bh, Bw, M, m, y, P) { (1-M*(Bu + Bh + Bw*W^m))^(y*P) }
+SURV.FUN <-   function(W, Bu, Bh, Bw, M, m, y, P) { (1-M*(Bu + Bh + Bw*W^m))^(y*P) }
 
 
 # Fitness function (described above)
-FITNESS <- function(W, E, q, a, Alpha, d, v, U, t, f, g, c, j, Bu, Bh, Bw, M, m, y, P,
-                    Wmax, Amax, h.vec, F.vec) {
-  Wnew <- W + GROWTH.FUN(W=W, E=E, a=a, v=v, U=U, Alpha= Alpha,
-                         d=d,
-                         q= ifelse(h.vec[h.vec] == "o", OCEAN.Q(t, f, g, c, j), q))
-  Wnew <- ifelse(A < Amax, )
-  Anew <-
-  Anew <-
-    
-  Fit <- ifelse(Wnew > Wmin, RISK.FUN(W, Bu, Bh, Bw, M, m, y, P)*F.vec[Wnew, 2, Anew])
+FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                    E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P, # vars in functions
+                    qa, qn, ya, yn, yo, # vars that vary by habitat (h.vec)
+                    h.vec, F.vec) # vectors describing habitats of areas and stored Fitness values
+  
+  { # start of function
+  
+  #define or change input parameters that depend on U, habitat, or Area.
+  U  <- ifelse(U == 1, 20, ifelse(U == 2, 40, 0))
+  d  <- ifelse(U == 0 & h.vec[A] == "n", dn0, d)
+  q  <- ifelse(h.vec[A] == "o", OCEAN.Q(t=t, f=f, g=g, c=c, j=j), ifelse(h.vec[A] == "n", qn, qa))
+  Bh <- ifelse(h.vec[A] == "n", Bn, ifelse(h.vec[A] == "a", Ba, Bo))
+  y  <- ifelse(h.vec[A] == "n", yn, ifelse(h.vec[A] == "a", ya, yo))
+  W  <- WctoW(Wc) # convert Wc (discrete 1 to 730 to W in grams)
+  
+  Wnew <- W + GROWTH.FUN(W=W, E=E, a=a, v=v, Alpha= Alpha, U=U, d=d, q=q)
+  
+  Wnew <- min(Wnew, Wmax) # if Wnew is greater than max value, keep at max value (this will be unlikely to happen since our Wmax is BIG.)
+  Wcnew <- WtoWc(Wnew)
+  
+  Anew <- A + ifelse(U == 20, 1, ifelse(U == 40, 2, 0))           # salmon's new location is its current A plus movement choice U.
+  Anew <- min(Anew, Amax) # if salmon are in the ocean (Amax) keep them in the ocean.
+  
+  Fit <- matrix(NA, 1, 2)
+  Fit[,1] <- ifelse(Wnew > Wmin, SURV.FUN(W=W, Bu=Bu, Bw=Bw, M=M, m=m,
+                                          P=P, Bh=Bh, y=y)*F.vec[Wcnew, 2, Anew], 0)
+  Fit[,2] <- SURV.FUN(W=W, Bu=Bu, Bw=Bw, M=M, m=m,
+                      P=P, Bh=Bh, y=y)
   
   return(Fit)
   
-}
+} # end function.
 
-sim.mix[t+1,2]<-GROWTH.FUN2(X = sim.mix[t,2], a=0.86, 
-                            q= ifelse(sim.mix[t,3] == "o", OCEAN.Q(t=sim.mix[t,1], a=0.07, b=40, c=0.07, d=0.02),
-                                      ifelse(sim.mix[t,3] == "a", 0.02, 0.04)), 
-                            A= ifelse(sim.mix[t,3] == "n" & sim.mix[t,4] == 0, 0.00407, 0.00607), 
-                            v=0.027, U=sim.mix[t,4])
+#Test Fitness function 
+FITNESS(Wc=80, A=Amax, t=tmax, U=0, Wmax, Amax,
+        E, q, a, Alpha, d, v, f, g, c, j, Bu=Bu[1], Bh, Bw, M, m, y, P, 
+        qa, qn, ya, yn, yo, 
+        h.vec, F.vec) #0.01118097 (Expected Fitness) and 0.907 (daily survival)!!!!!
 
 
-# Fitness function (described above)
-FITNESS <- function(B, X, Xmax, L, Lmax, e, e10, c, b, F.vec){
-  Xnew <- ifelse(L < 10, X + e - c, X + e10 - c) # calculate new state: energy reserves. If in L 10 than salmon gains MORE energy.
-  Xnew <- min(Xnew, Xmax)
-  Lnew <- L + b      # calculate new state: location
-  Lnew <- min(Lnew, Lmax)
+
+#### OVER.BEH function to apply over BEHAVIORAL CHOICES (move 0, 1, 2).
+      # Function used to apply FITNESS using for loop over all behavioral choices.
+      # Returns the maximum fitness (F.best), best choice (Beh.best), and daily survival (Surv.day).
+      # F.best saved in appro first col of F.vec.
+      # Returns Temp.out: copy of updated F.vec with extra rows at bottom with F.best and Beh.best.
+
+OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                     E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P, # vars in functions
+                     qa, qn, ya, yn, yo, # vars that vary by habitat (h.vec)
+                     h.vec, F.vec)
+
+  { # start function
+  F.beh.surv <- matrix(NA, 3, 2)  #matrix to save fitness (Fit) from each (3) behavioral choice.
   
-  W <- ifelse(Xnew > Xcrit, (1-B)*F.vec[Xnew, 2, Lnew], 0) # calculate fitness: prob of survive predation times future fitness of RESULTING state and location.
-  # if X is less than 1, than fitness is 0 no matter what.
-  return(W)
+  # run a for loop over all behavioral choices to get FITNESS (Fit) from each one.
+  for(i in 1:length(U)){ F.beh.surv[i,] <- FITNESS(Wc, A, t, U[i], Wmax, Amax,
+                                               E, q, a, Alpha, d, v, f, g, c, j, Bu[i], Bh, Bw, M, m, y, P, 
+                                               qa, qn, ya, yn, yo, 
+                                               h.vec, F.vec) }
+
+  F.best <- max(F.beh.surv[,1])  # Get maximum expected fitness from all three behavioral choices.
+  S.day <- F.beh.surv[F.beh.surv[,1] == F.best, 2] # Get the daily survival from the max expected fitness.
+  
+  Temp <- data.frame(Fit = F.beh.surv[,1], beh = seq(0,2,1), Surv = F.beh.surv[,2])  # make temp dataframe with each fitness (Fit) for each behavior (0,1,2), and daily survival (Surv).
+  Beh.best <- ifelse(F.best > 0, Temp[Temp$Fit == max(Temp$Fit),2], NA)  #get single value of best behavior choice (0,1,2). If W.best is 0 for all behavioral types, than no beh is best, return NA.
+  F.vec[Wc,1,A] <- F.best  # save best fitness in the appropriate F.vec column 1 for that specific state W and A.
+  
+  Temp.out <- array(NA, dim=c(Wstep.n+2, 2, Amax)) #(rows: salmon weight, cols: F(x,t), F(x, t+1), matrices: area). Same size as F.vec, but add 2 rows to save F.best, Best.beh, and Surv.day.
+  Temp.out[Wstep.n+1,,] <- c(F.best, Beh.best)
+  Temp.out[Wstep.n+2,,] <- c(S.day, NA)
+  Temp.out[1:Wstep.n,,] <- F.vec  # Temp.out needs ALL the info that will be used in the next function/loop. 
+                               # F.vec AND F.best, S.day, and Beh.best. Will split up later to use in different ways in the next function OVER.STATES.
+  return(Temp.out)
+  
+  } # end function.
+
+# Check if loop inside OVER.BEH works
+F.beh.surv <- matrix(NA, 3, 2)
+for(i in 1:length(U)){ F.beh.surv[i,] <- FITNESS(Wc=20, A=25, t, U[i], Wmax, Amax,
+                                                 E, q, a, Alpha, d, v, f, g, c, j, Bu[i], Bh, Bw, M, m, y, P, 
+                                                 qa, qn, ya, yn, yo, 
+                                                 h.vec, F.vec) }
+F.beh.surv # Works!!!
+
+
+# Check if OVER.BEH works for a specific W and A state for tmax-1. 
+Test.beh <- OVER.BEH(Wc=20, A=25, t, U, Wmax, Amax,
+                     E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P,
+                     qa, qn, ya, yn, yo, 
+                     h.vec, F.vec)
+View(Test.beh[,,25])   # Works!!! Look for a value in column one at W<-20 and
+                      # in rows 731 and 731 where we stored Fit, Beh.best, and S.day.
+
+
+
+#### OVER.STATES function to apply over BEHAVIORAL CHOICES (move 0, 1, 2) AND AREA (1 to 26).
+     # Function used to iterate OVER.BEH over both states X and L using nested for loops.
+     # Run OVER.BEH and get Temp.out. Split Temp.out to F.vec and best.W.beh (only W.best and Beh.best).
+     # Put Beh.best in appro Store spot. Combine F.vec and Store in an array,
+     # Temp.out2 with 4 cols (F(x,t), F(x,t+1), W.best, Beh.best).
+
+OVER.STATES <- function(){}
+
+
+
+#EXAMPLE!!!
+#### Function to iterate over both states X and L. Output is an array where first two columns is updated F.vec, third col is best W, fourth col is best Beh.
+
+OVER.STATES <- function(B, X, Xmax, L, Lmax, e, e10, c, b, F.vec){
+  Store <- array(NA, dim=c(10,2,10))  # array to store all W.best (column 1) and Beh.best (column 2) values from OVER.BEH for each state X (rows) and L (matricies).
+  
+  for(X in 1:Xmax){  # iterate over states X
+    for(L in 1:Lmax){ # iterate over states L
+      Temp.out <- OVER.BEH(B, X, Xmax, L, Lmax, e, e10, c, b, F.vec) # returns Temp.out from OVER.BEH, which as the updated F.vec AND W.best and Beh.best in the last row.
+      
+      n <- nrow(Temp.out) - 1  # get number of states by subtracting the last row to store W.best and Beh.best (this should be 10)
+      F.vec <- Temp.out[1:n,,] # get F.vec back solo by subsetting Temp.out wihout the stored last row with W.best and Beh.best.
+      
+      best.W.beh <- c(Temp.out[n+1,1,1], Temp.out[n+1,2,1]) # get only stored values W.best and Beh.best (last row of Temp.out)
+      Store[X,,L] <- best.W.beh # put best W and best beh in Store.
+    }}
+  
+  # combine Store values with F.vec in Temp.out2 as the vessel leaving this function to bring important info to next for loop!
+  Temp.out2 <- abind(F.vec, Store, along = 2) # add store columns to F.vec. This should be an array with 4 columns: F(X,t), F(X,t+1), W.best, Beh.best.
+  return(Temp.out2)
 }
 
-# check fitness function works.
-# FITNESS(B[1], X=7, Xmax, L=10, Lmax, e[1], e10, c[1], b[1], F.vec)
+
