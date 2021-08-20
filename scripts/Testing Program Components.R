@@ -61,3 +61,41 @@ FITNESS <- function(W, A, t, U, Wmax, Amax, # state vars, constraints & beh choi
   return(Fit)
   
 }
+
+
+
+# main programming loops
+
+# Use while loop starting at Time = tmax, decrement with each loop, until time is 1 and then exit the loop.
+while(t > 1)
+{ # start while loop
+  
+  t <- t - 1 # This takes the Time from the prior loop and decrements it by one for the next loop.
+  
+  Temp.out2 <- OVER.STATES(Wc, A, t, U, Wmax, Amax,
+                           E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P,
+                           qa, qn, ya, yn, yo,
+                           h.vec, F.vec)  # Get all F.best, Beh.best, and S.day for all W and A for the current Time.
+  # Temp.out2 also has the updated F.vec!
+  
+  Temp.out2 <- Test.States
+  
+  
+  
+  TempF.vec <- Temp.out2[,1:2,] # Get F.vec out of Temp.out2 (first two columns).
+  View(TempF.vec[,,Amax])
+  
+  
+  for (J in 1:Wstep.n){    # for each state W and A, update F.vec with the new F.vec (TempF.vec) from the OVER.STATES function (column 1),
+    for(K in 1:Amax){   # and put those values back into F.vec in the second column to be ready for the next time iteration.
+      F.vec[J,2,K] <- TempF.vec[J,1,K] }}
+  
+  Best.beh[t,,] <- Temp.out2[,4,]  # save best behavior in Best.beh (decision matrix!)
+  F.all[t,,] <- Temp.out2[,3,]     # save best fitness in F.all
+  Surv.day[t,,] <- Temp.out2[,5,]  # save daily Survival in Surv.day
+  
+} # end while loop.
+
+
+
+

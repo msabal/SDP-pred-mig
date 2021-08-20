@@ -31,7 +31,7 @@ tmax <- 60
 
 #### Make functions to convert between W in grams and W in computer discrete indexing
 
-# Make a dataframe to covert between real W (grams) and computer discrete index (Wc)
+# Make a data frame to covert between real W (grams) and computer discrete index (Wc)
 Wconvdf <- data.frame(W = seq(Wmin+Wstep, Wmax, 0.1), Wc = seq(1,Wstep.n,1))
 
 plot(W ~ Wc, Wconvdf)
@@ -233,15 +233,16 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
                                                h.vec, F.vec) }
 
   F.best <- max(F.beh.surv[,1])  # Get maximum expected fitness from all three behavioral choices.
-  S.day <- F.beh.surv[F.beh.surv[,1] == F.best, 2] # Get the daily survival from the max expected fitness.
+  S.day <- ifelse(F.best > 0, F.beh.surv[F.beh.surv[,1] == F.best, 2], NA) # Get the daily survival from the max expected fitness.
   
   Temp <- data.frame(Fit = F.beh.surv[,1], beh = seq(0,2,1), Surv = F.beh.surv[,2])  # make temp dataframe with each fitness (Fit) for each behavior (0,1,2), and daily survival (Surv).
-  Beh.best <- ifelse(F.best > 0, Temp[Temp$Fit == max(Temp$Fit),2], NA)  #get single value of best behavior choice (0,1,2). If W.best is 0 for all behavioral types, than no beh is best, return NA.
+  Beh.best <- ifelse(F.best > 0, Temp[Temp$Fit == max(Temp$Fit),2], NA)  #get single value of best behavior choice (0,1,2). If F.best is 0 for all behavioral types, than no beh is best, return NA.
+  
   F.vec[Wc,1,A] <- F.best  # save best fitness in the appropriate F.vec column 1 for that specific state W and A.
   
   Temp.out <- array(NA, dim=c(Wstep.n+2, 2, Amax)) #(rows: salmon weight, cols: F(x,t), F(x, t+1), matrices: area). Same size as F.vec, but add 2 rows to save F.best, Best.beh, and Surv.day.
   Temp.out[Wstep.n+1,,] <- c(F.best, Beh.best)
-  Temp.out[Wstep.n+2,,] <- c(S.day, NA)
+  Temp.out[Wstep.n+2,1,] <- S.day
   Temp.out[1:Wstep.n,,] <- F.vec  # Temp.out needs ALL the info that will be used in the next function/loop. 
                                # F.vec AND F.best, S.day, and Beh.best. Will split up later to use in different ways in the next function OVER.STATES.
   return(Temp.out)
@@ -250,53 +251,139 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
 
 # Check if loop inside OVER.BEH works
 F.beh.surv <- matrix(NA, 3, 2)
-for(i in 1:length(U)){ F.beh.surv[i,] <- FITNESS(Wc=20, A=25, t, U[i], Wmax, Amax,
+for(i in 1:length(U)){ F.beh.surv[i,] <- FITNESS(Wc=20, A=20, t, U[i], Wmax, Amax,
                                                  E, q, a, Alpha, d, v, f, g, c, j, Bu[i], Bh, Bw, M, m, y, P, 
                                                  qa, qn, ya, yn, yo, 
                                                  h.vec, F.vec) }
 F.beh.surv # Works!!!
 
+rm(F.beh.surv) #remove after done checking.
+
 
 # Check if OVER.BEH works for a specific W and A state for tmax-1. 
-Test.beh <- OVER.BEH(Wc=20, A=25, t, U, Wmax, Amax,
+Test.beh <- OVER.BEH(Wc=20, A=20, t, U, Wmax, Amax,
                      E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P,
                      qa, qn, ya, yn, yo, 
                      h.vec, F.vec)
 View(Test.beh[,,25])   # Works!!! Look for a value in column one at W<-20 and
                       # in rows 731 and 731 where we stored Fit, Beh.best, and S.day.
-
+rm(Test.beh)
 
 
 #### OVER.STATES function to apply over BEHAVIORAL CHOICES (move 0, 1, 2) AND AREA (1 to 26).
-     # Function used to iterate OVER.BEH over both states X and L using nested for loops.
-     # Run OVER.BEH and get Temp.out. Split Temp.out to F.vec and best.W.beh (only W.best and Beh.best).
+     # Function used to iterate OVER.BEH over both states W and A using nested for loops.
+     # Run OVER.BEH and get Temp.out. Split Temp.out to F.vec and best.F.beh (only F.best and Beh.best).
      # Put Beh.best in appro Store spot. Combine F.vec and Store in an array,
-     # Temp.out2 with 4 cols (F(x,t), F(x,t+1), W.best, Beh.best).
+     # Temp.out2 with 4 cols (F(x,t), F(x,t+1), F.best, Beh.best, S.day).
 
-OVER.STATES <- function(){}
-
-
-
-#EXAMPLE!!!
-#### Function to iterate over both states X and L. Output is an array where first two columns is updated F.vec, third col is best W, fourth col is best Beh.
-
-OVER.STATES <- function(B, X, Xmax, L, Lmax, e, e10, c, b, F.vec){
-  Store <- array(NA, dim=c(10,2,10))  # array to store all W.best (column 1) and Beh.best (column 2) values from OVER.BEH for each state X (rows) and L (matricies).
+OVER.STATES <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                        E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P, # vars in functions
+                        qa, qn, ya, yn, yo, # vars that vary by habitat (h.vec)
+                        h.vec, F.vec)
+ { # start function
   
-  for(X in 1:Xmax){  # iterate over states X
-    for(L in 1:Lmax){ # iterate over states L
-      Temp.out <- OVER.BEH(B, X, Xmax, L, Lmax, e, e10, c, b, F.vec) # returns Temp.out from OVER.BEH, which as the updated F.vec AND W.best and Beh.best in the last row.
-      
-      n <- nrow(Temp.out) - 1  # get number of states by subtracting the last row to store W.best and Beh.best (this should be 10)
-      F.vec <- Temp.out[1:n,,] # get F.vec back solo by subsetting Temp.out wihout the stored last row with W.best and Beh.best.
-      
-      best.W.beh <- c(Temp.out[n+1,1,1], Temp.out[n+1,2,1]) # get only stored values W.best and Beh.best (last row of Temp.out)
-      Store[X,,L] <- best.W.beh # put best W and best beh in Store.
-    }}
+  Store <- array(NA, dim=c(Wstep.n, 3, Amax)) # Array to store all F.best (col 1), Beh.best (col 2), and S.day (col 3)
+                                                # from OVER.BEH for each state W (rows) and A (matrices).
   
-  # combine Store values with F.vec in Temp.out2 as the vessel leaving this function to bring important info to next for loop!
-  Temp.out2 <- abind(F.vec, Store, along = 2) # add store columns to F.vec. This should be an array with 4 columns: F(X,t), F(X,t+1), W.best, Beh.best.
+  for(Wc in 1:Wstep.n){
+    for(A in 1:Amax){
+      Temp.out <- OVER.BEH(Wc, A, t, U, Wmax, Amax,
+                           E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P,
+                           qa, qn, ya, yn, yo,
+                           h.vec, F.vec) # this returns Temp.out from OVER.BEH, which looks like...
+                                         # an array: (rows: salmon weight (length: Wstep.n+2),
+                                         # 2 cols: F(x,t), F(x, t+1), matrices: area (length: Amax)).
+                                         # Same size as F.vec, but add 2 rows to Wstep.n to save
+                                         # F.best [in Wstep.n+1 row, 1st col], Best.beh [in Wstep.n+1 row, 2nd col],
+                                         # and Surv.day [Wstep.n=2 row, 1st col].
+      
+      F.vec <- Temp.out[1:Wstep.n,,] # get F.vec by itself out of Temp.out (without last two rows).
+      best.F.beh.S <- c(Temp.out[Wstep.n+1,1,1], Temp.out[Wstep.n+1,2,1], Temp.out[Wstep.n+2,1,1]) # get F.best, Beh.best, S.day.
+      
+      Store[Wc,,A] <- best.F.beh.S # put F.best, Beh.best, and S.day in Store for appro loop state combo.
+      
+    }} #end nested for loops.
+  
+  # Combine Store values with F.vec in Temp.out2 as the vessel leaving this function to bring important info to next for loop!
+  Temp.out2 <- abind(F.vec, Store, along = 2) # add Store columns to F.vec. This should be an array (rows: Wstep.n, matrices: Amax)
+                                              # with 5 columns: F(X,t), F(X,t+1), F.best, Beh.best. S.day.
+                                              # along = 2 tells to bind the columns (dimension 2) together!
   return(Temp.out2)
-}
+  
+ } # end function.
+
+
+# check to see if OVER.STATES works and returns Temp.out2
+Test.States <- OVER.STATES(Wc, A, t=tmax-1, U, Wmax, Amax,
+                E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P,
+                qa, qn, ya, yn, yo, 
+                h.vec, F.vec)
+
+View(Test.States[,,Amax-2]) # works!!
+      # View(Test.States[,,Amax]) Col 2 (F(W,t+1)) has values from terminal fitness, optimal choice has to be move 0
+      # View(Test.States[,,Amax-1]) Col 2 (F(W,t+1)) has 0s from terminal fitness, optimal choice can be move 1 or 2
+      # View(Test.States[,,Amax-2]) Col 2 (F(W,t+1)) has 0s from terminal fitness, optimal choice has to be move 2
+      # View(Test.States[,,Amax-3]) Col 2 (F(W,t+1)) has 0s from terminal fitness, F.best all 0s because can't make it
+                                                   # to A26 in by tmax. Therefore, Beh.best and S.day all NAs.
+rm(Test.States)
+
+
+
+#### MAIN PROGRAM: iterate all of the above functions over time starting with tmax and moving backwards until t = 0.
+
+### Output objects to save data from program
+F.vec  # (rows: weight, cols: F(x,t), F(x, t+1), matrices: area)
+F.all  # (rows: time, cols: weight, matrices: area)
+Best.beh # (rows: time, cols: weight, matrices: area)
+Surv.day # (rows: time, cols: weight, matrices: area)
+
+# Start iterations over time
+t <- tmax # time starts with tmax.
+
+
+start.time <- Sys.time() # time how long the while loop takes
+
+# Use while loop starting at Time = tmax, decrement with each loop, until time is 1 and then exit the loop.
+while(t > 1)
+  { # start while loop
+  
+  t <- t - 1 # This takes the Time from the prior loop and decrements it by one for the next loop.
+  
+  Temp.out2 <- OVER.STATES(Wc, A, t, U, Wmax, Amax,
+                           E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P,
+                           qa, qn, ya, yn, yo,
+                           h.vec, F.vec)  # Get all F.best, Beh.best, and S.day for all W and A for the current Time.
+                                          # Temp.out2 also has the updated F.vec!
+  
+  TempF.vec <- Temp.out2[,1:2,] # Get F.vec out of Temp.out2 (first two columns).
+  
+  for (J in 1:Wstep.n){    # for each state W and A, update F.vec with the new F.vec (TempF.vec) from the OVER.STATES function (column 1),
+    for(K in 1:Amax){   # and put those values back into F.vec in the second column to be ready for the next time iteration.
+      F.vec[J,2,K] <- TempF.vec[J,1,K] }}
+  
+  Best.beh[t,,] <- Temp.out2[,4,]  # save best behavior in Best.beh (decision matrix!)
+  F.all[t,,] <- Temp.out2[,3,]     # save best fitness in F.all
+  Surv.day[t,,] <- Temp.out2[,5,]  # save daily Survival in Surv.day
+  
+} # end while loop.
+
+end.time <- Sys.time() # time how long the while loop takes
+program.duration <- end.time - start.time
+program.duration #730 W steps takes program ~18 mins. Probs could double to 0.05 and/or increase Wmax.
+
+# Check output data sets to see if they make sense
+View(F.all[,,Amax])
+View(Best.beh[,,Amax])
+View(Surv.day[,,Amax-4])
+# Wahoooo!!!!! Only this is time 60 (last row) is missing because they are from
+  # the Terminal Fitness function (not the program)! But I can always manually add them in!
+
+write.csv(F.all, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\F.all.output.csv")
+write.csv(Best.beh, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\Best.beh.output.csv")
+write.csv(Surv.day, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\Surv.day.output.csv")
+
+
+
+
 
 
