@@ -151,8 +151,8 @@ F.vec[1:Wstep.n, 2, Amax] <- TERM.FUN(W = seq(Wmin+Wstep, Wmax , Wstep),
 
 F.vec[,2,1:Amax-1] <- 0    #if salmon end in any area besides the last (Amax), then their fitness is 0!
 
-View(F.vec[,,Amax]) #check and see terminal values at Amax (should all be values)
-View(F.vec[,,1]) #check and see terminal values at Area 1 (should all be 0s)
+#View(F.vec[,,Amax]) #check and see terminal values at Amax (should all be values)
+#View(F.vec[,,1]) #check and see terminal values at Area 1 (should all be 0s)
 
 
 
@@ -205,10 +205,10 @@ FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh cho
 } # end function.
 
 #Test Fitness function 
-FITNESS(Wc=80, A=Amax, t=tmax, U=0, Wmax, Amax,
-        E, q, a, Alpha, d, v, f, g, c, j, Bu=Bu[1], Bh, Bw, M, m, y, P, 
-        qa, qn, ya, yn, yo, 
-        h.vec, F.vec) #0.01118097 (Expected Fitness) and 0.907 (daily survival)!!!!!
+#FITNESS(Wc=80, A=Amax, t=tmax, U=0, Wmax, Amax,
+#        E, q, a, Alpha, d, v, f, g, c, j, Bu=Bu[1], Bh, Bw, M, m, y, P, 
+#        qa, qn, ya, yn, yo, 
+#        h.vec, F.vec) #0.01118097 (Expected Fitness) and 0.907 (daily survival)!!!!!
 
 
 
@@ -250,24 +250,24 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
   } # end function.
 
 # Check if loop inside OVER.BEH works
-F.beh.surv <- matrix(NA, 3, 2)
-for(i in 1:length(U)){ F.beh.surv[i,] <- FITNESS(Wc=20, A=20, t, U[i], Wmax, Amax,
-                                                 E, q, a, Alpha, d, v, f, g, c, j, Bu[i], Bh, Bw, M, m, y, P, 
-                                                 qa, qn, ya, yn, yo, 
-                                                 h.vec, F.vec) }
-F.beh.surv # Works!!!
+#F.beh.surv <- matrix(NA, 3, 2)
+#for(i in 1:length(U)){ F.beh.surv[i,] <- FITNESS(Wc=20, A=20, t, U[i], Wmax, Amax,
+#                                                 E, q, a, Alpha, d, v, f, g, c, j, Bu[i], Bh, Bw, M, m, y, P, 
+#                                                 qa, qn, ya, yn, yo, 
+#                                                 h.vec, F.vec) }
+#F.beh.surv # Works!!!
 
-rm(F.beh.surv) #remove after done checking.
+#rm(F.beh.surv) #remove after done checking.
 
 
 # Check if OVER.BEH works for a specific W and A state for tmax-1. 
-Test.beh <- OVER.BEH(Wc=20, A=20, t, U, Wmax, Amax,
-                     E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P,
-                     qa, qn, ya, yn, yo, 
-                     h.vec, F.vec)
-View(Test.beh[,,25])   # Works!!! Look for a value in column one at W<-20 and
+#Test.beh <- OVER.BEH(Wc=20, A=20, t, U, Wmax, Amax,
+#                     E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P,
+#                     qa, qn, ya, yn, yo, 
+#                     h.vec, F.vec)
+#View(Test.beh[,,25])   # Works!!! Look for a value in column one at W<-20 and
                       # in rows 731 and 731 where we stored Fit, Beh.best, and S.day.
-rm(Test.beh)
+#rm(Test.beh)
 
 
 #### OVER.STATES function to apply over BEHAVIORAL CHOICES (move 0, 1, 2) AND AREA (1 to 26).
@@ -314,18 +314,18 @@ OVER.STATES <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh
 
 
 # check to see if OVER.STATES works and returns Temp.out2
-Test.States <- OVER.STATES(Wc, A, t=tmax-1, U, Wmax, Amax,
-                E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P,
-                qa, qn, ya, yn, yo, 
-                h.vec, F.vec)
+#Test.States <- OVER.STATES(Wc, A, t=tmax-1, U, Wmax, Amax,
+#                E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P,
+#                qa, qn, ya, yn, yo, 
+#                h.vec, F.vec)
 
-View(Test.States[,,Amax-2]) # works!!
+#View(Test.States[,,Amax-2]) # works!!
       # View(Test.States[,,Amax]) Col 2 (F(W,t+1)) has values from terminal fitness, optimal choice has to be move 0
       # View(Test.States[,,Amax-1]) Col 2 (F(W,t+1)) has 0s from terminal fitness, optimal choice can be move 1 or 2
       # View(Test.States[,,Amax-2]) Col 2 (F(W,t+1)) has 0s from terminal fitness, optimal choice has to be move 2
       # View(Test.States[,,Amax-3]) Col 2 (F(W,t+1)) has 0s from terminal fitness, F.best all 0s because can't make it
                                                    # to A26 in by tmax. Therefore, Beh.best and S.day all NAs.
-rm(Test.States)
+#rm(Test.States)
 
 
 
@@ -443,35 +443,105 @@ write.csv(df.all2, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositori
 
 #### FORWARD SIMULATIONS ####
 # create subset of salmon starting computer weights (Wc) to simulate tracks for
-sim.sam <- c(7.1, 10, 15, 20)
+sim.sam.W <- c(7.1, 10, 15, 20) # pick weights (g) to simulate
 
-# convert sim.sam
-sim.sam <- WtoWc(sim.sam)
+# convert sim.sam from W to Wc
+sim.sam.Wc <- WtoWc(sim.sam.W)
 
 # create output objects to store outcomes from for loop
-output <- matrix(NA, tmax, length(sim.sam))  # rows: time, columns: weight (W). Output to track best behaviors over time for each state.
-output[1,] <- 1 # salmon start in area 1
+output.A <- matrix(NA, tmax, length(sim.sam.Wc))  # rows: time, columns: weight (W). Output to track best behaviors over time for each state.
+output.A[1,] <- 1 # salmon start in area 1
+
+output.S <- matrix(NA, tmax, length(sim.sam.Wc)) # output to store daily Surv
+output.Fit <- matrix(NA, tmax, length(sim.sam.Wc)) # output to store expected Fitness
+output.beh <- matrix(NA, tmax, length(sim.sam.Wc)) # output to store best behavior
 
 # for loop tracking new areas for individuals starting at A = 1, and my chosen salmon weights (W in sim.sam).
 
-for(X in 1:length(sim.sam)){                                      # iterate over chosen starting salmon weights
-  for(t in 1:(tmax-1)){                                           # iterate over time
-    A <- output[t,X]                                              # current area is the value in the current row of time (t)
-    Anew <- A + Best.beh[t,X,A]                                   # location in next time step is the current location plus how much they move (Best.beh)
-    Anew <- min(Anew, Amax)                                       # location cannot be greater than Lmax 
-    output[t+1,X] <- Anew                                         # store new location in the next row (t+1)
-  }
-}
+for(X in 1:length(sim.sam.Wc)){            # iterate over chosen starting salmon weights
+  for(t in 1:(tmax-1)){                    # iterate over time
+    A <- output.A[t,X]                     # current area is the value in the current row of time (t)
+    Anew <- A + Best.beh[t,X,A]            # area in next time step is the current location plus how much they move (Best.beh)
+    Anew <- min(Anew, Amax)                # area cannot be greater than Amax 
+    output.A[t+1,X] <- Anew                # store new area in the next row (t+1)
+ 
+    output.S[t,X] <- Surv.day[t,X,A]       #  get appro daily survival from Surv.day and save it in output.S
+    output.Fit[t,X] <- F.all[t,X,A]        #  get appro expected fitness from F.all and save it in output.Fit
+    output.beh[t,X] <- Best.beh[t,X,A]     #  get appro best beh from Best.beh and save it in output.beh
+    
+    }} # end for loops.
 
 
 # Plot forward simulations!
 
-data.tracks <- melt(output)
-colnames(data.tracks)<- c("Time", "sim.sam", "Area")
+# melt output.A
+data.tracks <- melt(output.A)
+colnames(data.tracks)<- c("Time", "W", "A")
 
-ggplot(data=data.tracks, aes(x=Time, y=Area, color=as.factor(sim.sam))) + geom_line(size=1) + geom_point() +
+data.tracks$W <- as.factor(data.tracks$W)
+levels(data.tracks$W) <- c(sim.sam.W)
+
+data.tracks <- join(data.tracks, data.frame(h = h.vec, A = seq(1,Amax,1)))
+
+# melt output.S
+data.tracks.S <- melt(output.S)
+colnames(data.tracks.S)<- c("Time", "W", "S.day")
+
+data.tracks.S$W <- as.factor(data.tracks.S$W)
+levels(data.tracks.S$W) <- c(sim.sam.W)
+
+data.tracks <- join(data.tracks, data.tracks.S)
+
+# melt output.Fit
+data.tracks.Fit <- melt(output.Fit)
+colnames(data.tracks.Fit)<- c("Time", "W", "Fit")
+
+data.tracks.Fit$W <- as.factor(data.tracks.Fit$W)
+levels(data.tracks.Fit$W) <- c(sim.sam.W)
+
+data.tracks <- join(data.tracks, data.tracks.Fit)
+
+# melt output.beh
+data.tracks.beh <- melt(output.beh)
+colnames(data.tracks.beh)<- c("Time", "W", "Beh")
+
+data.tracks.beh$W <- as.factor(data.tracks.beh$W)
+levels(data.tracks.beh$W) <- c(sim.sam.W)
+
+data.tracks <- join(data.tracks, data.tracks.beh)
+
+
+
+## how to apply this over t and Wc?
+for(t in 1:tmax-1){data.tracks[t+1,6] <- prod(sim.mix[1:t+1,5])}
+
+
+
+
+# see data.tracks all together: Time, W, A, h, S.day, Fit, Beh
+head(data.tracks)
+
+
+# Plot forward simulations!
+
+# plot outmigration tracks.
+ggplot(data=data.tracks, aes(x=Time, y=A, color=as.factor(W))) + geom_line(size=1) + geom_point() +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank()) + coord_equal() +
   scale_x_continuous(breaks = seq(1,tmax,1)) +
   scale_y_continuous(breaks = seq(1,Amax,1)) +
+  scale_color_brewer(name= "Starting size (g)", palette = "PiYG")
+
+# plot daily survival by time.
+ggplot(data=data.tracks, aes(x=Time, y=S.day, color=as.factor(W), shape=h)) + geom_point() +
+  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank(), legend.background=element_blank()) +
+  scale_x_continuous(breaks = seq(1,tmax,1)) +
+  scale_color_brewer(name= "Starting size (g)", palette = "PiYG")
+
+# plot daily survival by Area.
+ggplot(data=data.tracks, aes(x=A, y=S.day, color=as.factor(W))) + geom_point() +
+  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank(), legend.background=element_blank()) +
+  scale_x_continuous(breaks = seq(1,Amax,1)) +
   scale_color_brewer(name= "Starting size (g)", palette = "PiYG")
