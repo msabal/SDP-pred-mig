@@ -20,79 +20,69 @@ pdat$Best.beh <- as.factor(pdat$Best.beh) # make Best.beh a factor.
 
 # unsplit all output back into separate output arrays
 
+#daply(pdat, [, ])
 
-
-#### PLOTTING THE DECISION, FITNESS, AND SURVIVAL MATRICIES
-
-# decision matrix plots for best behaviors at each location
-#ggplot(data=subset(pdat, A == 1), aes(x=t, y=W, fill=Best.beh)) + geom_tile(color="gray90") + facet_wrap(~ A, ncol = 2) +
-#  scale_fill_manual(values = c("cornflowerblue", "gold", "limegreen")) + coord_equal() +
-#  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank())
-
-
-# Dataset is too big (especially 730 values of salmon weights!) to plot.
+acast(pdat, t ~ A, value.var = Best.beh)
 
 
 
 
 #### FORWARD SIMULATIONS ####
-Wmin <- 7
-Wmax <- 80
-Wstep <- 0.1
-Wstep.n <- ((Wmax-Wmin)/Wstep)
-Amin <- 1
-Amax <- 26
-tmin <- 1
+# create subset of salmon starting computer weights (Wc) to simulate tracks for
+Ws <- c(7.1, 10, 15, 20) # pick Starting weights (g) to simulate
+
+# convert Ws from W to Wc
+Ws.c <- WtoWc(Ws)
+
 tmax <- 60
 
-# create subset of salmon starting computer weights (Wc) to simulate tracks for
-sim.sam <- c(7.1, 10, 15, 20)
+# create output objects to store for A
+output.A <- matrix(NA, tmax, length(Ws))  # rows: time, columns: weight (W). Output to track best behaviors over time for each state.
+output.A[1,] <- 1 # salmon start in area 1
 
-# Build functions to convert between W and Wc
-WtoWc <- function(W){ round(m.W*W + y.W, digits=Wstep) }
-WctoW <- function(Wc){ m.Wc*Wc + y.Wc }
+A <- 1
+t <- 2
+Wc <- 
 
-# convert sim.sam
-sim.sam <- WtoWc(sim.sam)
+
+for(Wc in 1:length(Ws)){                    # iterate over chosen starting salmon weights
+  for(t in 1:(tmax-1)){                    # iterate over time
+    A <- output.A[t,Wc]                     # current area is the value in the current row of time (t)
+    Anew <- A + pdat[pdat$t == t & pdat$Wc == Wc & pdat$A == A,4]
+      
+      Best.beh[t,X,A]            # area in next time step is the current location plus how much they move (Best.beh)
+    Anew <- min(Anew, Amax)                # area cannot be greater than Amax 
+    output.A[t+1,X] <- Anew                # store new area in the next row (t+1)
+    
+    output.S[t,X] <- Surv.day[t,X,A]       #  get appro daily survival from Surv.day and save it in output.S
+    output.Fit[t,X] <- F.all[t,X,A]        #  get appro expected fitness from F.all and save it in output.Fit
+    output.beh[t,X] <- Best.beh[t,X,A]     #  get appro best beh from Best.beh and save it in output.beh
+    
+  }} # end for loops.
+
+
+
 
 # create output objects to store outcomes from for loop
-output <- matrix(NA, tmax, length(sim.sam))  # rows: time, columns: weight (W). Output to track best behaviors over time for each state.
-output[1,] <- 1 # salmon start in area 1
+output.A <- matrix(NA, tmax, length(sim.sam.Wc))  # rows: time, columns: weight (W). Output to track best behaviors over time for each state.
+output.A[1,] <- 1 # salmon start in area 1
+
+output.S <- matrix(NA, tmax, length(sim.sam.Wc)) # output to store daily Surv
+output.Fit <- matrix(NA, tmax, length(sim.sam.Wc)) # output to store expected Fitness
+output.beh <- matrix(NA, tmax, length(sim.sam.Wc)) # output to store best behavior
 
 # for loop tracking new areas for individuals starting at A = 1, and my chosen salmon weights (W in sim.sam).
 
-for(X in 1:length(sim.sam)){                                      # iterate over chosen starting salmon weights
-  for(t in 1:(tmax-1)){                                           # iterate over time
-    A <- output[t,X]                                              # current area is the value in the current row of time (t)
-    Anew <- A + pdat[pdat$t == t & pdat$A == A & pdat$Wc == X, 4] # location in next time step is the current location plus how much they move (Best.beh)
-    Anew <- min(Anew, Amax)                                       # location cannot be greater than Lmax 
-    output[t+1,X] <- Anew                                        # store new location in the next row (t+1)
-  }
-}
-
-
-t=1; A=1; X=1
-pdat[pdat$t == t & pdat$A == A & pdat$Wc == X, 4]
-
-rm(t); rm(A); rm(X)
-
-
-#### Plot forward simulations!
-
-data.tracks <- melt(output)
-colnames(data.tracks)<- c("Time", "X", "Location")
-
-indiv.constant <- ggplot(data=data.tracks, aes(x=Time, y=Location, color=as.factor(X))) + geom_line(size=1) + geom_point() +
-  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
-  theme(legend.key=element_blank(), legend.background=element_blank()) + coord_equal() +
-  scale_x_continuous(breaks = seq(1,Horizon,1)) +
-  scale_y_continuous(breaks = seq(1,Lmax,1)) +
-  scale_color_brewer(name= "Energy (X)", palette = "PiYG") +
-  ggtitle("Constant ocean predation") + theme(plot.title = element_text(hjust = 0.5))
-indiv.constant
-
-setwd("C:/Users/Megan/Desktop/")
-pdf("TRACKS.CON.pdf", width=7.5, height=11)
-indiv.constant
-dev.off()
+for(X in 1:length(sim.sam.Wc)){            # iterate over chosen starting salmon weights
+  for(t in 1:(tmax-1)){                    # iterate over time
+    A <- output.A[t,X]                     # current area is the value in the current row of time (t)
+    Anew <- A + Best.beh[t,X,A]            # area in next time step is the current location plus how much they move (Best.beh)
+    Anew <- min(Anew, Amax)                # area cannot be greater than Amax 
+    output.A[t+1,X] <- Anew                # store new area in the next row (t+1)
+    
+    output.S[t,X] <- Surv.day[t,X,A]       #  get appro daily survival from Surv.day and save it in output.S
+    output.Fit[t,X] <- F.all[t,X,A]        #  get appro expected fitness from F.all and save it in output.Fit
+    output.beh[t,X] <- Best.beh[t,X,A]     #  get appro best beh from Best.beh and save it in output.beh
+    
+  }} # end for loops.
 
