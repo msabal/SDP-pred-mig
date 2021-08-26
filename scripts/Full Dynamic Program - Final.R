@@ -455,56 +455,57 @@ write.csv(df.all2, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositori
 
 #### FORWARD SIMULATIONS ####
 # create subset of salmon starting computer weights (Wc) to simulate tracks for
-sim.sam.W <- c(7.1, 10, 15, 20) # pick weights (g) to simulate
+Ws <- c(7.1, 10, 15, 20) # pick starting weights (g) to simulate
 
 # convert sim.sam from W to Wc
-sim.sam.Wc <- WtoWc(sim.sam.W)
+Ws <- WtoWc(Ws)
 
 # create output objects to store outcomes from for loop
-output.A <- matrix(NA, tmax, length(sim.sam.Wc))  # rows: time, columns: weight (W). Output to track best behaviors over time for each state.
+output.A <- matrix(NA, tmax, length(Ws))  # rows: time, columns: weight (W). Output to track best behaviors over time for each state.
 output.A[1,] <- 1 # salmon start in area 1
 
-output.S <- matrix(NA, tmax, length(sim.sam.Wc)) # output to store daily Surv
-output.Fit <- matrix(NA, tmax, length(sim.sam.Wc)) # output to store expected Fitness
-output.beh <- matrix(NA, tmax, length(sim.sam.Wc)) # output to store best behavior
+output.S <- matrix(NA, tmax, length(Ws)) # output to store daily Surv
+output.Fit <- matrix(NA, tmax, length(Ws)) # output to store expected Fitness
+output.beh <- matrix(NA, tmax, length(Ws)) # output to store best behavior
 
-output.W <- matrix(NA, tmax, length(sim.sam.Wc)) # output to store changing W over time.
-output.Scum <- matrix(NA, tmax, length(sim.sam.Wc)) # output to store cumulative survival over time.
+output.Wc <- matrix(NA, tmax, length(Ws)) # output to store changing W over time.
+output.Wc[1,] <- Ws
+
+output.Scum <- matrix(NA, tmax, length(Ws)) # output to store cumulative survival over time.
 
 # for loop tracking new areas for individuals starting at A = 1, and my chosen salmon weights (W in sim.sam).
 
-for(X in 1:length(sim.sam.Wc)){            # iterate over chosen starting salmon weights
+for(X in 1:length(Ws)){            # iterate over chosen starting salmon weights
   for(t in 1:(tmax-1)){                    # iterate over time
     A <- output.A[t,X]                     # current area is the value in the current row of time (t)
     Anew <- A + Best.beh[t,X,A]            # area in next time step is the current location plus how much they move (Best.beh)
     Anew <- min(Anew, Amax)                # area cannot be greater than Amax 
     output.A[t+1,X] <- Anew                # store new area in the next row (t+1)
  
+    Wc <-output.Wc[t,X]                    # current Wc (computer weight) is from the appro spot in output.Wc
+    W <- WctoW(Wc)                         # convert to W (salmon weight in g)
+    W.new <- W + G.day[t,X,A]              # new salmon weight is current W (g) plus growth increment from certain choice stored in G.day
+    Wc.new <- WtoWc(W.new)                 # convert new W to new Wc
+    output.Wc[t+1,X] <- Wc.new             # store new Wc in output.Wc
+    
     output.S[t,X] <- Surv.day[t,X,A]       #  get appro daily survival from Surv.day and save it in output.S
     output.Fit[t,X] <- F.all[t,X,A]        #  get appro expected fitness from F.all and save it in output.Fit
     output.beh[t,X] <- Best.beh[t,X,A]     #  get appro best beh from Best.beh and save it in output.beh
   
     }} # end for loops.
 
+output.W <- WctoW(output.Wc)
+
+
+
+
 
 # for loop for cumulative survival
-for(X in 1:length(sim.sam.Wc)){
+for(X in 1:length(Ws)){
   for(t in 1:(tmax)){
     output.Scum[t,X] <- prod(output.S[1:t,X])
     }} # end of loop.
 
-
-# for loop for cumulative growth
-output.W[1,] <- sim.sam.Wc
-
-for(X in 1:length(sim.sam.Wc)){
-  for(t in 1:(tmax)){
-    Wc.start <- output.W[t,X]
-    output.W[t+1,X] <- Wc.start + G.day[t,X,A]
-    
-    ## KEEP WORKING ON THIS!!!
-    
-  }} # end of loop.
 
 
 
@@ -515,48 +516,43 @@ for(X in 1:length(sim.sam.Wc)){
 
 # melt output.A
 data.tracks <- melt(output.A)
-colnames(data.tracks)<- c("Time", "W", "A")
-
-data.tracks$W <- as.factor(data.tracks$W)
-levels(data.tracks$W) <- c(sim.sam.W)
+colnames(data.tracks)<- c("Time", "Ws", "A")
 
 data.tracks <- join(data.tracks, data.frame(h = h.vec, A = seq(1,Amax,1)))
 
 # melt output.S
 data.tracks.S <- melt(output.S)
-colnames(data.tracks.S)<- c("Time", "W", "S.day")
-
-data.tracks.S$W <- as.factor(data.tracks.S$W)
-levels(data.tracks.S$W) <- c(sim.sam.W)
+colnames(data.tracks.S)<- c("Time", "Ws", "S.day")
 
 data.tracks <- join(data.tracks, data.tracks.S)
 
 # melt output.Fit
 data.tracks.Fit <- melt(output.Fit)
-colnames(data.tracks.Fit)<- c("Time", "W", "Fit")
-
-data.tracks.Fit$W <- as.factor(data.tracks.Fit$W)
-levels(data.tracks.Fit$W) <- c(sim.sam.W)
+colnames(data.tracks.Fit)<- c("Time", "Ws", "Fit")
 
 data.tracks <- join(data.tracks, data.tracks.Fit)
 
 # melt output.beh
 data.tracks.beh <- melt(output.beh)
-colnames(data.tracks.beh)<- c("Time", "W", "Beh")
-
-data.tracks.beh$W <- as.factor(data.tracks.beh$W)
-levels(data.tracks.beh$W) <- c(sim.sam.W)
+colnames(data.tracks.beh)<- c("Time", "Ws", "Beh")
 
 data.tracks <- join(data.tracks, data.tracks.beh)
 
 # melt output.beh
 data.tracks.Scum <- melt(output.Scum)
-colnames(data.tracks.Scum)<- c("Time", "W", "S.cum")
-
-data.tracks.Scum$W <- as.factor(data.tracks.Scum$W)
-levels(data.tracks.Scum$W) <- c(sim.sam.W)
+colnames(data.tracks.Scum)<- c("Time", "Ws", "S.cum")
 
 data.tracks <- join(data.tracks, data.tracks.Scum)
+
+# melt output.W
+data.tracks.W<- melt(output.W)
+colnames(data.tracks.W)<- c("Time", "Ws", "W")
+
+data.tracks <- join(data.tracks, data.tracks.W)
+
+# convert Ws to salmon weigh units and as a factor.
+data.tracks$Ws <- as.factor(data.tracks$Ws)
+levels(data.tracks$Ws) <- c(WctoW(Ws))
 
 
 # see data.tracks all together: Time, W, A, h, S.day, Fit, Beh
@@ -566,7 +562,7 @@ head(data.tracks)
 # Plot forward simulations!
 
 # plot outmigration tracks.
-ggplot(data=data.tracks, aes(x=Time, y=A, color=as.factor(W))) + geom_line(size=1) + geom_point() +
+ggplot(data=data.tracks, aes(x=Time, y=A, color=as.factor(Ws))) + geom_line(size=1) + geom_point() +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank()) + coord_equal() +
   scale_x_continuous(breaks = seq(1,tmax,1)) +
@@ -574,22 +570,46 @@ ggplot(data=data.tracks, aes(x=Time, y=A, color=as.factor(W))) + geom_line(size=
   scale_color_brewer(name= "Starting size (g)", palette = "PiYG")
 
 # plot daily survival by time.
-ggplot(data=data.tracks, aes(x=Time, y=S.day, color=as.factor(W))) + geom_point() +
+ggplot(data=data.tracks, aes(x=Time, y=S.day, color=as.factor(Ws))) + geom_point() +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank()) +
   scale_x_continuous(breaks = seq(1,tmax,1)) +
   scale_color_brewer(name= "Starting size (g)", palette = "PiYG")
 
 # plot daily survival by Area.
-ggplot(data=data.tracks, aes(x=A, y=S.day, color=as.factor(W))) + geom_point() +
+ggplot(data=data.tracks, aes(x=A, y=S.day, color=as.factor(Ws))) + geom_point() +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank()) +
   scale_x_continuous(breaks = seq(1,Amax,1)) +
   scale_color_brewer(name= "Starting size (g)", palette = "PiYG")
 
 # plot cumulative survival by time.
-ggplot(data=data.tracks, aes(x=Time, y=S.cum, color=as.factor(W))) + geom_point() +
+ggplot(data=data.tracks, aes(x=Time, y=S.cum, color=as.factor(Ws))) + geom_point() +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank()) +
-  scale_x_continuous(breaks = seq(1,Amax,1)) +
+  scale_x_continuous(breaks = seq(1,tmax,1)) +
   scale_color_brewer(name= "Starting size (g)", palette = "PiYG")
+
+# plot growth by time.
+ggplot(data=data.tracks, aes(x=Time, y=W, color=as.factor(Ws))) + geom_point() +
+  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank(), legend.background=element_blank()) +
+  scale_x_continuous(breaks = seq(1,tmax,1)) +
+  scale_color_brewer(name= "Starting size (g)", palette = "PiYG")
+
+
+
+#### Get frequency of moves per habitat per starting salmon weight (Ws)
+
+output.freq <- matrix(NA, 3, length(Ws)) # output to store frequency of moves per Ws
+
+# use lapply?? or a for loop?
+
+# first subset and ignore ocean entries...
+tot <- length(data.tracks$Beh)
+ag <- aggregate(A ~ Beh + h, data.tracks, length)
+
+ag$prop <- ag$A/tot
+
+
+
