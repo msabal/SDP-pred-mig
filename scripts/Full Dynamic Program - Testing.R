@@ -2,10 +2,10 @@
 # Test Fitness Function
 
 # Pick state combo to test function on:
-W <- 15
+W <- 7.1
 A <- 26
-t <- 60
-U <- 1
+t <- 40
+U <- 0
 
 rm(W,A,t,U) # clear practice values.
 
@@ -95,6 +95,47 @@ while(t > 1)
   Surv.day[t,,] <- Temp.out2[,5,]  # save daily Survival in Surv.day
   
 } # end while loop.
+
+
+
+
+### OVER.BEH troubleshooting :(
+Wc=1
+
+
+OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                     E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P, # vars in functions
+                     qa, qn, ya, yn, yo, # vars that vary by habitat (h.vec)
+                     h.vec, F.vec)
+  
+{ # start function
+  F.beh.surv <- matrix(NA, 3, 3)  #matrix to save fitness (Fit) from each (3) behavioral choice.
+  
+  # run a for loop over all behavioral choices to get FITNESS (Fit) from each one.
+  for(i in 1:length(U)){ F.beh.surv[i,] <- FITNESS(Wc, A, t, U[i], Wmax, Amax,
+                                                   E, q, a, Alpha, d, v, f, g, c, j, Bu[i], Bh, Bw, M, m, y, P, 
+                                                   qa, qn, ya, yn, yo, 
+                                                   h.vec, F.vec) }
+  
+  F.best <- max(F.beh.surv[,1])  # Get maximum expected fitness from all three behavioral choices.
+  S.day <- ifelse(F.best > 0, F.beh.surv[F.beh.surv[,1] == F.best, 2], NA) # Get the daily survival from the max expected fitness.
+  G.day <- ifelse(F.best > 0, F.beh.surv[F.beh.surv[,1] == F.best, 3], NA) # Get the daily growth from the max expected fitness.
+  
+  Temp <- data.frame(Fit = F.beh.surv[,1], beh = seq(0,2,1), Surv = F.beh.surv[,2], Growth = F.beh.surv[,3])  # make temp dataframe with each fitness (Fit) for each behavior (0,1,2), and daily survival (Surv).
+  Beh.best <- ifelse(F.best > 0, Temp[Temp$Fit == max(Temp$Fit),2], NA)  #get single value of best behavior choice (0,1,2). If F.best is 0 for all behavioral types, than no beh is best, return NA.
+  
+  F.vec[Wc,1,A] <- F.best  # save best fitness in the appropriate F.vec column 1 for that specific state W and A.
+  
+  Temp.out <- array(NA, dim=c(Wstep.n+2, 2, Amax)) #(rows: salmon weight, cols: F(x,t), F(x, t+1), matrices: area). Same size as F.vec, but add 2 rows to save F.best, Best.beh, and Surv.day.
+  Temp.out[Wstep.n+1,,] <- c(F.best, Beh.best)
+  Temp.out[Wstep.n+2,,] <- c(S.day, G.day)
+  Temp.out[1:Wstep.n,,] <- F.vec  # Temp.out needs ALL the info that will be used in the next function/loop. 
+  # F.vec AND F.best, S.day, and Beh.best. Will split up later to use in different ways in the next function OVER.STATES.
+  return(Temp.out)
+  
+} # end function.
+
+
 
 
 

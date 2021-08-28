@@ -14,7 +14,7 @@ options(scipen=999)
 
 # W: salmon weight (g)
 Wmin <- 7
-Wmax <- 80 # make this small to start? Eventually want 80 or 100 g...
+Wmax <- 50 # make this small to start? Eventually want 80 or 100 g...
 Wstep <- 0.1 # discrete interval steps maybe try 0.05
 Wstep.n <- ((Wmax-Wmin)/Wstep)  # this results in a lot of discrete steps - yikes!
                       # Try linear interpolation? (See Clark & Mangel Ch 2)
@@ -24,7 +24,7 @@ Amax <- 26
 
 # t: time
 tmin <- 1
-tmax <- 60
+tmax <- 40
 
 
 
@@ -115,7 +115,7 @@ Smax  <- 0.3
 # Growth
 E     <- 0.04
 qa    <- 0.75 #can change
-qn    <- 0.75 # can change
+qn    <- 1    # can change
 a     <- 0.86
 Alpha <- 0.00607
 d     <- 1
@@ -129,13 +129,13 @@ j     <- 0.07
 # Risk
 Bu    <- c(0.7, 1, 0.7) # B0, B1, B2 (can concatenate because we will loop over behavior choices?)
 Ba    <- 1
-Bn    <- 0.7 #can change
+Bn    <- 0.5 #can change
 Bo    <- 1
 Bw    <- 2
 M     <- 0.002
 m     <- -0.37
-ya    <- 1 #can change
-yn    <- 1 #can change
+ya    <- 1  #can change
+yn    <- 1  #can change
 yo    <- 1  #can change
 P     <- 20
 
@@ -213,10 +213,10 @@ FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh cho
 } # end function.
 
 #Test Fitness function 
-FITNESS(Wc=80, A=Amax, t=tmax, U=0, Wmax, Amax,
+FITNESS(Wc=1, A=Amax, t=tmax, U=0, Wmax, Amax,
         E, q, a, Alpha, d, v, f, g, c, j, Bu=Bu[1], Bh, Bw, M, m, y, P, 
         qa, qn, ya, yn, yo, 
-        h.vec, F.vec) #0.01118097 (Expected Fitness) and 0.907 (daily survival) and growth rate (for that time step)!!!!!
+        h.vec, F.vec) # # (Expected Fitness) and # (daily survival) and # growth rate (for that time step)!!!!!
 
 
 
@@ -260,21 +260,21 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
 
 # Check if loop inside OVER.BEH works
 F.beh.surv <- matrix(NA, 3, 3)
-for(i in 1:length(U)){ F.beh.surv[i,] <- FITNESS(Wc=20, A=Amax-1, t, U[i], Wmax, Amax,
+for(i in 1:length(U)){ F.beh.surv[i,] <- FITNESS(Wc=1, A=Amax, t=tmax, U[i], Wmax, Amax,
                                                  E, q, a, Alpha, d, v, f, g, c, j, Bu[i], Bh, Bw, M, m, y, P, 
                                                  qa, qn, ya, yn, yo, 
                                                  h.vec, F.vec) }
-#F.beh.surv # Works!!!
+F.beh.surv # Works!!!
 
 rm(F.beh.surv) #remove after done checking.
 
 
 # Check if OVER.BEH works for a specific W and A state for tmax-1. 
-Test.beh <- OVER.BEH(Wc=20, A=Amax-1, t, U, Wmax, Amax,
+Test.beh <- OVER.BEH(Wc=1, A=Amax, t=tmax, U, Wmax, Amax,
                      E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P,
                      qa, qn, ya, yn, yo, 
                      h.vec, F.vec)
-View(Test.beh[,,Amax-1])   # Works!!! Look for a value in column one at W<-20 and
+View(Test.beh[,,Amax])   # Works!!! Look for a value in column one at W<-3 and
                       # in rows 731 and 731 where we stored Fit, Beh.best, S.day, and G.day.
 rm(Test.beh)
 
@@ -384,7 +384,7 @@ program.duration #730 W steps takes program ~18 mins. Probs could double to 0.05
 
 # Check output data sets to see if they make sense
 View(F.all[,,Amax])
-View(Best.beh[,,Amax])
+View(Best.beh[,,Amax-10])
 View(Surv.day[,,Amax-4])
 View(G.day[,,Amax]) # not 100% sure these are the values I want to use.
 # Wahoooo!!!!! Only this is time 60 (last row) is missing because they are from
@@ -562,7 +562,8 @@ head(data.tracks)
 # Plot forward simulations!
 
 # plot outmigration tracks.
-ggplot(data=data.tracks, aes(x=Time, y=A, color=as.factor(Ws))) + geom_line(size=1) + geom_point() +
+ggplot(data=data.tracks, aes(x=Time, y=A, color=as.factor(Ws))) +
+  geom_line(size=1, position=position_dodge(0.4)) + geom_point(position=position_dodge(0.4)) +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank()) + coord_equal() +
   scale_x_continuous(breaks = seq(1,tmax,1)) +
@@ -570,21 +571,21 @@ ggplot(data=data.tracks, aes(x=Time, y=A, color=as.factor(Ws))) + geom_line(size
   scale_color_brewer(name= "Starting size (g)", palette = "PiYG")
 
 # plot daily survival by time.
-ggplot(data=data.tracks, aes(x=Time, y=S.day, color=as.factor(Ws))) + geom_point() +
+ggplot(data=data.tracks, aes(x=Time, y=S.day, color=as.factor(Ws))) + geom_point(position=position_dodge(0.4)) +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank()) +
   scale_x_continuous(breaks = seq(1,tmax,1)) +
   scale_color_brewer(name= "Starting size (g)", palette = "PiYG")
 
 # plot daily survival by Area.
-ggplot(data=data.tracks, aes(x=A, y=S.day, color=as.factor(Ws))) + geom_point() +
+ggplot(data=data.tracks, aes(x=A, y=S.day, color=as.factor(Ws))) + geom_point(position=position_dodge(0.4)) +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank()) +
   scale_x_continuous(breaks = seq(1,Amax,1)) +
   scale_color_brewer(name= "Starting size (g)", palette = "PiYG")
 
 # plot cumulative survival by time.
-ggplot(data=data.tracks, aes(x=Time, y=S.cum, color=as.factor(Ws))) + geom_point() +
+ggplot(data=data.tracks, aes(x=Time, y=S.cum, color=as.factor(Ws))) + geom_point(position=position_dodge(0.4)) +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank()) +
   scale_x_continuous(breaks = seq(1,tmax,1)) +
@@ -601,60 +602,43 @@ ggplot(data=data.tracks, aes(x=Time, y=W, color=as.factor(Ws))) + geom_point() +
 
 #### Get frequency of moves per habitat per starting salmon weight (Ws)
 
-output.freq <- matrix(NA, 3, length(Ws)) # output to store frequency of moves per Ws
-
-# use lapply?? or a for loop?
-
-# first subset and ignore ocean entries...
-tot <- length(data.tracks$Beh)
-ag <- aggregate(A ~ Beh + h, data.tracks, length)
-
-ag$prop <- ag$A/tot
-
-
-
-# try use as guide for for lapply...
-
-### From getting ERDDAP stuff
-###Big function to apply to each fish_no
-Big_fun<-function(Recap_date, ocean_entry_date, recap_lat, recap_long){
+PROP.U.FUN <- function(A, h, Beh){ # start loop.
+  df <- data.frame (A, h, Beh)
+  df$Beh <- as.factor(df$Beh)
+  df$h <- as.factor(df$h)
   
-  df<-data.frame(Recap_date, ocean_entry_date, recap_lat, recap_long)  
-  df$Recap_date<-as.Date(df$Recap_date)
-  df$ocean_entry_date<-as.Date(df$ocean_entry_date)
-  oc_dates<-seq(ocean_entry_date, Recap_date, by="days")
-  df2<-df[rep(1: nrow(df), length(oc_dates)),]  #repeat dataframe
-  df2$date<-oc_dates
-  list_date<-split(df2, df2$date) 
-  out_list<-lapply(list_date, function(x) av_sst(x$recap_lat, x$recap_long, x$date))  
-  m<-lapply(out_list, unlist)
-  m2<-lapply(m, mean)
-  out_df<-do.call(rbind, m2)
-  out_df<-as.data.frame(out_df)
-  colnames(out_df)<-c("mean_sst")
-  out_df
+  df <- subset(df, df$h != "o")
   
-}
+  tot <- length(df$Beh)
+  
+  ag <- aggregate(A ~ Beh + h, df, length)
+  ag$tot <-  length(df$Beh)
+  ag$prop.u <- ag$A/tot
+  
+  ag # return aggregated dataset for each Ws
+  
+} #end loop.
+
+data.tracks.L <- droplevels(data.tracks)
+data.tracks.L <- split(data.tracks.L, data.tracks.L$Ws)
+
+out.L<-lapply(data.tracks.L, function(x) PROP.U.FUN(x$A, x$h, x$Beh))
+
+out.df<-ldply(out.L, as.vector)
+colnames(out.df)[1]<-"Ws"
 
 
+## plot proportion of choices
+ggplot(data=out.df, aes(x=as.factor(Ws), y=prop.u, fill=as.factor(Beh))) + 
+  geom_bar(position="stack", stat="identity")
+  
+  
+  
+  
+  geom_point() +
+  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank(), legend.background=element_blank()) +
+  scale_x_continuous(breaks = seq(1,tmax,1)) +
+  scale_color_brewer(name= "Starting size (g)", palette = "PiYG")
 
-#####FOR SUBSET OF 4 FISH
-oc$Recap_date<-as.Date(oc$Recap_date)
-oc$ocean_entry_date<-as.Date(oc$ocean_entry_date)
-
-fish4<-oc[oc$fish_no=="10.0351" | oc$fish_no=="1244" | oc$fish_no=="10.0346" | oc$fish_no=="10.0344",]
-fish4$Recap_date<-as.Date(fish4$Recap_date)
-fish4$ocean_entry_date<-as.Date(fish4$ocean_entry_date)
-fish4<-droplevels(fish4)
-list_fish4<-split(fish4, fish4$fish_no)
-
-library(plyr)
-library(ncdf)
-
-out_list_fish4<-lapply(list_fish4, function(x) Big_fun(x$Recap_date, x$ocean_entry_date, x$recap_lat, x$recap_long))
-#then...
-df3<-ldply(out_list_fish4, as.vector)
-colnames(df3)[1]<-"fish_no"
-ag1<-aggregate(mean_sst ~ fish_no, data=df3, mean)
-ag1  ###Boomba! works!
 
