@@ -24,7 +24,7 @@ Amax <- 26
 
 # t: time
 tmin <- 1
-tmax <- 40
+tmax <- 60
 
 
 
@@ -455,7 +455,7 @@ write.csv(df.all2, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositori
 
 #### FORWARD SIMULATIONS ####
 # create subset of salmon starting computer weights (Wc) to simulate tracks for
-Ws <- c(7.1, 10, 15, 20) # pick starting weights (g) to simulate
+Ws <- seq(7.1, 20, 0.5) # pick starting weights (g) to simulate
 
 # convert sim.sam from W to Wc
 Ws <- WtoWc(Ws)
@@ -567,78 +567,139 @@ ggplot(data=data.tracks, aes(x=Time, y=A, color=as.factor(Ws))) +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank()) + coord_equal() +
   scale_x_continuous(breaks = seq(1,tmax,1)) +
-  scale_y_continuous(breaks = seq(1,Amax,1)) +
-  scale_color_brewer(name= "Starting size (g)", palette = "PiYG")
+  scale_y_continuous(breaks = seq(1,Amax,1)) 
 
 # plot daily survival by time.
 ggplot(data=data.tracks, aes(x=Time, y=S.day, color=as.factor(Ws))) + geom_point(position=position_dodge(0.4)) +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank()) +
-  scale_x_continuous(breaks = seq(1,tmax,1)) +
-  scale_color_brewer(name= "Starting size (g)", palette = "PiYG")
+  scale_x_continuous(breaks = seq(1,tmax,1))
 
 # plot daily survival by Area.
 ggplot(data=data.tracks, aes(x=A, y=S.day, color=as.factor(Ws))) + geom_point(position=position_dodge(0.4)) +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank()) +
-  scale_x_continuous(breaks = seq(1,Amax,1)) +
-  scale_color_brewer(name= "Starting size (g)", palette = "PiYG")
+  scale_x_continuous(breaks = seq(1,Amax,1))
 
 # plot cumulative survival by time.
 ggplot(data=data.tracks, aes(x=Time, y=S.cum, color=as.factor(Ws))) + geom_point(position=position_dodge(0.4)) +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank()) +
-  scale_x_continuous(breaks = seq(1,tmax,1)) +
-  scale_color_brewer(name= "Starting size (g)", palette = "PiYG")
+  scale_x_continuous(breaks = seq(1,tmax,1))
 
 # plot growth by time.
 ggplot(data=data.tracks, aes(x=Time, y=W, color=as.factor(Ws))) + geom_point() +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank()) +
-  scale_x_continuous(breaks = seq(1,tmax,1)) +
-  scale_color_brewer(name= "Starting size (g)", palette = "PiYG")
+  scale_x_continuous(breaks = seq(1,tmax,1))
 
 
 
 #### Get frequency of moves per habitat per starting salmon weight (Ws)
 
-PROP.U.FUN <- function(A, h, Beh){ # start loop.
-  df <- data.frame (A, h, Beh)
+# df <- subset(data.tracks, data.tracks$Ws == 7.1) # to practice within function on one Ws value.
+
+
+TRACK.SUM.FUN <- function(A, h, Beh, Time, Fit, S.day, S.cum, W){ # start function.
+  df <- data.frame (A, h, Beh, Time, Fit, S.day, S.cum, W)
   df$Beh <- as.factor(df$Beh)
   df$h <- as.factor(df$h)
   
-  df <- subset(df, df$h != "o")
+  Fit <- max(df$Fit, na.rm=T)            # get maximum (end at tmax) expected future fitness (prob of surving to adult)
+  S.cum.tot <- min(df$S.cum, na.rm=T)        # get minimum (end at tmax) cumulative survival from release.
+  S.cum.riv <- min(df[df$h == "n" | df$h == "a", 7], na.rm=T)
   
-  tot <- length(df$Beh)
+  G.tot <- max(df$W, na.rm=T) - min(df$W, na.rm=T) # total growth in GRAMS.
+  G.riv <- max(df[df$h == "n" | df$h == "a", 8], na.rm=T) - min(df[df$h == "n" | df$h == "a", 8], na.rm=T) # in river
+  G.ocean <- max(df[df$h == "o", 8], na.rm=T) - min(df[df$h == "o", 8], na.rm=T) # in ocean
   
-  ag <- aggregate(A ~ Beh + h, df, length)
-  ag$tot <-  length(df$Beh)
-  ag$prop.u <- ag$A/tot
+  df <- subset(df, df$h != "o")          # ignore data once in the ocean
   
-  ag # return aggregated dataset for each Ws
+  dur <- length(df$Beh)                  # calculate duration of entire migration from t until the ocean (in days)
+  ag <- aggregate(A ~ Beh, df, length)   # aggregate number of different choices (Beh: 0, 1, 2)
+  ag$dur <-  length(df$Beh)
+  ag$p <- ag$A/dur                  # calculate the proportion of total choices of each type.
   
-} #end loop.
+  ag.empty <- data.frame(Beh = as.factor(c(0,1,2)))
+  ag1 <- join(ag.empty, ag, by="Beh", type = "left")
+  ag1[is.na(ag1)] <- 0
+  
+  out <- data.frame(p0 = ag[ag$Beh == 0,4], 
+                    p1 = ag[ag$Beh == 1,4], 
+                    p2 = ag[ag$Beh == 2,4], 
+                    dur = ag[1,3])  # store as dataframe as separate columns.
+  
+
+  ag.h <- aggregate(A ~ Beh + h, df, length)   # aggregate number of different choices (Beh: 0, 1, 2) BY habitat
+  dur.h <- aggregate(A ~ h, df, length)
+  colnames(dur.h)[2] <- "dur.h"
+  ag.h <- join(ag.h, dur.h)
+  ag.h$p <- ag.h$A / dur
+  
+  ag.e2 <- data.frame(Beh = as.factor(rep(c(0,1,2),2)), h = as.factor(c("n", "n", "n", "a", "a", "a")))
+  ag2 <- join(ag.e2, ag.h, type="left")
+  ag2[is.na(ag2)] <- 0
+  
+  out2 <- data.frame(p0.n = ag2[ag2$Beh == 0 & ag2$h == "n",5],
+                     p1.n = ag2[ag2$Beh == 1 & ag2$h == "n",5],
+                     p2.n = ag2[ag2$Beh == 2 & ag2$h == "n",5],
+                     p0.a = ag2[ag2$Beh == 0 & ag2$h == "a",5],
+                     p1.a = ag2[ag2$Beh == 1 & ag2$h == "a",5],
+                     p2.a = ag2[ag2$Beh == 2 & ag2$h == "a",5],
+                     dur.n = max(ag2[ag2$h == "n",4]),
+                     dur.a = max(ag2[ag2$h == "a",4]))
+  
+  Smean <- data.frame(S.mean.n = mean(df[df$h == "n",5]),
+                      S.mean.a = mean(df[df$h == "a",5]))
+  
+  out.final <- cbind(out, out2, Fit, S.cum.tot, S.cum.riv, G.tot, G.riv, G.ocean,
+                     Smean) # return aggregated dataset for each Ws
+  
+  out.final # return out.final
+  
+} #end function.
 
 data.tracks.L <- droplevels(data.tracks)
 data.tracks.L <- split(data.tracks.L, data.tracks.L$Ws)
 
-out.L<-lapply(data.tracks.L, function(x) PROP.U.FUN(x$A, x$h, x$Beh))
+out.L<-lapply(data.tracks.L, function(x) TRACK.SUM.FUN(x$A, x$h, x$Beh, x$Time, x$Fit, x$S.day, x$S.cum, x$W))
 
 out.df<-ldply(out.L, as.vector)
 colnames(out.df)[1]<-"Ws"
 
 
-## plot proportion of choices
-ggplot(data=out.df, aes(x=as.factor(Ws), y=prop.u, fill=as.factor(Beh))) + 
-  geom_bar(position="stack", stat="identity")
-  
-  
-  
-  
-  geom_point() +
-  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
-  theme(legend.key=element_blank(), legend.background=element_blank()) +
-  scale_x_continuous(breaks = seq(1,tmax,1)) +
-  scale_color_brewer(name= "Starting size (g)", palette = "PiYG")
+# melt or reshape data frame for plotting in ggplot!
 
+# get dataframe in long format by behavior choices
+df.l.beh <- unique(out.df[,1:4])
+df.l.beh <- melt(df.l.beh, variable.name = "Beh", value.name = "p")
+
+
+
+
+df.l.beh.h <- unique(out.df[, c("Ws", "p0.n", "p1.n", "p2.n", "p0.a", "p1.a", "p2.a")])
+df.l.beh.h <- melt(df.l.beh.h)  
+  
+## plot proportion of choices
+
+# prop of move 0, 1 or 2 habitats by starting Size.
+ggplot(data=df.l.beh, aes(x=as.numeric(Ws), y=p, color=Beh)) + geom_point(size=2) + stat_smooth(method = "lm", alpha=0.1) +
+  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank(), legend.background=element_blank())
+
+# prop of move 1 (no habitat)
+ggplot(data=out.df, aes(x=as.numeric(Ws), y=p1)) + geom_point(size=2) + stat_smooth(method = "loess", alpha=0.1) +
+  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank(), legend.background=element_blank())
+
+# prop of move 2 (no habitat)
+ggplot(data=out.df, aes(x=as.numeric(Ws), y=p2)) + geom_point(size=2) + stat_smooth(method = "loess", alpha=0.1) +
+  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank(), legend.background=element_blank())
+
+
+# duration
+ggplot(data=out.df, aes(x=as.numeric(Ws), y=dur)) + geom_point(size=2) + stat_smooth(method = "loess", alpha=0.1) +
+  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank(), legend.background=element_blank())
 
