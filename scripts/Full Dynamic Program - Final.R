@@ -673,12 +673,24 @@ colnames(out.df)[1]<-"Ws"
 # get dataframe in long format by behavior choices
 df.l.beh <- unique(out.df[,1:4])
 df.l.beh <- melt(df.l.beh, variable.name = "Beh", value.name = "p")
+levels(df.l.beh$Beh) <- c("0", "1", "2")
 
 
+# by habitat and movement choice: natural
+df.l.beh.n <- unique(out.df[, c("Ws", "p0.n", "p1.n", "p2.n")])
+df.l.beh.n <- melt(df.l.beh.n, variable.name = "Beh", value.name = "p")
+levels(df.l.beh.n$Beh) <- c("0", "1", "2")
+df.l.beh.n$h <- rep("n", length(df.l.beh.n$Ws))
+
+# by habitat and movement choice: altered
+df.l.beh.a <- unique(out.df[, c("Ws", "p0.a", "p1.a", "p2.a")])
+df.l.beh.a <- melt(df.l.beh.a, variable.name = "Beh", value.name = "p")
+levels(df.l.beh.a$Beh) <- c("0", "1", "2")
+df.l.beh.a$h <- rep("a", length(df.l.beh.a$Ws))
+
+df.l.beh.h <- rbind(df.l.beh.n, df.l.beh.a)
 
 
-df.l.beh.h <- unique(out.df[, c("Ws", "p0.n", "p1.n", "p2.n", "p0.a", "p1.a", "p2.a")])
-df.l.beh.h <- melt(df.l.beh.h)  
   
 ## plot proportion of choices
 
@@ -703,3 +715,36 @@ ggplot(data=out.df, aes(x=as.numeric(Ws), y=dur)) + geom_point(size=2) + stat_sm
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank())
 
+
+
+## plot proportion of choices BY HABITAT
+
+# prop of move 0, 1 or 2 habitats by starting Size.
+ggplot(data=df.l.beh.h, aes(x=as.numeric(Ws), y=p, color=Beh, shape = h)) + geom_point(size=2) + stat_smooth(method = "lm", alpha=0.1) +
+  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank(), legend.background=element_blank())
+
+# prop of move 0 habitats by starting Size.
+ggplot(data=subset(df.l.beh.h, Beh == 0), aes(x=as.numeric(Ws), y=p, color=h)) + geom_point(size=2) +
+  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank(), legend.background=element_blank())
+
+# prop of move 1 habitats by starting Size.
+ggplot(data=subset(df.l.beh.h, Beh == 1), aes(x=as.numeric(Ws), y=p, color=h)) + geom_point(size=2) +
+  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank(), legend.background=element_blank())
+
+# prop of move 2 habitats by starting Size.
+ggplot(data=subset(df.l.beh.h, Beh == 2), aes(x=as.numeric(Ws), y=p, color=h)) + geom_point(size=2) +
+  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank(), legend.background=element_blank())
+
+# bar plots of move choices by habitat
+ggplot(data=df.l.beh.h, aes(x=h, y=p, fill=Beh)) + geom_bar(stat="summary") +
+  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank(), legend.background=element_blank())
+
+
+ggplot(data=df.l.beh.h, aes(x=Beh, y=p, fill=h)) + geom_bar(stat="summary") +
+  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank(), legend.background=element_blank())
