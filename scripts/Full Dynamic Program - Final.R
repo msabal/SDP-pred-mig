@@ -60,8 +60,8 @@ h.vec <- rep(NA, Amax) # create blank vector for habitats for each Area.
 
 h.vec[Amax] <- "o" # make the last area (Amax) the ocean: "o"
 
-set.seed(24)  # set.seed to keep altered and natural habitat distribution constant for now.
-h.vec[1:Amax-1] <- sample(0:1, Amax-1, replace=T, prob=c(0.5,0.5))  # randomly sample
+set.seed(55)  # set.seed to keep altered and natural habitat distribution constant for now.
+h.vec[1:Amax-1] <- sample(0:1, Amax-1, replace=T, prob=c(0.5,0.01))  # randomly sample
         # Amax-1 number of values 0 or 1 with a 50% probability between the two values.
 
 h.vec[h.vec == "1"] <- "a"  # change 1 from sample function to "a"
@@ -129,7 +129,7 @@ j     <- 0.07
 # Risk
 Bu    <- c(0.7, 1, 0.7) # B0, B1, B2 (can concatenate because we will loop over behavior choices?)
 Ba    <- 1
-Bn    <- 0.5 #can change
+Bn    <- 0.7 #can change
 Bo    <- 1
 Bw    <- 2
 M     <- 0.002
@@ -567,10 +567,11 @@ ggplot(data=data.tracks, aes(x=Time, y=A, color=as.factor(Ws))) +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank()) + coord_equal() +
   scale_x_continuous(breaks = seq(1,tmax,1)) +
-  scale_y_continuous(breaks = seq(1,Amax,1)) 
+  scale_y_continuous(breaks = seq(1,Amax,1))
 
 # plot daily survival by time.
-ggplot(data=data.tracks, aes(x=Time, y=S.day, color=as.factor(Ws))) + geom_point(position=position_dodge(0.4)) +
+ggplot(data=data.tracks, aes(x=Time, y=S.day, color=as.factor(Ws))) +
+  scale_x_continuous(breaks = seq(1,tmax,1)) + geom_point(position=position_dodge(0.4)) +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank()) +
   scale_x_continuous(breaks = seq(1,tmax,1))
@@ -690,7 +691,7 @@ df.l.beh.a$h <- rep("a", length(df.l.beh.a$Ws))
 
 df.l.beh.h <- rbind(df.l.beh.n, df.l.beh.a)
 
-
+View(join(df.l.beh.h, out.df))
   
 ## plot proportion of choices
 
@@ -720,7 +721,7 @@ ggplot(data=out.df, aes(x=as.numeric(Ws), y=dur)) + geom_point(size=2) + stat_sm
 ## plot proportion of choices BY HABITAT
 
 # prop of move 0, 1 or 2 habitats by starting Size.
-ggplot(data=df.l.beh.h, aes(x=as.numeric(Ws), y=p, color=Beh, shape = h)) + geom_point(size=2) + stat_smooth(method = "lm", alpha=0.1) +
+ggplot(data=df.l.beh.h, aes(x=as.numeric(Ws), y=p, color=Beh, shape = h)) + geom_point(size=2) + stat_smooth(method = "loess", alpha=0.1) +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank())
 
@@ -748,3 +749,20 @@ ggplot(data=df.l.beh.h, aes(x=h, y=p, fill=Beh)) + geom_bar(stat="summary") +
 ggplot(data=df.l.beh.h, aes(x=Beh, y=p, fill=h)) + geom_bar(stat="summary") +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank())
+
+
+## plot proportion of choices BY HABITAT
+
+# prop of move 0, 1 or 2 habitats by starting Size.
+ggplot(data=df.l.beh.h, aes(x=as.numeric(Ws), y=p, color=Beh, shape = h)) + geom_point(size=2) + stat_smooth(method = "loess", alpha=0.1) +
+  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank(), legend.background=element_blank())
+
+
+# growth
+ggplot(data=out.df, aes(x=as.numeric(Ws), y=G.tot)) + geom_point()
+ggplot(data=out.df, aes(x=as.numeric(Ws), y=G.riv)) + geom_point() + stat_smooth(method="loess")
+ggplot(data=out.df, aes(x=as.numeric(Ws), y=G.ocean)) + geom_point()
+
+
+
