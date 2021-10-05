@@ -258,6 +258,10 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
     Surv.day[t,,] <- Temp.out2[,5,]  # save daily Survival in Surv.day
     G.day[t,,] <- Temp.out2[,6,]     # save daily growth in G.day
     
+    
+    # for each seed iteration of decision matrices... 
+    
+    # or...
     Temp.out3 <- abind(Best.beh, F.all, Surv.day, G.day, along = 2)  # not sure if this will work or what it will look like.
       
     return(Temp.out3)

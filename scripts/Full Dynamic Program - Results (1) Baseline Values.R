@@ -103,7 +103,7 @@ c     <- 40
 j     <- 0.07
 
 # Risk
-Bu    <- c(0.7, 1, 0.7) # B0, B1, B2 (can concatenate because we will loop over behavior choices?)
+Bu    <- c(0.7, 1, 0.7) # B0, B1, B2
 Ba    <- 1
 Bn    <- 0.7 #can change
 Bo    <- 1
