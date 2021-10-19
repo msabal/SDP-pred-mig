@@ -349,19 +349,13 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
     colnames(out.df)[1]<-"Wstart"
     
     # Get mean summary values
-    
-    
-    
-    # or...
-    Temp.out3 <- abind(Best.beh, F.all, Surv.day, G.day, along = 2)  # not sure if this will work or what it will look like.
+  
       
-    return(Temp.out3)
+    return(out.df)
     
     
   } # end while loop.
   } # end function.
-
-
 
 
 
