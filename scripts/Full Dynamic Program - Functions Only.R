@@ -1,9 +1,35 @@
 
 
- #### Make functions to convert between W in grams and W in computer discrete indexing
+
+#### ALL FUNCTIONS ####
+
+## Outline of this R script
+
+# 1. WtoWc and WctoW (convert between salmon weight in grams and computer index)
+
+# 2. TERM.FUN (terminal fitness function: relate salmon area and weight to probability of survival to age 3 adult)
+
+# 3. GROWTH.FUN
+
+# 4. OCEAN.Q
+
+# 5. SURV.FUN
+
+# 6. FITNESS
+
+# 7. OVER.BEH
+
+# 8. OVER.STATES
+
+# 9. TRACK.SUM.FUN
+
+# 10. MAIN_FUN
+
+
+#### (1) Make functions to convert between W in grams and W in computer discrete indexing
 
 # Make a data frame to covert between real W (grams) and computer discrete index (Wc)
-Wconvdf <- data.frame(W = seq(Wmin+Wstep, Wmax, 0.1), Wc = seq(1,Wstep.n,1))
+#Wconvdf <- data.frame(W = seq(Wmin+Wstep, Wmax, 0.1), Wc = seq(1,Wstep.n,1))
 
 # plot(W ~ Wc, Wconvdf)
 # summary(lm(W ~ Wc, Wconvdf)) # y-int: 7, slope: 0.1

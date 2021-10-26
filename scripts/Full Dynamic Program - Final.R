@@ -16,8 +16,8 @@ options(scipen=999)
 Wmin <- 7
 Wmax <- 50 # make this small to start? Eventually want 80 or 100 g...
 Wstep <- 0.1 # discrete interval steps maybe try 0.05
-Wstep.n <- ((Wmax-Wmin)/Wstep)  # this results in a lot of discrete steps - yikes!
-                      # Try linear interpolation? (See Clark & Mangel Ch 2)
+Wstep.n <- ((Wmax-Wmin)/Wstep)  # this results in a lot of discrete steps
+                      
 # A: salmon area
 Amin <- 1
 Amax <- 26
