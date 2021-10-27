@@ -20,11 +20,11 @@ for(i in 1:length(seeds)) {
   
   OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                   E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P, # vars in functions
-                  qa, qn, ya, yn, yo, # vars that vary by habitat (h.vec)
+                  qa, qn, ya, yn, yo, dn0, # vars that vary by habitat (h.vec)
                   Ws, r, Smax, W, # vars for Terminal fitness function
                   Wstep.n, Wstep, tmax, seeds[i], F.vec)
   
-  colnames(OUT) <- c("Wstart", "S.cum.riv", "G.riv", "G.ocean", "dur", "p0.n", "p1.n", "p2.n", "p0.a", "p1.a"," p2.a")
+  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur")
   
   OUT$seeds <- rep(seeds[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
   
@@ -43,8 +43,8 @@ write.csv(DF.10SEEDS, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Reposit
 
 
 ## Summarize DF.10SEEDS
-mean(DF.10SEEDS$dur)
-sd(DF.10SEEDS$dur)
+mean(DF.10SEEDS[!duplicated(DF.10SEEDS[c(1,9)]), 9])
+sd(DF.10SEEDS[!duplicated(DF.10SEEDS[c(1,9)]), 9])
 
 mean(DF.10SEEDS$S.cum.riv)
 sd(DF.10SEEDS$S.cum.riv)

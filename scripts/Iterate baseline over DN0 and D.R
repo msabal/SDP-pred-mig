@@ -1,4 +1,4 @@
-#### Iterate baseline parameters over qa and qn
+#### Iterate baseline parameters over d and dn0
 
 # load libraries
 library(abind); library(ggplot2); library(plyr); library(reshape2)
@@ -7,65 +7,65 @@ library(abind); library(ggplot2); library(plyr); library(reshape2)
 options(scipen=999)
 
 #### Iterate Main Function over varying parameters
-qn <- 1
+d <- 1
 
-qa <- seq(0.5,1, by=0.1)
+dn0 <- seq(0.1,1, by=0.2)
 
-OUT.QA <- list()
+OUT.DN0 <- list()
 
 start.time <- Sys.time() # time how long the while loop takes
 
 # Start looping MAIN_FUN over different qa values
-for(i in 1:length(qa)) {
+for(i in 1:length(dn0)) {
   
   OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                   E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P, # vars in functions
-                  qa[i], qn, ya, yn, yo, dn0, # vars that vary by habitat (h.vec)
+                  qa, qn, ya, yn, yo, dn0[i], # vars that vary by habitat (h.vec)
                   Ws, r, Smax, W, # vars for Terminal fitness function
                   Wstep.n, Wstep, tmax, seeds, F.vec)
   
   colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur")
   
-  OUT$qa <- rep(qa[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
+  OUT$dn0 <- rep(dn0[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
   
-  OUT.QA[[i]] <- OUT
+  OUT.DN0[[i]] <- OUT
   
 } # end loop.
 
 end.time <- Sys.time() # time how long the while loop takes
 program.duration <- end.time - start.time
-program.duration # 59 mins
+program.duration # 53 mins
 
-DF.QA<-ldply(OUT.QA, as.vector)
+DF.DN0<-ldply(OUT.DN0, as.vector)
 
 ## Export DF.QA
-write.csv(DF.QA, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.QA.csv")
+write.csv(DF.DN0, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.DN0.csv")
 
 
 
 #### Iterate Main Function over varying parameters
-qa <- 1
+dn0 <- 1
 
-qn <- seq(0.5,0.9, by=0.1)
+d <- seq(0.1,0.9, by=0.2)
 
-OUT.QN <- list()
+OUT.D <- list()
 
 start.time <- Sys.time() # time how long the while loop takes
 
 # Start looping MAIN_FUN over different qa values
-for(i in 1:length(qn)) {
+for(i in 1:length(d)) {
   
   OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P, # vars in functions
-                  qa, qn[i], ya, yn, yo, dn0, # vars that vary by habitat (h.vec)
+                  E, q, a, Alpha, d[i], v, f, g, c, j, Bu, Bh, Bw, M, m, y, P, # vars in functions
+                  qa, qn, ya, yn, yo, dn0, # vars that vary by habitat (h.vec)
                   Ws, r, Smax, W, # vars for Terminal fitness function
                   Wstep.n, Wstep, tmax, seeds, F.vec)
   
   colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur")
   
-  OUT$qn <- rep(qn[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
+  OUT$d <- rep(d[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
   
-  OUT.QN[[i]] <- OUT
+  OUT.D[[i]] <- OUT
   
 } # end loop.
 
@@ -73,23 +73,23 @@ end.time <- Sys.time() # time how long the while loop takes
 program.duration <- end.time - start.time
 program.duration # 1.83 hours for seeds length = 10!
 
-DF.QN<-ldply(OUT.QN, as.vector)
+DF.D<-ldply(OUT.D, as.vector)
 
 ## Export DF.QA
-write.csv(DF.QN, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.QN.csv")
+write.csv(DF.D, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.D.csv")
 
 
-# Join DF.QA and DF.QN 
+# Join DF.DN0 and DF.D
 
 DF.QA$qn <- rep(1, length(DF.QA$Wstart)) # make qn column and set all values to 1
 DF.QN$qa <- rep(1, length(DF.QN$Wstart)) # make qa column and set all values to 1
 
-DF.Q <- rbind(DF.QA, DF.QN)
+DF.D <- rbind(DF.DN0, DF.D)
 
-# Calculate Qn/Qa ratios!
-DF.Q$qn_qa <- DF.Q$qn / DF.Q$qa
+# Calculate Dn0/d ratios!
+DF.D$dn0_d <- DF.D$dn0 / DF.Q$d
 
-
+##UPDATE THIS!
 # Melt dataframe to get into long format
 df.l.beh <- DF.Q[,c("Wstart", "qn_qa", "p0.n", "p1.n", "p2.n")]
 df.l.beh <- melt(df.l.beh, variable.name = "Beh", value.name = "p", id.vars = c("Wstart", "qn_qa"))
@@ -114,5 +114,3 @@ ggplot(data=DF.Q, aes(x=qn_qa, y=p0.n, color=Wstart)) + geom_point(size=3) + the
 ggplot(data=subset(DF.Q.LONG, Beh == 0 & Wstart == 10), aes(x=qn_qa, y=p, color=h)) + geom_point(size=3) + theme_classic() + ylim(c(0,1))
 ggplot(data=subset(DF.Q.LONG, Beh == 1 & Wstart == 10), aes(x=qn_qa, y=p, color=h)) + geom_point(size=3) + theme_classic() + ylim(c(0,1))
 ggplot(data=subset(DF.Q.LONG, Beh == 2 & Wstart == 10), aes(x=qn_qa, y=p, color=h)) + geom_point(size=3) + theme_classic() + ylim(c(0,1))
-
-

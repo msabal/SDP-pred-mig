@@ -29,15 +29,15 @@
 #### (1) Make functions to convert between W in grams and W in computer discrete indexing
 
 # Make a data frame to covert between real W (grams) and computer discrete index (Wc)
-#Wconvdf <- data.frame(W = seq(Wmin+Wstep, Wmax, 0.1), Wc = seq(1,Wstep.n,1))
+Wconvdf <- data.frame(W = seq(Wmin+Wstep, Wmax, 0.1), Wc = seq(1,Wstep.n,1))
 
-# plot(W ~ Wc, Wconvdf)
-# summary(lm(W ~ Wc, Wconvdf)) # y-int: 7, slope: 0.1
+plot(W ~ Wc, Wconvdf)
+summary(lm(W ~ Wc, Wconvdf)) # y-int: 7, slope: 0.1
 m.Wc <- 0.1
 y.Wc <- 7
 
-# plot(Wc ~ W, Wconvdf)
-# summary(lm(Wc ~ W, Wconvdf)) # y-int: -70, slope: 10
+plot(Wc ~ W, Wconvdf)
+summary(lm(Wc ~ W, Wconvdf)) # y-int: -70, slope: 10
 m.W <- 10
 y.W <- -70
 
@@ -72,7 +72,7 @@ SURV.FUN <-   function(W, Bu, Bh, Bw, M, m, y, P) { (1-M*(Bu + Bh + Bw*W^m))^(y*
 # Fitness function (described above)
 FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                     E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P, # vars in functions
-                    qa, qn, ya, yn, yo, # vars that vary by habitat (h.vec)
+                    qa, qn, ya, yn, yo, dn0, # vars that vary by habitat (h.vec)
                     seeds, F.vec) # vectors describing habitats of areas and stored Fitness values
   
 { # start of function
@@ -129,7 +129,7 @@ FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh cho
 
 OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                      E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P, # vars in functions
-                     qa, qn, ya, yn, yo, # vars that vary by habitat (h.vec)
+                     qa, qn, ya, yn, yo, dn0, # vars that vary by habitat (h.vec)
                      seeds, F.vec)
   
 { # start function
@@ -138,7 +138,7 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
   # run a for loop over all behavioral choices to get FITNESS (Fit) from each one.
   for(i in 1:length(U)){ F.beh.surv[i,] <- FITNESS(Wc, A, t, U[i], Wmax, Amax,
                                                    E, q, a, Alpha, d, v, f, g, c, j, Bu[i], Bh, Bw, M, m, y, P, 
-                                                   qa, qn, ya, yn, yo, 
+                                                   qa, qn, ya, yn, yo, dn0,
                                                    seeds, F.vec) }
   
   F.best <- max(F.beh.surv[,1])  # Get maximum expected fitness from all three behavioral choices.
@@ -188,7 +188,7 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
 
 OVER.STATES <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                         E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P, # vars in functions
-                        qa, qn, ya, yn, yo, # vars that vary by habitat (h.vec)
+                        qa, qn, ya, yn, yo, dn0, # vars that vary by habitat (h.vec)
                         seeds, F.vec)
 { # start function
   
@@ -199,7 +199,7 @@ OVER.STATES <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh
     for(A in 1:Amax){
       Temp.out <- OVER.BEH(Wc, A, t, U, Wmax, Amax,
                            E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P,
-                           qa, qn, ya, yn, yo,
+                           qa, qn, ya, yn, yo, dn0,
                            seeds, F.vec) # this returns Temp.out from OVER.BEH, which looks like...
       # an array: (rows: salmon weight (length: Wstep.n+2),
       # 2 cols: F(x,t), F(x, t+1), matrices: area (length: Amax)).
@@ -255,7 +255,8 @@ TRACK.SUM.FUN <- function(A, h, Beh, Time, Fit, S.day, S.cum, W){ # start functi
   dur.h <- aggregate(A ~ h, df2, length)
   colnames(dur.h)[2] <- "dur.h"
   ag.h <- join(ag.h, dur.h)
-  ag.h$p <- ag.h$A / ag.h$dur.h
+  ag.h$p <- ag.h$A / ag.h$dur.h # calculate proportion of moves by habitat out of the total moves PER HABITAT.
+  ag.h$p.tot <- ag.h$A / dur       # calculate proportion of moves by habitat out of the total moves OVERALL.
   
   p0.n <- ifelse(length(ag.h[ag.h$Beh == 0 & ag.h$h == "n",5]) > 0, ag.h[ag.h$Beh == 0 & ag.h$h == "n",5], 0)
   p1.n <- ifelse(length(ag.h[ag.h$Beh == 1 & ag.h$h == "n",5]) > 0, ag.h[ag.h$Beh == 1 & ag.h$h == "n",5], 0)
@@ -264,16 +265,23 @@ TRACK.SUM.FUN <- function(A, h, Beh, Time, Fit, S.day, S.cum, W){ # start functi
   p1.a <- ifelse(length(ag.h[ag.h$Beh == 1 & ag.h$h == "a",5]) > 0, ag.h[ag.h$Beh == 1 & ag.h$h == "a",5], 0)
   p2.a <- ifelse(length(ag.h[ag.h$Beh == 2 & ag.h$h == "a",5]) > 0, ag.h[ag.h$Beh == 2 & ag.h$h == "a",5], 0)
   
-  out.final <- cbind(S.cum.riv, G.riv, G.ocean, dur, p0.n, p1.n, p2.n, p0.a, p1.a, p2.a)
+  p0.n.tot <- ifelse(length(ag.h[ag.h$Beh == 0 & ag.h$h == "n",6]) > 0, ag.h[ag.h$Beh == 0 & ag.h$h == "n",6], 0)
+  p1.n.tot <- ifelse(length(ag.h[ag.h$Beh == 1 & ag.h$h == "n",6]) > 0, ag.h[ag.h$Beh == 1 & ag.h$h == "n",6], 0)
+  p2.n.tot <- ifelse(length(ag.h[ag.h$Beh == 2 & ag.h$h == "n",6]) > 0, ag.h[ag.h$Beh == 2 & ag.h$h == "n",6], 0)
+  p0.a.tot <- ifelse(length(ag.h[ag.h$Beh == 0 & ag.h$h == "a",6]) > 0, ag.h[ag.h$Beh == 0 & ag.h$h == "a",6], 0)
+  p1.a.tot <- ifelse(length(ag.h[ag.h$Beh == 1 & ag.h$h == "a",6]) > 0, ag.h[ag.h$Beh == 1 & ag.h$h == "a",6], 0)
+  p2.a.tot <- ifelse(length(ag.h[ag.h$Beh == 2 & ag.h$h == "a",6]) > 0, ag.h[ag.h$Beh == 2 & ag.h$h == "a",6], 0)
   
-  out.final # return out.final: vector of 4 summary variables.
+  out.final <- cbind(S.cum.riv, G.riv, G.ocean, dur, p0.n, p1.n, p2.n, p0.a, p1.a, p2.a, p0.n.tot, p1.n.tot, p2.n.tot, p0.a.tot, p1.a.tot, p2.a.tot)
+  
+  out.final # return out.final: vector of summary variables.
   
 } #end function.
 
 
 MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                      E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P, # vars in functions
-                     qa, qn, ya, yn, yo, # vars that vary by habitat (h.vec)
+                     qa, qn, ya, yn, yo, dn0, # vars that vary by habitat (h.vec)
                      Ws, r, Smax, W, # vars for Terminal fitness function
                      Wstep.n, Wstep, tmax, seeds, F.vec)
 { # start function
@@ -299,7 +307,7 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
     
     Temp.out2 <- OVER.STATES(Wc, A, t, U, Wmax, Amax,
                              E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P,
-                             qa, qn, ya, yn, yo,
+                             qa, qn, ya, yn, yo, dn0,
                              seeds, F.vec)  # Get all F.best, Beh.best, and S.day for all W and A for the current Time.
     # Temp.out2 also has the updated F.vec!
     
@@ -411,6 +419,37 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
   out.df<-ldply(out.L, as.vector)
   colnames(out.df)[1]<-"Wstart"
   
-  return(out.df)
+  # Melt dataframe to get into long format: proportion of moves by habitat PER HABITAT
+  df.l.beh <- out.df[,c(1, 6, 7, 8)]
+  df.l.beh <- melt(df.l.beh, variable.name = "Beh", value.name = "p", id.vars = c("Wstart"))
+  levels(df.l.beh$Beh) <- c("0", "1", "2")
+  df.l.beh$h <- rep("n", length(df.l.beh$Wstart))
+  
+  # by habitat and movement choice: altered
+  df.l.beh1 <- out.df[,c(1, 9, 10, 11)]
+  df.l.beh1 <- melt(df.l.beh1, variable.name = "Beh", value.name = "p", id.vars = c("Wstart"))
+  levels(df.l.beh1$Beh) <- c("0", "1", "2")
+  df.l.beh1$h <- rep("a", length(df.l.beh1$Wstart))
+  
+  DF.LONG.h <- rbind(df.l.beh, df.l.beh1)
+  
+  # Melt dataframe to get into long format: proportion of moves by habitat TOTAL
+  df.l.beh <- out.df[,c(1, 12, 13, 14)]
+  df.l.beh <- melt(df.l.beh, variable.name = "Beh", value.name = "p.tot", id.vars = c("Wstart"))
+  levels(df.l.beh$Beh) <- c("0", "1", "2")
+  df.l.beh$h <- rep("n", length(df.l.beh$Wstart))
+  
+  # by habitat and movement choice: altered
+  df.l.beh1 <- out.df[,c(1, 15, 16, 17)]
+  df.l.beh1 <- melt(df.l.beh1, variable.name = "Beh", value.name = "p.tot", id.vars = c("Wstart"))
+  levels(df.l.beh1$Beh) <- c("0", "1", "2")
+  df.l.beh1$h <- rep("a", length(df.l.beh1$Wstart))
+  
+  DF.LONG.tot <- rbind(df.l.beh, df.l.beh1)
+  
+  DF.LONG <- join(DF.LONG.h, DF.LONG.tot)
+  DF.LONG <- join(DF.LONG, out.df[c(1:5)])
+  
+  return(DF.LONG) # return DF.LONG dataframe by Wstart.
   
 } # end function.

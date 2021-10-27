@@ -9,7 +9,7 @@ seeds <- 1 # can change
 # W: salmon weight (g)
 Wmin <- 7
 Wmax <- 50
-Wstep <- 0.1 
+Wstep <- 0.1 # maybe switch to 0.05 g - I think salmon aren't growing enough because of rounding...
 Wstep.n <- ((Wmax-Wmin)/Wstep)
 
 # A: salmon area
