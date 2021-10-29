@@ -99,6 +99,18 @@ write.csv(DF.Q, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\
 
 # Plots!
 
+ggplot(data=subset(DF.Q, Beh == 0 & Wstart == 14.3), aes(x=qn_qa, y=p.tot, fill=h)) + 
+  geom_line(size=0.8, aes(color=h)) +
+  geom_point(size=3.5, shape=21) + 
+  theme_classic() + ylim(c(0,1)) +
+  scale_color_manual(values=c("firebrick2", "forestgreen")) +
+  scale_fill_manual(values=c("firebrick2", "forestgreen")) +
+  ylab("Frequency of move 0") + xlab("Qn:Qa")
+  
+
+
+
+
 ggplot(data=DF.Q, aes(x=qn_qa, y=p0.a, color=Wstart)) + geom_point(size=3) + theme_classic() + ylim(c(0,1))
 ggplot(data=DF.Q, aes(x=qn_qa, y=p0.n, color=Wstart)) + geom_point(size=3) + theme_classic() + ylim(c(0,1))
 
