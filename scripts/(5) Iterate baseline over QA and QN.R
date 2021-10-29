@@ -75,7 +75,7 @@ program.duration # 1.83 hours for seeds length = 10!
 
 DF.QN<-ldply(OUT.QN, as.vector)
 
-## Export DF.QA
+## Export DF.QN
 write.csv(DF.QN, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.QN.csv")
 
 
@@ -90,19 +90,10 @@ DF.Q <- rbind(DF.QA, DF.QN)
 DF.Q$qn_qa <- DF.Q$qn / DF.Q$qa
 
 
-# Melt dataframe to get into long format
-df.l.beh <- DF.Q[,c("Wstart", "qn_qa", "p0.n", "p1.n", "p2.n")]
-df.l.beh <- melt(df.l.beh, variable.name = "Beh", value.name = "p", id.vars = c("Wstart", "qn_qa"))
-levels(df.l.beh$Beh) <- c("0", "1", "2")
-df.l.beh$h <- rep("n", length(df.l.beh$Wstart))
+## Export DF.Q
+write.csv(DF.Q, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.Q.csv")
 
-# by habitat and movement choice: altered
-df.l.beh1 <- DF.Q[,c(1,14,9,10,11)]
-df.l.beh1 <- melt(df.l.beh1, variable.name = "Beh", value.name = "p", id.vars = c("Wstart", "qn_qa"))
-levels(df.l.beh1$Beh) <- c("0", "1", "2")
-df.l.beh1$h <- rep("a", length(df.l.beh1$Wstart))
 
-DF.Q.LONG <- rbind(df.l.beh, df.l.beh1)
 
 
 
