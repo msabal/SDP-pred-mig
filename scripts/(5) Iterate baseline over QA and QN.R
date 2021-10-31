@@ -39,7 +39,7 @@ program.duration # 59 mins
 DF.QA<-ldply(OUT.QA, as.vector)
 
 ## Export DF.QA
-write.csv(DF.QA, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.QA.csv")
+#write.csv(DF.QA, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.QA.csv")
 
 
 
@@ -73,7 +73,7 @@ end.time <- Sys.time() # time how long the while loop takes
 program.duration <- end.time - start.time
 program.duration # 1.83 hours for seeds length = 10!
 
-DF.QN<-ldply(OUT.QN, as.vector)
+#DF.QN<-ldply(OUT.QN, as.vector)
 
 ## Export DF.QN
 write.csv(DF.QN, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.QN.csv")
@@ -94,6 +94,15 @@ DF.Q$qn_qa <- DF.Q$qn / DF.Q$qa
 write.csv(DF.Q, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.Q.csv")
 
 
+# Aggregate  by Wstart (salmon size)
+# summarize data for barplot
+bar.cp<-aggregate(p.tot ~ h + qn_qa, data=subset(DF.Q, Beh == 0), mean)
+a<-aggregate(p.tot ~ h + qn_qa, data=subset(DF.Q, Beh == 0), sd); colnames(a)[3]<-"sd"
+b<-aggregate(p.tot ~ h + qn_qa, data=subset(DF.Q, Beh == 0), length); colnames(b)[3]<-"n"
+bar.cp<-join(bar.cp, a); bar.cp<-join(bar.cp, b)
+bar.cp$se<-bar.cp$sd / sqrt(bar.cp$n)
+
+bar.cp$h<-as.factor(bar.cp$h)
 
 
 
@@ -108,9 +117,32 @@ ggplot(data=subset(DF.Q, Beh == 0 & Wstart == 14.3), aes(x=qn_qa, y=p.tot, fill=
   ylab("Frequency of move 0") + xlab("Qn:Qa")
   
 
+# Aggregated by Wstart
 
+plot_qn.qa <- ggplot(data=bar.cp, aes(x=qn_qa, y=p.tot, fill=h)) + 
+  geom_vline(xintercept = 1, linetype="dashed",  color = "gray24", size=0.5) +
+  geom_line(size=0.5, aes(color=h)) +
+  geom_errorbar(aes(ymax=p.tot + se, ymin=p.tot - se, color=h), width=0, size=0.5) +
+  geom_point(size=2, shape=21) + 
+  theme_classic() + ylim(c(0,1)) +
+  scale_color_manual(values=c("mediumpurple", "forestgreen"), labels = element_blank()) +
+  scale_fill_manual(values=c("mediumpurple", "forestgreen"), labels = c("Altered", "Natural")) +
+  ylab("Frequency of move 0") + xlab(expression(paste(q[n]:q[a]))) +
+  theme(axis.text.y = element_text(size=13), axis.text.x = element_text(size=13),
+        axis.title.y = element_text(size=13), axis.title.x = element_text(size=13),
+        legend.title = element_blank(), legend.text = element_text(size=13)) +
+  theme(legend.position = c(0.75, 0.75))
 
+plot_qn.qa
 
+setwd("C:/Users/Megan/Desktop/")
+pdf("Fig_Qa_Qn.pdf", width=4, height=4)
+
+plot_qn.qa
+
+dev.off()
+
+## Other plots!
 ggplot(data=DF.Q, aes(x=qn_qa, y=p0.a, color=Wstart)) + geom_point(size=3) + theme_classic() + ylim(c(0,1))
 ggplot(data=DF.Q, aes(x=qn_qa, y=p0.n, color=Wstart)) + geom_point(size=3) + theme_classic() + ylim(c(0,1))
 

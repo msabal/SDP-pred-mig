@@ -81,36 +81,50 @@ write.csv(DF.D, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\
 
 # Join DF.DN0 and DF.D
 
-DF.QA$qn <- rep(1, length(DF.QA$Wstart)) # make qn column and set all values to 1
-DF.QN$qa <- rep(1, length(DF.QN$Wstart)) # make qa column and set all values to 1
+DF.DN0$d <- rep(1, length(DF.DN0$Wstart)) # make qn column and set all values to 1
+DF.D$dn0 <- rep(1, length(DF.D$Wstart)) # make qa column and set all values to 1
 
 DF.D <- rbind(DF.DN0, DF.D)
 
 # Calculate Dn0/d ratios!
-DF.D$dn0_d <- DF.D$dn0 / DF.Q$d
+DF.D$dn0_d <- DF.D$dn0 / DF.D$d   # have ratios up to 10!!!! CHECK THIS!!!!!!!!!!!!!!
 
-##UPDATE THIS!
-# Melt dataframe to get into long format
-df.l.beh <- DF.Q[,c("Wstart", "qn_qa", "p0.n", "p1.n", "p2.n")]
-df.l.beh <- melt(df.l.beh, variable.name = "Beh", value.name = "p", id.vars = c("Wstart", "qn_qa"))
-levels(df.l.beh$Beh) <- c("0", "1", "2")
-df.l.beh$h <- rep("n", length(df.l.beh$Wstart))
-
-# by habitat and movement choice: altered
-df.l.beh1 <- DF.Q[,c(1,14,9,10,11)]
-df.l.beh1 <- melt(df.l.beh1, variable.name = "Beh", value.name = "p", id.vars = c("Wstart", "qn_qa"))
-levels(df.l.beh1$Beh) <- c("0", "1", "2")
-df.l.beh1$h <- rep("a", length(df.l.beh1$Wstart))
-
-DF.Q.LONG <- rbind(df.l.beh, df.l.beh1)
+## Export DF.D
+write.csv(DF.D, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.D.csv")
 
 
+# Aggregate  by Wstart (salmon size)
+# summarize data for barplot
+bar.cp<-aggregate(p.tot ~ h + dn0_d, data=subset(DF.D, Beh == 0), mean)
+a<-aggregate(p.tot ~ h + dn0_d, data=subset(DF.D, Beh == 0), sd); colnames(a)[3]<-"sd"
+b<-aggregate(p.tot ~ h + dn0_d, data=subset(DF.D, Beh == 0), length); colnames(b)[3]<-"n"
+bar.cp<-join(bar.cp, a); bar.cp<-join(bar.cp, b)
+bar.cp$se<-bar.cp$sd / sqrt(bar.cp$n)
+
+bar.cp$h<-as.factor(bar.cp$h)
 
 # Plots!
+plot_dn0.d <- ggplot(data=subset(bar.cp, dn0_d < 3), aes(x=dn0_d, y=p.tot, fill=h)) + 
+  geom_vline(xintercept = 1, linetype="dashed",  color = "gray24", size=0.5) +
+  geom_line(size=0.5, aes(color=h)) +
+  geom_errorbar(aes(ymax=p.tot + se, ymin=p.tot - se, color=h), width=0, size=0.5) +
+  geom_point(size=2, shape=21) + 
+  theme_classic() + ylim(c(0,1)) +
+  scale_color_manual(values=c("mediumpurple", "forestgreen"), labels = element_blank()) +
+  scale_fill_manual(values=c("mediumpurple", "forestgreen"), labels = c("Altered", "Natural")) +
+  ylab("Frequency of move 0") + xlab(expression(paste(d[n0]:d))) +
+  theme(axis.text.y = element_text(size=13), axis.text.x = element_text(size=13),
+        axis.title.y = element_text(size=13), axis.title.x = element_text(size=13),
+        legend.title = element_blank(), legend.text = element_text(size=13)) +
+  theme(legend.position = c(0.75, 0.75))
 
-ggplot(data=DF.Q, aes(x=qn_qa, y=p0.a, color=Wstart)) + geom_point(size=3) + theme_classic() + ylim(c(0,1))
-ggplot(data=DF.Q, aes(x=qn_qa, y=p0.n, color=Wstart)) + geom_point(size=3) + theme_classic() + ylim(c(0,1))
+plot_dn0.d
 
-ggplot(data=subset(DF.Q.LONG, Beh == 0 & Wstart == 10), aes(x=qn_qa, y=p, color=h)) + geom_point(size=3) + theme_classic() + ylim(c(0,1))
-ggplot(data=subset(DF.Q.LONG, Beh == 1 & Wstart == 10), aes(x=qn_qa, y=p, color=h)) + geom_point(size=3) + theme_classic() + ylim(c(0,1))
-ggplot(data=subset(DF.Q.LONG, Beh == 2 & Wstart == 10), aes(x=qn_qa, y=p, color=h)) + geom_point(size=3) + theme_classic() + ylim(c(0,1))
+setwd("C:/Users/Megan/Desktop/")
+pdf("Fig_Dn0_D.pdf", width=4, height=4)
+
+plot_dn0.d
+
+dev.off()
+
+
