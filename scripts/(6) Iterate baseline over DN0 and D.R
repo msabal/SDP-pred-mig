@@ -104,8 +104,8 @@ bar.cp$se<-bar.cp$sd / sqrt(bar.cp$n)
 bar.cp$h<-as.factor(bar.cp$h)
 
 # Plots!
-plot_dn0.d <- ggplot(data=subset(bar.cp, dn0_d < 3), aes(x=dn0_d, y=p.tot, fill=h)) + 
-  geom_vline(xintercept = 1, linetype="dashed",  color = "gray24", size=0.5) +
+plot_dn0.d <- ggplot(data=bar.cp, aes(x=log(dn0_d), y=p.tot, fill=h)) + 
+  geom_vline(xintercept = 0, linetype="dashed",  color = "gray24", size=0.5) +
   geom_line(size=0.5, aes(color=h)) +
   geom_errorbar(aes(ymax=p.tot + se, ymin=p.tot - se, color=h), width=0, size=0.5) +
   geom_point(size=2, shape=21) + 
