@@ -9,7 +9,7 @@ options(scipen=999)
 #### Iterate Main Function over varying parameters
 qn <- 1
 
-qa <- seq(0.5,1, by=0.1)
+qa <- seq(0.5, 1, by=0.1)
 
 OUT.QA <- list()
 
@@ -19,8 +19,8 @@ start.time <- Sys.time() # time how long the while loop takes
 for(i in 1:length(qa)) {
   
   OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P, # vars in functions
-                  qa[i], qn, ya, yn, yo, dn0, # vars that vary by habitat (h.vec)
+                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, # vars in functions
+                  qa[i], qn, ya, yn, yo, dn0, Ba, Bn, Bo, # vars that vary by habitat (h.vec)
                   Ws, r, Smax, W, # vars for Terminal fitness function
                   Wstep.n, Wstep, tmax, seeds, F.vec)
   
@@ -39,7 +39,7 @@ program.duration # 59 mins
 DF.QA<-ldply(OUT.QA, as.vector)
 
 ## Export DF.QA
-#write.csv(DF.QA, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.QA.csv")
+write.csv(DF.QA, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.QA.csv")
 
 
 
@@ -56,8 +56,8 @@ start.time <- Sys.time() # time how long the while loop takes
 for(i in 1:length(qn)) {
   
   OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bh, Bw, M, m, y, P, # vars in functions
-                  qa, qn[i], ya, yn, yo, dn0, # vars that vary by habitat (h.vec)
+                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, # vars in functions
+                  qa, qn[i], ya, yn, yo, dn0, Ba, Bn, Bo, # vars that vary by habitat (h.vec)
                   Ws, r, Smax, W, # vars for Terminal fitness function
                   Wstep.n, Wstep, tmax, seeds, F.vec)
   
@@ -103,42 +103,36 @@ bar.cp<-join(bar.cp, a); bar.cp<-join(bar.cp, b)
 bar.cp$se<-bar.cp$sd / sqrt(bar.cp$n)
 
 bar.cp$h<-as.factor(bar.cp$h)
-
+levels(bar.cp$h) <- c("Altered", "Natural")
 
 
 # Plots!
 
-ggplot(data=subset(DF.Q, Beh == 0 & Wstart == 14.3), aes(x=qn_qa, y=p.tot, fill=h)) + 
-  geom_line(size=0.8, aes(color=h)) +
-  geom_point(size=3.5, shape=21) + 
-  theme_classic() + ylim(c(0,1)) +
-  scale_color_manual(values=c("firebrick2", "forestgreen")) +
-  scale_fill_manual(values=c("firebrick2", "forestgreen")) +
-  ylab("Frequency of move 0") + xlab("Qn:Qa")
-  
-
-# Aggregated by Wstart
-
-plot_qn.qa <- ggplot(data=bar.cp, aes(x=log(qn_qa), y=p.tot, fill=h)) + 
+plot_qn_qa <- ggplot(data=bar.cp, aes(x=log(qn_qa), y=p.tot, fill=h, color=h)) + 
   geom_vline(xintercept = 0, linetype="dashed",  color = "gray24", size=0.5) +
+  geom_vline(xintercept = log(1/0.7), linetype="dashed",  color = "skyblue", size=0.5) +
   geom_line(size=0.5, aes(color=h)) +
   geom_errorbar(aes(ymax=p.tot + se, ymin=p.tot - se, color=h), width=0, size=0.5) +
-  geom_point(size=2, shape=21) + 
+  geom_point(size=2, shape=21, color="black") + 
   theme_classic() + ylim(c(0,1)) +
-  scale_color_manual(values=c("mediumpurple", "forestgreen"), labels = element_blank()) +
-  scale_fill_manual(values=c("mediumpurple", "forestgreen"), labels = c("Altered", "Natural")) +
-  ylab("Frequency of move 0") + xlab(expression(paste(q[n]:q[a]))) +
-  theme(axis.text.y = element_text(size=13), axis.text.x = element_text(size=13),
-        axis.title.y = element_text(size=13), axis.title.x = element_text(size=13),
-        legend.title = element_blank(), legend.text = element_text(size=13)) +
-  theme(legend.position = c(0.75, 0.75))
+  scale_color_manual(values=c("mediumpurple", "forestgreen")) +
+  scale_fill_manual(values=c("mediumpurple", "forestgreen")) +
+  ylab("Frequency of move 0") + xlab(expression(paste(ln(q[n]:q[a])))) +
+  theme(axis.text.y = element_text(size=11), axis.text.x = element_text(size=11),
+        axis.title.y = element_text(size=11), axis.title.x = element_text(size=11),
+        legend.title = element_blank(), legend.text = element_text(size=11)) +
+  theme(legend.position = c(0.8, 0.8), legend.background = element_rect(fill="transparent")) +
+  annotate(geom="text", x=-0.4, y=1, label="greater flow\nrefugia in natural", color="forestgreen", fontface="bold") +
+  annotate(geom="text", x=0.4, y=1, label="greater flow\nrefugia in altered", color="mediumpurple", fontface="bold") +
+  annotate(geom="text", x=log(1/0.7)+0.2, y=0.5, label="baseline", color="skyblue", fontface="bold")
 
-plot_qn.qa
+
+plot_qn_qa
 
 setwd("C:/Users/Megan/Desktop/")
-pdf("Fig_Qa_Qn.pdf", width=4, height=4)
+pdf("Fig_Qa_Qn.pdf", width=4.5, height=4)
 
-plot_qn.qa
+plot_qn_qa
 
 dev.off()
 

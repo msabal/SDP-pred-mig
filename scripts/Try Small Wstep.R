@@ -1,12 +1,42 @@
 
-#### Run baseline parameters. (no iteration)
-
 # load libraries
 library(abind); library(ggplot2); library(plyr); library(reshape2)
 
 #remove scientific notation
 options(scipen=999)
 
+
+### TRY WITH MORE WSTEPS!!!!!!!!
+
+# Update Wstep
+Wmin <- 7
+Wmax <- 50
+Wstep <- 0.05 # maybe switch to 0.05 g - I think salmon aren't growing enough because of rounding...
+Wstep.n <- ((Wmax-Wmin)/Wstep)
+
+
+# Update Wstep functions.
+
+# Make a data frame to covert between real W (grams) and computer discrete index (Wc)
+Wconvdf <- data.frame(W = seq(Wmin+Wstep, Wmax, Wstep), Wc = seq(1,Wstep.n,1))
+
+plot(W ~ Wc, Wconvdf)
+summary(lm(W ~ Wc, Wconvdf)) # y-int: 7, slope: 0.05 (Wstep!!)
+m.Wc <- 0.05
+y.Wc <- 7
+
+plot(Wc ~ W, Wconvdf)
+summary(lm(Wc ~ W, Wconvdf)) # y-int: -140, slope: 20
+m.W <- 20
+y.W <- -140
+
+# Build functions to convert between W and Wc
+WtoWc <- function(W){ round(m.W*W + y.W, digits=Wstep) }
+WctoW <- function(Wc){ m.Wc*Wc + y.Wc }
+
+
+
+#### Run baseline parameters. (no iteration)
 
 #### Inside of MAIN_FUN only until calculates datatracks
 
@@ -135,8 +165,8 @@ data.tracks$Wstart <- as.factor(data.tracks$Wstart) # convert Wstart to salmon w
 levels(data.tracks$Wstart) <- c(WctoW(Wstart))
 
 ## Export DF.SEEDS for Figures 1 and 2!
-write.csv(data.tracks, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BASE.TRACKS.csv")
-data.tracks <- read.csv("C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BASE.TRACKS.csv", sep=",")
+#write.csv(data.tracks, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BASE.TRACKS.csv")
+#data.tracks <- read.csv("C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BASE.TRACKS.csv", sep=",")
 
 
 #make vector of how to color A x-axis labels by habitat type.
@@ -162,3 +192,23 @@ pdf("Baseline_tracks.pdf", width=8, height=4)
 plot_base_tracks
 
 dev.off()
+
+
+## Run MAIN FUN for Summary
+
+
+start.time <- Sys.time() # time how long the while loop takes
+
+OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, # vars in functions
+                qa, qn, ya, yn, yo, dn0, Ba, Bn, Bo, # vars that vary by habitat (h.vec)
+                Ws, r, Smax, W, # vars for Terminal fitness function
+                Wstep.n, Wstep, tmax, seeds, F.vec)
+
+colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur")
+
+OUT
+
+end.time <- Sys.time() # time how long the while loop takes for Wstep 0.05 and Wstep.n 860
+program.duration <- end.time - start.time
+program.duration # 
