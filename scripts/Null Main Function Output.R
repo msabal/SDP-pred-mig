@@ -4,8 +4,66 @@ library(abind); library(ggplot2); library(plyr); library(reshape2)
 #remove scientific notation
 options(scipen=999)
 
+#### RUN NULL HABITAT MODEL - NO ITERATION
 
-#### RUN BASELINE PARAMETERS. (no iteration)
+# Parameters - NULL HABITAT DIFFERENCES
+
+#### SET BASELINE PARAMETERS ####
+
+#### Parameters
+
+# seeds for h.vec
+seeds <- 1 # can change
+
+# W: salmon weight (g)
+Wmin <- 7
+Wmax <- 50
+Wstep <- 0.1 
+Wstep.n <- ((Wmax-Wmin)/Wstep)
+
+# A: salmon area
+Amin <- 1
+Amax <- 26
+
+# t: time
+tmin <- 1
+tmax <- 60
+# Behavioral choice
+U <- c(0, 1, 2)
+
+# Terminal fitness
+Ws    <- 40
+r     <- 0.1
+Smax  <- 0.3
+
+# Growth
+E     <- 0.04
+qa    <- 1        # no diff
+qn    <- 1        # no diff
+a     <- 0.86
+Alpha <- 0.00607
+d     <- 1        # no diff
+dn0   <- 1        # no diff
+v     <- 0.027
+f     <- 0.5
+g     <- 2
+c     <- 40
+j     <- 0.07
+
+# Risk
+Bu    <- c(0.7, 1, 0.7) # B0, B1, B2 (can concatenate because we will loop over behavior choices?)
+Ba    <- 1        # no diff
+Bn    <- 1        # no diff
+Bo    <- 1
+Bw    <- 2
+M     <- 0.002
+m     <- -0.37
+ya    <- 1        # no diff
+yn    <- 1        # no diff
+yo    <- 1  
+P     <- 20
+
+# Run Model to datatracks
 
 #### Inside of MAIN_FUN only until calculates datatracks
 
@@ -134,8 +192,8 @@ data.tracks$Wstart <- as.factor(data.tracks$Wstart) # convert Wstart to salmon w
 levels(data.tracks$Wstart) <- c(WctoW(Wstart))
 
 ## Export DF.SEEDS for Figures 1 and 2!
-write.csv(data.tracks, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BASE.TRACKS.csv")
-data.tracks <- read.csv("C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BASE.TRACKS.csv", sep=",")
+write.csv(data.tracks, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.NULL.TRACKS.csv")
+data.tracks <- read.csv("C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.NULL.TRACKS.csv", sep=",")
 
 
 #make vector of how to color A x-axis labels by habitat type.
@@ -144,7 +202,7 @@ h.col <- ifelse(h.vec == "a", "mediumpurple",
 
 # FIGURE 1. Baseline simulated salmon tracks.
 
-plot_base_tracks <- ggplot(data=data.tracks, aes(x=Time, y=A, color=as.factor(Wstart))) +
+plot_null_tracks <- ggplot(data=data.tracks, aes(x=Time, y=A, color=as.factor(Wstart))) +
   geom_line(size=1, position=position_dodge(0.4)) + geom_point(position=position_dodge(0.4)) +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.position=c(0.8, 0.45), legend.background=element_blank()) + coord_equal() +
@@ -153,11 +211,28 @@ plot_base_tracks <- ggplot(data=data.tracks, aes(x=Time, y=A, color=as.factor(Ws
   theme(axis.text.y = element_text(color=h.col, face="bold"), axis.text.x = element_text(face = "bold")) +
   ylab("Area") + scale_color_brewer(palette = "Set3", name= "Starting salmon size (g)")
 
-plot_base_tracks
+plot_null_tracks
 
 setwd("C:/Users/Megan/Desktop/")
-pdf("Baseline_tracks.pdf", width=8, height=4)
+pdf("Null_tracks.pdf", width=8, height=4)
 
-plot_base_tracks
+plot_null_tracks
 
 dev.off()
+
+
+#### Run full main program to get summary stats for one seed.
+
+OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, # vars in functions
+                qa, qn, ya, yn, yo, dn0, Ba, Bn, Bo, # vars that vary by habitat (h.vec)
+                Ws, r, Smax, W, # vars for Terminal fitness function
+                Wstep.n, Wstep, tmax, seeds, F.vec)
+
+colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur")
+
+# Summary stats across salmon sizes
+mean(OUT$dur)
+mean(OUT$S.cum.riv)
+mean(OUT$G.riv) / mean(OUT$dur)
+mean(OUT$G.ocean) / (60-mean(OUT$dur))

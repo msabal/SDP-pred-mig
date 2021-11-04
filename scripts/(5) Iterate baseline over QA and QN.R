@@ -78,7 +78,6 @@ program.duration # 1.83 hours for seeds length = 10!
 ## Export DF.QN
 write.csv(DF.QN, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.QN.csv")
 
-
 # Join DF.QA and DF.QN 
 
 DF.QA$qn <- rep(1, length(DF.QA$Wstart)) # make qn column and set all values to 1
@@ -122,8 +121,8 @@ plot_qn_qa <- ggplot(data=bar.cp, aes(x=log(qn_qa), y=p.tot, fill=h, color=h)) +
         axis.title.y = element_text(size=11), axis.title.x = element_text(size=11),
         legend.title = element_blank(), legend.text = element_text(size=11)) +
   theme(legend.position = c(0.8, 0.8), legend.background = element_rect(fill="transparent")) +
-  annotate(geom="text", x=-0.4, y=1, label="greater flow\nrefugia in natural", color="forestgreen", fontface="bold") +
-  annotate(geom="text", x=0.4, y=1, label="greater flow\nrefugia in altered", color="mediumpurple", fontface="bold") +
+  annotate(geom="text", x=-0.4, y=1, label="less food\nin natural", color="forestgreen", fontface="bold") +
+  annotate(geom="text", x=0.4, y=1, label="less food\nin altered", color="mediumpurple", fontface="bold") +
   annotate(geom="text", x=log(1/0.7)+0.2, y=0.5, label="baseline", color="skyblue", fontface="bold")
 
 
