@@ -24,7 +24,7 @@ for(i in 1:length(dn0)) {
                   Ws, r, Smax, W, # vars for Terminal fitness function
                   Wstep.n, Wstep, tmax, seeds, F.vec)
   
-  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur")
+  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
   
   OUT$dn0 <- rep(dn0[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
   
@@ -61,7 +61,7 @@ for(i in 1:length(d)) {
                   Ws, r, Smax, W, # vars for Terminal fitness function
                   Wstep.n, Wstep, tmax, seeds, F.vec)
   
-  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur")
+  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
   
   OUT$d <- rep(d[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
   

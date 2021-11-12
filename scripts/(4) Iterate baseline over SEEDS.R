@@ -24,7 +24,7 @@ for(i in 1:length(seeds)) {
                   Ws, r, Smax, W, # vars for Terminal fitness function
                   Wstep.n, Wstep, tmax, seeds[i], F.vec)
   
-  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur")
+  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
   
   OUT$seeds <- rep(seeds[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
   

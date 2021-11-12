@@ -247,6 +247,8 @@ TRACK.SUM.FUN <- function(A, h, Beh, Time, Fit, S.day, S.cum, W){ # start functi
   S.cum.riv <- min(df[df$h == "n" | df$h == "a", 7], na.rm=T)
   G.riv <- max(df[df$h == "n" | df$h == "a", 8], na.rm=T) - min(df[df$h == "n" | df$h == "a", 8], na.rm=T) # in river
   G.ocean <- max(df[df$h == "o", 8], na.rm=T) - min(df[df$h == "o", 8], na.rm=T) # in ocean
+  Fit <- max(df$Fit, na.rm=T)
+  
   
   df2 <- subset(df, df$h != "o")          # ignore data once in the ocean
   dur <- length(df2$Beh)  
@@ -272,7 +274,7 @@ TRACK.SUM.FUN <- function(A, h, Beh, Time, Fit, S.day, S.cum, W){ # start functi
   p1.a.tot <- ifelse(length(ag.h[ag.h$Beh == 1 & ag.h$h == "a",6]) > 0, ag.h[ag.h$Beh == 1 & ag.h$h == "a",6], 0)
   p2.a.tot <- ifelse(length(ag.h[ag.h$Beh == 2 & ag.h$h == "a",6]) > 0, ag.h[ag.h$Beh == 2 & ag.h$h == "a",6], 0)
   
-  out.final <- cbind(S.cum.riv, G.riv, G.ocean, dur, p0.n, p1.n, p2.n, p0.a, p1.a, p2.a, p0.n.tot, p1.n.tot, p2.n.tot, p0.a.tot, p1.a.tot, p2.a.tot)
+  out.final <- cbind(S.cum.riv, G.riv, G.ocean, dur, p0.n, p1.n, p2.n, p0.a, p1.a, p2.a, p0.n.tot, p1.n.tot, p2.n.tot, p0.a.tot, p1.a.tot, p2.a.tot, Fit)
   
   out.final # return out.final: vector of summary variables.
   
@@ -448,7 +450,7 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
   DF.LONG.tot <- rbind(df.l.beh, df.l.beh1)
   
   DF.LONG <- join(DF.LONG.h, DF.LONG.tot)
-  DF.LONG <- join(DF.LONG, out.df[c(1:5)])
+  DF.LONG <- join(DF.LONG, out.df[c(1:5,18)])
   
   return(DF.LONG) # return DF.LONG dataframe by Wstart.
   

@@ -161,3 +161,80 @@ pdf("Baseline_tracks.pdf", width=8, height=4)
 plot_base_tracks
 
 dev.off()
+
+
+
+
+# Plot baseline patterns by Wstart (size)
+
+# First, get summary data (do this manually instead of re-running the whole MAIN_FUN)
+
+#Apply TRACK.SUM.FUN on data.tracks
+data.tracks.L <- droplevels(data.tracks)
+data.tracks.L <- split(data.tracks.L, data.tracks.L$Wstart)
+
+out.L<-lapply(data.tracks.L, function(x) TRACK.SUM.FUN(x$A, x$h, x$Beh, x$Time, x$Fit, x$S.day, x$S.cum, x$W))
+
+out.df<-ldply(out.L, as.vector)
+colnames(out.df)[1]<-"Wstart"
+
+# Melt dataframe to get into long format: proportion of moves by habitat PER HABITAT
+df.l.beh <- out.df[,c(1, 6, 7, 8)]
+df.l.beh <- melt(df.l.beh, variable.name = "Beh", value.name = "p", id.vars = c("Wstart"))
+levels(df.l.beh$Beh) <- c("0", "1", "2")
+df.l.beh$h <- rep("n", length(df.l.beh$Wstart))
+
+# by habitat and movement choice: altered
+df.l.beh1 <- out.df[,c(1, 9, 10, 11)]
+df.l.beh1 <- melt(df.l.beh1, variable.name = "Beh", value.name = "p", id.vars = c("Wstart"))
+levels(df.l.beh1$Beh) <- c("0", "1", "2")
+df.l.beh1$h <- rep("a", length(df.l.beh1$Wstart))
+
+DF.LONG.h <- rbind(df.l.beh, df.l.beh1)
+
+# Melt dataframe to get into long format: proportion of moves by habitat TOTAL
+df.l.beh <- out.df[,c(1, 12, 13, 14)]
+df.l.beh <- melt(df.l.beh, variable.name = "Beh", value.name = "p.tot", id.vars = c("Wstart"))
+levels(df.l.beh$Beh) <- c("0", "1", "2")
+df.l.beh$h <- rep("n", length(df.l.beh$Wstart))
+
+# by habitat and movement choice: altered
+df.l.beh1 <- out.df[,c(1, 15, 16, 17)]
+df.l.beh1 <- melt(df.l.beh1, variable.name = "Beh", value.name = "p.tot", id.vars = c("Wstart"))
+levels(df.l.beh1$Beh) <- c("0", "1", "2")
+df.l.beh1$h <- rep("a", length(df.l.beh1$Wstart))
+
+DF.LONG.tot <- rbind(df.l.beh, df.l.beh1)
+
+DF.LONG <- join(DF.LONG.h, DF.LONG.tot)
+DF.LONG <- join(DF.LONG, out.df[c(1:5,18)])
+
+colnames(DF.LONG) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
+
+# FIGURE X. Wstart by p.tot by habitat.
+
+DF.LONG$h<-as.factor(DF.LONG$h)
+levels(DF.LONG$h) <- c("Altered", "Natural")
+
+DF.LONG$Wstart<-as.numeric(DF.LONG$Wstart)
+
+plot_base_move0_by_Wstart <- ggplot(data=subset(DF.LONG, Beh == 0), aes(x=Wstart, y=p.tot, fill=h, color=h)) + 
+  geom_line(size=0.5, aes(color=h)) + geom_point(size=2, shape=21, color="black") +
+  theme_classic() + ylim(c(0,1)) +
+  scale_color_manual(values=c("mediumpurple", "forestgreen")) +
+  scale_fill_manual(values=c("mediumpurple", "forestgreen")) +
+  ylab("Frequency of move 0") + xlab("Starting salmon size (g)") +
+  theme(axis.text.y = element_text(size=11), axis.text.x = element_text(size=11),
+        axis.title.y = element_text(size=11), axis.title.x = element_text(size=11),
+        legend.title = element_blank(), legend.text = element_text(size=11)) +
+  theme(legend.position = c(0.8, 0.8), legend.background = element_rect(fill="transparent"))
+
+
+plot_base_move0_by_Wstart
+
+setwd("C:/Users/Megan/Desktop/")
+pdf("Fig_base_move0_by_Wstart.pdf", width=4.5, height=4)
+
+plot_base_move0_by_Wstart
+
+dev.off()

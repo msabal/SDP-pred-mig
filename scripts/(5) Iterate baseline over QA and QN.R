@@ -24,7 +24,7 @@ for(i in 1:length(qa)) {
                   Ws, r, Smax, W, # vars for Terminal fitness function
                   Wstep.n, Wstep, tmax, seeds, F.vec)
   
-  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur")
+  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
   
   OUT$qa <- rep(qa[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
   
@@ -61,7 +61,7 @@ for(i in 1:length(qn)) {
                   Ws, r, Smax, W, # vars for Terminal fitness function
                   Wstep.n, Wstep, tmax, seeds, F.vec)
   
-  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur")
+  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
   
   OUT$qn <- rep(qn[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
   
@@ -73,7 +73,7 @@ end.time <- Sys.time() # time how long the while loop takes
 program.duration <- end.time - start.time
 program.duration # 1.83 hours for seeds length = 10!
 
-#DF.QN<-ldply(OUT.QN, as.vector)
+DF.QN<-ldply(OUT.QN, as.vector)
 
 ## Export DF.QN
 write.csv(DF.QN, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.QN.csv")
