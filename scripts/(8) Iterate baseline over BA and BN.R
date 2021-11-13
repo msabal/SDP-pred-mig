@@ -82,7 +82,6 @@ DF.BN<-ldply(OUT.BN, as.vector)
 ## Export DF.QA
 write.csv(DF.BN, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BN.csv")
 
-
 # Join DF.BA and DF.BN
 
 DF.BA$Bn <- rep(1, length(DF.BA$Wstart)) # make Bn column and set all values to 1

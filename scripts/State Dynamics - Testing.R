@@ -710,6 +710,17 @@ plot(Surv.day~t, sim.mix, col=c("red", "limegreen", "mediumslateblue")[as.factor
 
 
 
+### Try CAP equation from Nobriga et al. 2020
+
+CAP <- function(X, P){ 0.861-(1.82*PPR) }
+curve(Beta.W(X, m=2), xname="X", xlim=c(7,20), ylab="contrib. daily mortality rate")
+curve(Beta.W(X, m=0.04), xname="X", add=T, col="slateblue")
+abline(h=0.001666,lty="dashed")
+
+
+
+
+
 ######################## TERMINAL FITNESS #####################################
 TERM.FUN <- function(X, g){ 1/(1 + exp(-X+g)) }
 curve(TERM.FUN(X, g=15), xname="X", xlim=c(10,50), ylab="Prob of returning as 3 yr old adult")
