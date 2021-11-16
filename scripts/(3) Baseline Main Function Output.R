@@ -238,3 +238,30 @@ pdf("Fig_base_move0_by_Wstart.pdf", width=4.5, height=4)
 plot_base_move0_by_Wstart
 
 dev.off()
+
+
+# Plot duration by Wstart
+plot_base_dur_by_Wstart <- ggplot(data=DF.LONG, aes(x=Wstart, y=dur)) + 
+  geom_line(size=0.5) + geom_point(size=2, shape=21, color="black") +
+  theme_classic() + ylim(c(20,30)) +
+  ylab("Migration duration") + xlab("Starting salmon size (g)") +
+  theme(axis.text.y = element_text(size=11), axis.text.x = element_text(size=11),
+        axis.title.y = element_text(size=11), axis.title.x = element_text(size=11),
+        legend.title = element_blank(), legend.text = element_text(size=11)) +
+  theme(legend.position = c(0.8, 0.8), legend.background = element_rect(fill="transparent"))
+
+
+plot_base_dur_by_Wstart
+
+# Plot G.riv by Wstart
+plot_base_Griv_by_Wstart <- ggplot(data=DF.LONG, aes(x=Wstart, y=G.riv)) + 
+  geom_line(size=0.5) + geom_point(size=2, shape=21, color="black") +
+  theme_classic() + ylim(c(0,5)) +
+  ylab("Grams gained in river") + xlab("Starting salmon size (g)") +
+  theme(axis.text.y = element_text(size=11), axis.text.x = element_text(size=11),
+        axis.title.y = element_text(size=11), axis.title.x = element_text(size=11),
+        legend.title = element_blank(), legend.text = element_text(size=11)) +
+  theme(legend.position = c(0.8, 0.8), legend.background = element_rect(fill="transparent"))
+
+
+plot_base_Griv_by_Wstart
