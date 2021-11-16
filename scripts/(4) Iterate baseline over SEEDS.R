@@ -40,7 +40,7 @@ DF.10SEEDS<-ldply(OUT.SEEDS, as.vector)
 
 ## Export DF.SEEDS for Figures 1 and 2!
 write.csv(DF.10SEEDS, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.10SEEDS.FIGS1&2.csv")
-
+DF.10SEEDS <- read.csv("C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.10SEEDS.FIGS1&2.csv", sep=",")
 
 ## Summarize DF.10SEEDS
 mean(DF.10SEEDS[!duplicated(DF.10SEEDS[c(1,9)]), 9])
@@ -61,34 +61,32 @@ sd(DF.10SEEDS$mean.G.ocean)
 
 ## Make bar plot of choices
 
-# Melt dataframe to get into long format
-df.l.beh <- DF.10SEEDS[,c("Wstart", "seeds", "p0.n", "p1.n", "p2.n")]
-df.l.beh <- melt(df.l.beh, variable.name = "Beh", value.name = "p", id.vars = c("Wstart", "seeds"))
-levels(df.l.beh$Beh) <- c("0", "1", "2")
-df.l.beh$h <- rep("n", length(df.l.beh$Wstart))
-
-# by habitat and movement choice: altered
-df.l.beh1 <- DF.10SEEDS[,c(1,9,10,11,12)]
-df.l.beh1 <- melt(df.l.beh1, variable.name = "Beh", value.name = "p", id.vars = c("Wstart", "seeds"))
-levels(df.l.beh1$Beh) <- c("0", "1", "2")
-df.l.beh1$h <- rep("a", length(df.l.beh1$Wstart))
-
-df.l.beh.h <- rbind(df.l.beh, df.l.beh1)
+# # Melt dataframe to get into long format
+# df.l.beh <- DF.10SEEDS[,c("Wstart", "seeds", "p0.n", "p1.n", "p2.n")]
+# df.l.beh <- melt(df.l.beh, variable.name = "Beh", value.name = "p", id.vars = c("Wstart", "seeds"))
+# levels(df.l.beh$Beh) <- c("0", "1", "2")
+# df.l.beh$h <- rep("n", length(df.l.beh$Wstart))
+# 
+# # by habitat and movement choice: altered
+# df.l.beh1 <- DF.10SEEDS[,c(1,9,10,11,12)]
+# df.l.beh1 <- melt(df.l.beh1, variable.name = "Beh", value.name = "p", id.vars = c("Wstart", "seeds"))
+# levels(df.l.beh1$Beh) <- c("0", "1", "2")
+# df.l.beh1$h <- rep("a", length(df.l.beh1$Wstart))
+# 
+# df.l.beh.h <- rbind(df.l.beh, df.l.beh1)
 
 
 
 # summarize data for barplot
-bar.cp<-aggregate(p ~ h + Beh, data=df.l.beh.h, mean)
-a<-aggregate(p ~ h + Beh, data=df.l.beh.h, sd); colnames(a)[3]<-"sd"
-b<-aggregate(p ~ h + Beh, data=df.l.beh.h, length); colnames(b)[3]<-"n"
+bar.cp<-aggregate(p ~ h + Beh, data=DF.10SEEDS, mean)
+a<-aggregate(p ~ h + Beh, data=DF.10SEEDS, sd); colnames(a)[3]<-"sd"
+b<-aggregate(p ~ h + Beh, data=DF.10SEEDS, length); colnames(b)[3]<-"n"
 bar.cp<-join(bar.cp, a); bar.cp<-join(bar.cp, b)
 bar.cp$se<-bar.cp$sd / sqrt(bar.cp$n)
 
 bar.cp$h<-as.factor(bar.cp$h)
 bar.cp$Beh<-as.factor(bar.cp$Beh)
 
-#levels(bar.cp$h)<-c("hatchery", "wild-us", "wild-ds")
-#levels(bar.cp$Beh)<-c("no predator", "predator")
 
 bar.cp <- bar.cp[order(bar.cp$h, bar.cp$Beh),]
 bar.cp$pcum <-  NA
