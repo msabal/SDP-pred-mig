@@ -516,6 +516,22 @@ points(X~t, sim.move40n, col="limegreen", pch=16)
     # Success that different movement choices and river shoreline habitats result in different
       # growth trajectories.
 
+## Let's try qa,n as a function of U!!!
+
+RIVER.Q <- function(U, a, b){ a*U^(b) } # try declining exponential - too tricky. simplify below with linear.
+
+curve(RIVER.Q(U, a= 0.02, b=-1), xname="U", xlim=c(0,2), ylim=c(0,2))
+# want xlim=c(0,2), ylim=c(0,2)
+
+RIVER.Q <- function(U, m, b) { m*U+b }
+curve(RIVER.Q(U, m=-0.3, b=1), xname="U", xlim=c(0,2), ylim=c(0,2))
+curve(RIVER.Q(U, m=-0.3, b=1.5), xname="U", add=T, col="mediumpurple")
+curve(RIVER.Q(U, m=-0.3, b=2), xname="U", add=T, col="royalblue")
+abline(h=0.5, col="gray24", lty="dashed")
+
+
+
+
 ### Now let's add q for the ocean.
 OCEAN.Q <- function(t, a, b, c,d){  d+a*exp(-(t-b)^2/2*c^2) }
 curve(OCEAN.Q(t, a=0.07, b=40, c=0.07, d=0.02), xlim=c(0, 60), ylab="q (ocean)",
