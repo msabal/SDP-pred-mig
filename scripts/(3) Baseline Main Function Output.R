@@ -70,20 +70,21 @@ output.Wc[1,] <- Wstart
 
 for(X in 1:length(Wstart)){            # iterate over chosen starting salmon weights
   for(t in 1:(tmax-1)){                    # iterate over time
-    A <- output.A[t,X]                     # current area is the value in the current row of time (t)
-    Anew <- A + Best.beh[t,X,A]            # area in next time step is the current location plus how much they move (Best.beh)
-    Anew <- min(Anew, Amax)                # area cannot be greater than Amax 
-    output.A[t+1,X] <- Anew                # store new area in the next row (t+1)
     
     Wc <-output.Wc[t,X]                    # current Wc (computer weight) is from the appro spot in output.Wc
     W <- WctoW(Wc)                         # convert to W (salmon weight in g)
-    W.new <- W + G.day[t,X,A]              # new salmon weight is current W (g) plus growth increment from certain choice stored in G.day
+    W.new <- W + G.day[t,output.Wc[t,X],A]              # new salmon weight is current W (g) plus growth increment from certain choice stored in G.day
     Wc.new <- WtoWc(W.new)                 # convert new W to new Wc
     output.Wc[t+1,X] <- Wc.new             # store new Wc in output.Wc
     
-    output.S[t,X] <- Surv.day[t,X,A]       #  get appro daily survival from Surv.day and save it in output.S
-    output.Fit[t,X] <- F.all[t,X,A]        #  get appro expected fitness from F.all and save it in output.Fit
-    output.beh[t,X] <- Best.beh[t,X,A]     #  get appro best beh from Best.beh and save it in output.beh
+    A <- output.A[t,X]                     # current area is the value in the current row of time (t)
+    Anew <- A + Best.beh[t,output.Wc[t,X],A]            # area in next time step is the current location plus how much they move (Best.beh)
+    Anew <- min(Anew, Amax)                # area cannot be greater than Amax 
+    output.A[t+1,X] <- Anew                # store new area in the next row (t+1)
+    
+    output.S[t,X] <- Surv.day[t,output.Wc[t,X],A]       #  get appro daily survival from Surv.day and save it in output.S
+    output.Fit[t,X] <- F.all[t,output.Wc[t,X],A]        #  get appro expected fitness from F.all and save it in output.Fit
+    output.beh[t,X] <- Best.beh[t,output.Wc[t,X],A]     #  get appro best beh from Best.beh and save it in output.beh
     
   }} # end for loops.
 
@@ -147,7 +148,7 @@ h.col <- ifelse(h.vec == "a", "mediumpurple",
 plot_base_tracks <- ggplot(data=data.tracks, aes(x=Time, y=A, color=as.factor(Wstart))) +
   geom_line(size=1, position=position_dodge(0.4)) + geom_point(position=position_dodge(0.4)) +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
-  theme(legend.key=element_blank(), legend.position=c(0.8, 0.45), legend.background=element_blank()) + coord_equal() +
+  theme(legend.key=element_blank(), legend.position="bottom", legend.background=element_blank()) + coord_equal() +
   scale_x_continuous(breaks = seq(1,tmax,2)) +
   scale_y_continuous(breaks = seq(1,Amax,1)) +
   theme(axis.text.y = element_text(color=h.col, face="bold"), axis.text.x = element_text(face = "bold")) +
