@@ -351,19 +351,21 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
     for(t in 1:(tmax-1)){                    # iterate over time
       
       Wc <-output.Wc[t,X]                    # current Wc (computer weight) is from the appro spot in output.Wc
+      A <- output.A[t,X]                     # current area is the value in the current row of time (t)
+      
       W <- WctoW(Wc)                         # convert to W (salmon weight in g)
-      W.new <- W + G.day[t,output.Wc[t,X],A]              # new salmon weight is current W (g) plus growth increment from certain choice stored in G.day
+      W.new <- W + G.day[t,Wc,A]              # new salmon weight is current W (g) plus growth increment from certain choice stored in G.day
+      W.new <- ifelse(W.new > Wmax, Wmax, W.new)  #W.new must be less than Wmax to look up a value in G.day - but really if this is happening, should increase Wmax.
       Wc.new <- WtoWc(W.new)                 # convert new W to new Wc
       output.Wc[t+1,X] <- Wc.new             # store new Wc in output.Wc
       
-      A <- output.A[t,X]                     # current area is the value in the current row of time (t)
-      Anew <- A + Best.beh[t,output.Wc[t,X],A]            # area in next time step is the current location plus how much they move (Best.beh)
+      Anew <- A + Best.beh[t,Wc,A]            # area in next time step is the current location plus how much they move (Best.beh)
       Anew <- min(Anew, Amax)                # area cannot be greater than Amax 
       output.A[t+1,X] <- Anew                # store new area in the next row (t+1)
       
-      output.S[t,X] <- Surv.day[t,output.Wc[t,X],A]       #  get appro daily survival from Surv.day and save it in output.S
-      output.Fit[t,X] <- F.all[t,output.Wc[t,X],A]        #  get appro expected fitness from F.all and save it in output.Fit
-      output.beh[t,X] <- Best.beh[t,output.Wc[t,X],A]     #  get appro best beh from Best.beh and save it in output.beh
+      output.S[t,X] <- Surv.day[t,Wc,A]       #  get appro daily survival from Surv.day and save it in output.S
+      output.Fit[t,X] <- F.all[t,Wc,A]        #  get appro expected fitness from F.all and save it in output.Fit
+      output.beh[t,X] <- Best.beh[t,Wc,A]     #  get appro best beh from Best.beh and save it in output.beh
       
     }} # end for loops.
   

@@ -8,8 +8,8 @@ seeds <- 1 # can change
 
 # W: salmon weight (g)
 Wmin <- 7
-Wmax <- 50
-Wstep <- 0.1 # maybe switch to 0.05 g - I think salmon aren't growing enough because of rounding...
+Wmax <- 70   # originally used 50, but once fixed forward sim issue need to increase this. 100 is plenty (even with weird exponential growth happening), 70 should be good.
+Wstep <- 0.1 # checked 0.05 steps and no big difference. This is good.
 Wstep.n <- ((Wmax-Wmin)/Wstep)
 
 # A: salmon area

@@ -5,7 +5,7 @@ library(abind); library(ggplot2); library(plyr); library(reshape2)
 options(scipen=999)
 
 
-#### RUN BASELINE PARAMETERS. (no iteration)
+#### RUN BASELINE PARAMETERS. (no iteration across parameters)
 
 #### Inside of MAIN_FUN only until calculates datatracks
 
@@ -72,19 +72,21 @@ for(X in 1:length(Wstart)){            # iterate over chosen starting salmon wei
   for(t in 1:(tmax-1)){                    # iterate over time
     
     Wc <-output.Wc[t,X]                    # current Wc (computer weight) is from the appro spot in output.Wc
+    A <- output.A[t,X]                     # current area is the value in the current row of time (t)
+    
     W <- WctoW(Wc)                         # convert to W (salmon weight in g)
-    W.new <- W + G.day[t,output.Wc[t,X],A]              # new salmon weight is current W (g) plus growth increment from certain choice stored in G.day
+    W.new <- W + G.day[t,Wc,A]              # new salmon weight is current W (g) plus growth increment from certain choice stored in G.day
+    W.new <- ifelse(W.new > Wmax, Wmax, W.new)  #W.new must be less than Wmax to look up a value in G.day - but really if this is happening, should increase Wmax.
     Wc.new <- WtoWc(W.new)                 # convert new W to new Wc
     output.Wc[t+1,X] <- Wc.new             # store new Wc in output.Wc
     
-    A <- output.A[t,X]                     # current area is the value in the current row of time (t)
-    Anew <- A + Best.beh[t,output.Wc[t,X],A]            # area in next time step is the current location plus how much they move (Best.beh)
+    Anew <- A + Best.beh[t,Wc,A]            # area in next time step is the current location plus how much they move (Best.beh)
     Anew <- min(Anew, Amax)                # area cannot be greater than Amax 
     output.A[t+1,X] <- Anew                # store new area in the next row (t+1)
     
-    output.S[t,X] <- Surv.day[t,output.Wc[t,X],A]       #  get appro daily survival from Surv.day and save it in output.S
-    output.Fit[t,X] <- F.all[t,output.Wc[t,X],A]        #  get appro expected fitness from F.all and save it in output.Fit
-    output.beh[t,X] <- Best.beh[t,output.Wc[t,X],A]     #  get appro best beh from Best.beh and save it in output.beh
+    output.S[t,X] <- Surv.day[t,Wc,A]       #  get appro daily survival from Surv.day and save it in output.S
+    output.Fit[t,X] <- F.all[t,Wc,A]        #  get appro expected fitness from F.all and save it in output.Fit
+    output.beh[t,X] <- Best.beh[t,Wc,A]     #  get appro best beh from Best.beh and save it in output.beh
     
   }} # end for loops.
 
@@ -164,6 +166,17 @@ plot_base_tracks
 dev.off()
 
 
+## NEXT FIGURE: Plot individual growth trajectories. Do these look like Von Bert growth and like empirical estimates?
+
+plot_base_growth <- ggplot(data=data.tracks, aes(x=Time, y=W, color=as.factor(Wstart))) +
+  geom_line(size=1, position=position_dodge(0.4)) + geom_point(position=position_dodge(0.4)) +
+  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank(), legend.position="bottom", legend.background=element_blank()) + coord_equal() +
+  scale_x_continuous(breaks = seq(1,tmax,2)) +
+  scale_y_continuous(breaks = seq(1,Wmax,1)) +
+  ylab("Weight (g)") + scale_color_brewer(palette = "Set3", name= "Starting salmon size (g)")
+
+plot_base_growth
 
 
 # Plot baseline patterns by Wstart (size)
