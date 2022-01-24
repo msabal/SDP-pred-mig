@@ -159,7 +159,7 @@ plot_base_tracks <- ggplot(data=data.tracks, aes(x=Time, y=A, color=as.factor(Ws
 plot_base_tracks
 
 setwd("C:/Users/Megan/Desktop/")
-pdf("Baseline_tracks.pdf", width=8, height=4)
+pdf("Baseline_tracks.pdf", width=8, height=7)
 
 plot_base_tracks
 
@@ -177,6 +177,8 @@ plot_base_growth <- ggplot(data=data.tracks, aes(x=Time, y=W, color=as.factor(Ws
   ylab("Weight (g)") + scale_color_brewer(palette = "Set3", name= "Starting salmon size (g)")
 
 plot_base_growth
+
+
 
 
 # Plot baseline patterns by Wstart (size)

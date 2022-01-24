@@ -8,7 +8,7 @@ seeds <- 1 # can change
 
 # W: salmon weight (g)
 Wmin <- 7
-Wmax <- 70   # originally used 50, but once fixed forward sim issue need to increase this. 100 is plenty (even with weird exponential growth happening), 70 should be good.
+Wmax <- 60   # 
 Wstep <- 0.1 # checked 0.05 steps and no big difference. This is good.
 Wstep.n <- ((Wmax-Wmin)/Wstep)
 
@@ -28,7 +28,7 @@ r     <- 0.1
 Smax  <- 0.3
 
 # Growth
-E     <- 0.04
+E     <- 0.03
 a     <- 0.86
 Alpha <- 0.00607
 d     <- 1
@@ -36,15 +36,15 @@ dn0   <- 0.7
 v     <- 0.027
 
 #river growth by speed
-z     <- -0.015
-ka    <- 1 # can vary btw 1 and 2
-kn    <- 2 # can vary btw 1 and 2
+z     <- -0.01
+ka    <- 0.9 # can vary btw 0.8 and 1.3
+kn    <- 1.2 # can vary btw 0.8 and 1.3
 
 # ocean growth
-f     <- 0.5
-g     <- 2
+f     <- 0.75
+g     <- 1.2
 c     <- 40
-j     <- 0.07
+j     <- 0.05
 
 # Risk
 Bu    <- c(0.7, 1, 0.7) # B0, B1, B2 (can concatenate because we will loop over behavior choices?)
