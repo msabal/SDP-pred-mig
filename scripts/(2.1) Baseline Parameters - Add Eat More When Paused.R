@@ -37,8 +37,8 @@ v     <- 0.027
 
 #river growth by speed
 z     <- -0.01
-ka    <- 0.9 # can vary btw 0.8 and 1.3
-kn    <- 1.2 # can vary btw 0.8 and 1.3
+ka    <- 0.9 # can vary btw 0.9 and 1.3
+kn    <- 1.2 # can vary btw 0.9 and 1.3
 
 # ocean growth
 f     <- 0.75

@@ -116,10 +116,10 @@ FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh cho
 } # end function.
 
 #Test Fitness function 
-FITNESS(Wc=1, A=Amax, t=tmax, U=2, Wmax, Amax,
-         E, q, a, Alpha, d, v, f, g, c, j, Bu=Bu[2], Bw, M, m, y, P, z,
-         ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, 
-         seeds=1, F.vec) # # (Expected Fitness) and # (daily survival) and # growth rate (for that time step)!!!!!
+#FITNESS(Wc=1, A=Amax, t=tmax, U=2, Wmax, Amax,
+#         E, q, a, Alpha, d, v, f, g, c, j, Bu=Bu[2], Bw, M, m, y, P, z,
+#         ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, 
+#         seeds=1, F.vec) # # (Expected Fitness) and # (daily survival) and # growth rate (for that time step)!!!!!
 
 
 
@@ -173,15 +173,15 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
 # 
 # 
 # # Check if OVER.BEH works for a specific W and A state for tmax-1.
-Test.beh <- OVER.BEH(Wc=1, A=Amax, t=tmax, U, Wmax, Amax,
-                     E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
-                     ya, yn, yo, dn0, Ba, Bn, Bo, kn, ka,
-                     seeds=1, F.vec)
- head(Test.beh[,,Amax])
- tail(Test.beh[,,Amax])
+#Test.beh <- OVER.BEH(Wc=1, A=Amax, t=tmax, U, Wmax, Amax,
+#                     E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
+#                     ya, yn, yo, dn0, Ba, Bn, Bo, kn, ka,
+#                     seeds=1, F.vec)
+# head(Test.beh[,,Amax])
+# tail(Test.beh[,,Amax])
  # Works!!! Look for a value in column one at W<-# and
  # in rows 731 and 731 where we stored Fit, Beh.best, S.day, and G.day.
- rm(Test.beh)
+# rm(Test.beh)
 
 
 #### OVER.STATES function to apply over BEHAVIORAL CHOICES (move 0, 1, 2) AND AREA (1 to 26).
@@ -228,12 +228,12 @@ OVER.STATES <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh
 
 
 # # check to see if OVER.STATES works and returns Temp.out2
- Test.States <- OVER.STATES(Wc, A, t=tmax-1, U, Wmax, Amax,
-                            E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
-                            ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, 
-                            seeds=1, F.vec)
+# Test.States <- OVER.STATES(Wc, A, t=tmax-1, U, Wmax, Amax,
+#                            E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
+#                            ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, 
+#                            seeds=1, F.vec)
  
- View(Test.States[,,Amax-1]) # works!!
+# View(Test.States[,,Amax-1]) # works!!
 # # View(Test.States[,,Amax]) Col 2 (F(W,t+1)) has values from terminal fitness, optimal choice has to be move 0
 # # View(Test.States[,,Amax-1]) Col 2 (F(W,t+1)) has 0s from terminal fitness, optimal choice can be move 1 or 2
 # # View(Test.States[,,Amax-2]) Col 2 (F(W,t+1)) has 0s from terminal fitness, optimal choice has to be move 2
@@ -462,3 +462,16 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
   return(DF.LONG) # return DF.LONG dataframe by Wstart.
   
 } # end function.
+
+
+# Test MAIN_FUN
+
+#OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+ #               E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+#                ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+#                Ws, r, Smax, W, # vars for Terminal fitness function
+#                Wstep.n, Wstep, tmax, seeds, F.vec)
+
+#colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
+
+#OUT
