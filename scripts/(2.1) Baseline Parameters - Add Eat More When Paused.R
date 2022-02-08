@@ -36,7 +36,7 @@ dn0   <- 0.7
 v     <- 0.027
 
 #river growth by speed
-z     <- -0.01
+z     <- -0.01 # -0.01 when more food when moving slower, 0 to test without this effect.
 ka    <- 0.9 # can vary btw 0.9 and 1.3
 kn    <- 1.2 # can vary btw 0.9 and 1.3
 

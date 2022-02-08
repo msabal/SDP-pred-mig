@@ -16,12 +16,12 @@ curve(TERM.FUN(W, Ws=Ws , r=r, Smax=Smax), xname="W", xlim=c(7,80), ylim=c(0,0.3
 
 #river growth by speed
 z     <- -0.01
-ka    <- 0.9 # can vary btw 0.8 and 1.3
-kn    <- 1.2 # can vary btw 0.8 and 1.3
+ka    <- 0.9 # can vary btw 0.9 and 1.3
+kn    <- 1.2 # can vary btw 0.9 and 1.3
 
 RIVER.Q <- function(U, z, kh) { z*U+kh }
-curve(RIVER.Q(U, z=-0.01, kh=ka), xname="U", xlim=c(0,40), ylim=c(0,1.5))
-curve(RIVER.Q(U, z=-0.01, kh=kn), xname="U", add=T, col="mediumpurple")
+curve(RIVER.Q(U, z=z, kh=ka), xname="U", xlim=c(0,40), ylim=c(0,1.5))
+curve(RIVER.Q(U, z=z, kh=kn), xname="U", add=T, col="mediumpurple")
 abline(h=0.5, col="gray24", lty="dashed")
 
 RIVER.Q(U=0, z=-0.01, kh=ka)

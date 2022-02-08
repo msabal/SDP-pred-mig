@@ -178,7 +178,12 @@ plot_base_growth <- ggplot(data=data.tracks, aes(x=Time, y=W, color=as.factor(Ws
 
 plot_base_growth
 
+setwd("C:/Users/Megan/Desktop/")
+pdf("Baseline_growthtraj.pdf", width=6, height=7)
 
+plot_base_growth
+
+dev.off()
 
 
 # Plot baseline patterns by Wstart (size)
@@ -259,7 +264,7 @@ dev.off()
 # Plot duration by Wstart
 plot_base_dur_by_Wstart <- ggplot(data=DF.LONG, aes(x=Wstart, y=dur)) + 
   geom_line(size=0.5) + geom_point(size=2, shape=21, color="black") +
-  theme_classic() + ylim(c(20,30)) +
+  theme_classic() + ylim(c(15,40)) +
   ylab("Migration duration") + xlab("Starting salmon size (g)") +
   theme(axis.text.y = element_text(size=11), axis.text.x = element_text(size=11),
         axis.title.y = element_text(size=11), axis.title.x = element_text(size=11),
@@ -272,7 +277,7 @@ plot_base_dur_by_Wstart
 # Plot G.riv by Wstart
 plot_base_Griv_by_Wstart <- ggplot(data=DF.LONG, aes(x=Wstart, y=G.riv)) + 
   geom_line(size=0.5) + geom_point(size=2, shape=21, color="black") +
-  theme_classic() + ylim(c(0,5)) +
+  theme_classic() + ylim(c(0,15)) +
   ylab("Grams gained in river") + xlab("Starting salmon size (g)") +
   theme(axis.text.y = element_text(size=11), axis.text.x = element_text(size=11),
         axis.title.y = element_text(size=11), axis.title.x = element_text(size=11),
@@ -281,3 +286,36 @@ plot_base_Griv_by_Wstart <- ggplot(data=DF.LONG, aes(x=Wstart, y=G.riv)) +
 
 
 plot_base_Griv_by_Wstart
+
+
+## Get Summary Data
+
+OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+               E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+                ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+                Ws, r, Smax, W, # vars for Terminal fitness function
+                Wstep.n, Wstep, tmax, seeds, F.vec)
+
+colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
+
+# Calculate Growth per day for river and ocean
+OUT$G.riv.day <- OUT$G.riv / (OUT$dur)
+OUT$G.ocean.day <- OUT$G.ocean / (60-OUT$dur)
+
+OUT
+
+#Summary stats
+mean(OUT$G.riv.day)
+range(OUT$G.riv.day)
+
+mean(OUT$G.ocean.day)
+range(OUT$G.ocean.day)
+
+mean(OUT$dur)
+range(OUT$dur)
+
+mean(OUT$S.cum.riv)
+range(OUT$S.cum.riv)
+
+mean(OUT$Fit)
+range(OUT$Fit)
