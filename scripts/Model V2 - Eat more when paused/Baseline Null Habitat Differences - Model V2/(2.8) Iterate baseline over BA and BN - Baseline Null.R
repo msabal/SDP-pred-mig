@@ -16,8 +16,6 @@ OUT.BA <- list()
 start.time <- Sys.time() # time how long the while loop takes
 
 
-### STOP HERE! NEED TO SWAP Bh to Bn and Ba THROUGHOUT ALL FUNCTIONS AND CODE!!!!
-
 
 # Start looping MAIN_FUN over different qa values
 for(i in 1:length(Ba)) {
@@ -43,7 +41,7 @@ program.duration # 53 mins
 DF.BA<-ldply(OUT.BA, as.vector)
 
 ## Export DF.QA
-write.csv(DF.BA, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BA.csv")
+#write.csv(DF.BA, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BA.V2.Baseline-Null.csv")
 
 
 
@@ -80,7 +78,7 @@ program.duration # 1.83 hours for seeds length = 10!
 DF.BN<-ldply(OUT.BN, as.vector)
 
 ## Export DF.QA
-write.csv(DF.BN, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BN.csv")
+#write.csv(DF.BN, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BN.V2.Baseline-Null.csv")
 
 # Join DF.BA and DF.BN
 
@@ -93,8 +91,8 @@ DF.B <- rbind(DF.BA, DF.BN)
 DF.B$Bn_Ba <- DF.B$Bn / DF.B$Ba   # have ratios up to 10 -  log transform in plots!
 
 ## Export DF.Y
-write.csv(DF.B, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.B.csv")
-DF.B <- read.csv("H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.B.csv", sep=",")
+write.csv(DF.B, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.B.V2.Baseline-Null.csv")
+DF.B <- read.csv("H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.B.V2.Baseline-Null.csv", sep=",")
 
 # Aggregate  by Wstart (salmon size)
 # summarize data for barplot

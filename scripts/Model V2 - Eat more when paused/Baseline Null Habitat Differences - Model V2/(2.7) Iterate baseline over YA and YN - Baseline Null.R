@@ -39,7 +39,7 @@ program.duration # 53 mins
 DF.YA<-ldply(OUT.YA, as.vector)
 
 ## Export DF.QA
-write.csv(DF.YA, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.YA.V2.csv")
+#write.csv(DF.YA, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.YA.V2.csv")
 
 
 
@@ -76,7 +76,7 @@ program.duration # 1.83 hours for seeds length = 10!
 DF.YN<-ldply(OUT.YN, as.vector)
 
 ## Export DF.QA
-write.csv(DF.YN, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.YN.V2.csv")
+#write.csv(DF.YN, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.YN.V2.csv")
 
 
 # Join DF.YA and DF.YN
@@ -90,8 +90,8 @@ DF.Y <- rbind(DF.YA, DF.YN)
 DF.Y$yn_ya <- DF.Y$yn / DF.Y$ya   # have ratios up to 10 -  log transform in plots!
 
 ## Export DF.Y
-write.csv(DF.Y, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.Y.V2.csv")
-DF.Y <- read.csv("H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.Y.V2.csv", sep=",")
+write.csv(DF.Y, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.Y.V2.Baseline-Null.csv")
+DF.Y <- read.csv("H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.Y.V2.Baseline-Null.csv", sep=",")
 
 # Aggregate  by Wstart (salmon size)
 # summarize data for barplot
