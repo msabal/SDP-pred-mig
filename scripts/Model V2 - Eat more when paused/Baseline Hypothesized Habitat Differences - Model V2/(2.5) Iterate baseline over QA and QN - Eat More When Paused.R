@@ -75,7 +75,7 @@ program.duration # 1.83 hours for seeds length = 10!
 
 DF.KN<-ldply(OUT.KN, as.vector)
 
-## Export DF.QN
+## Export DF.KN
 write.csv(DF.KN, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.KN.V2.csv")
 
 # Join DF.QA and DF.QN 
