@@ -5,6 +5,7 @@
 
 # seeds for h.vec
 seeds <- 1 # can change
+N <- 0.5 # percent of natural habitat in river.
 
 # W: salmon weight (g)
 Wmin <- 7
@@ -64,4 +65,4 @@ P     <- 20
 params.list <-c("Wc", "A", "t", "U", "Wmax", "Amax",
                 "E", "q", "a", "Alpha", "d", "v", "f", "g", "c", "j", "Bu", "Bw", "M", "m", "y", "P", "z", 
                 "ya", "yn", "yo", "dn0", "Ba", "Bn", "Bo", "ka", "kn",
-                "seeds", "F.vec")
+                "seeds", "F.vec", "N")
