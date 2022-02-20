@@ -74,7 +74,7 @@ SURV.FUN <-   function(W, Bu, Bh, Bw, M, m, y, P)     { (1-M*(Bu + Bh + Bw*W^m))
 FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                     E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
                     ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
-                    seeds, F.vec) # vectors describing habitats of areas and stored Fitness values
+                    seeds, F.vec, N) # vectors describing habitats of areas and stored Fitness values
   
 { # start of function
   
@@ -82,7 +82,7 @@ FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh cho
   h.vec <- rep(NA, Amax) # create blank vector for habitats for each Area.
   h.vec[Amax] <- "o" # make the last area (Amax) the ocean: "o"
   set.seed(seeds)  # set.seed to keep altered and natural habitat distribution constant for now.
-  h.vec[1:Amax-1] <- sample(0:1, Amax-1, replace=T, prob=c(0.5,0.5))  # randomly sample
+  h.vec[1:Amax-1] <- sample(0:1, Amax-1, replace=T, prob=c(N,1-N))  # randomly sample
   # Amax-1 number of values 0 or 1 with a 50% probability between the two values.
   h.vec[h.vec == "1"] <- "a"  # change 1 from sample function to "a"
   h.vec[h.vec == "0"] <- "n"  # change 0 from sample function to "n"
@@ -119,7 +119,7 @@ FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh cho
 #FITNESS(Wc=1, A=Amax, t=tmax, U=2, Wmax, Amax,
 #         E, q, a, Alpha, d, v, f, g, c, j, Bu=Bu[2], Bw, M, m, y, P, z,
 #         ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, 
-#         seeds=1, F.vec) # # (Expected Fitness) and # (daily survival) and # growth rate (for that time step)!!!!!
+#         seeds=1, F.vec, N) # # (Expected Fitness) and # (daily survival) and # growth rate (for that time step)!!!!!
 
 
 
@@ -132,7 +132,7 @@ FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh cho
 OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                      E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
                      ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
-                     seeds, F.vec)
+                     seeds, F.vec, N)
   
 { # start function
   F.beh.surv <- matrix(NA, 3, 3)  #matrix to save fitness (Fit) from each (3) behavioral choice.
@@ -141,7 +141,7 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
   for(i in 1:length(U)){ F.beh.surv[i,] <- FITNESS(Wc, A, t, U[i], Wmax, Amax,
                                                    E, q, a, Alpha, d, v, f, g, c, j, Bu[i], Bw, M, m, y, P, z,
                                                    ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
-                                                   seeds, F.vec) }
+                                                   seeds, F.vec, N) }
   
   F.best <- max(F.beh.surv[,1])  # Get maximum expected fitness from all three behavioral choices.
   S.day <- ifelse(F.best > 0, F.beh.surv[F.beh.surv[,1] == F.best, 2], NA) # Get the daily survival from the max expected fitness.
@@ -166,7 +166,7 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
 # for(i in 1:length(U)){ F.beh.surv[i,] <- FITNESS(Wc=1, A=Amax, t=tmax, U[i], Wmax, Amax,
 #                                                  E, q, a, Alpha, d, v, f, g, c, j, Bu[i], Bw, M, m, y, P, z,
 #                                                  ya, yn, yo, dn0, Ba, Bn, Bo, kn, ka,
-#                                                  seeds=1, F.vec) }
+#                                                  seeds=1, F.vec, N) }
 # F.beh.surv # Works!!!
 # 
 #rm(F.beh.surv) #remove after done checking.
@@ -193,7 +193,7 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
 OVER.STATES <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                         E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
                         ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
-                        seeds, F.vec)
+                        seeds, F.vec, N)
 { # start function
   
   Store <- array(NA, dim=c(Wstep.n, 4, Amax)) # Array to store all F.best (col 1), Beh.best (col 2), and S.day (col 3), G.day (col 4)
@@ -204,7 +204,7 @@ OVER.STATES <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh
       Temp.out <- OVER.BEH(Wc, A, t, U, Wmax, Amax,
                            E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
                            ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
-                           seeds, F.vec) # this returns Temp.out from OVER.BEH, which looks like...
+                           seeds, F.vec, N) # this returns Temp.out from OVER.BEH, which looks like...
       # an array: (rows: salmon weight (length: Wstep.n+2),
       # 2 cols: F(x,t), F(x, t+1), matrices: area (length: Amax)).
       # Same size as F.vec, but add 2 rows to Wstep.n to save
@@ -231,7 +231,7 @@ OVER.STATES <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh
 # Test.States <- OVER.STATES(Wc, A, t=tmax-1, U, Wmax, Amax,
 #                            E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
 #                            ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, 
-#                            seeds=1, F.vec)
+#                            seeds=1, F.vec, N)
  
 # View(Test.States[,,Amax-1]) # works!!
 # # View(Test.States[,,Amax]) Col 2 (F(W,t+1)) has values from terminal fitness, optimal choice has to be move 0
@@ -289,7 +289,7 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
                      E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
                      ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
                      Ws, r, Smax, W, # vars for Terminal fitness function
-                     Wstep.n, Wstep, tmax, seeds, F.vec)
+                     Wstep.n, Wstep, tmax, seeds, F.vec, N)
 { # start function
   
   #make objects to store loop outputs.
@@ -314,7 +314,7 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
     Temp.out2 <- OVER.STATES(Wc, A, t, U, Wmax, Amax,
                              E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
                              ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
-                             seeds, F.vec)  # Get all F.best, Beh.best, and S.day for all W and A for the current Time.
+                             seeds, F.vec, N )  # Get all F.best, Beh.best, and S.day for all W and A for the current Time.
     # Temp.out2 also has the updated F.vec!
     
     TempF.vec <- Temp.out2[,1:2,] # Get F.vec out of Temp.out2 (first two columns).
@@ -387,7 +387,7 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
   h.vec <- rep(NA, Amax) # create blank vector for habitats for each Area.
   h.vec[Amax] <- "o" # make the last area (Amax) the ocean: "o"
   set.seed(seeds)  # set.seed to keep altered and natural habitat distribution constant for now.
-  h.vec[1:Amax-1] <- sample(0:1, Amax-1, replace=T, prob=c(0.5,0.5))  # randomly sample
+  h.vec[1:Amax-1] <- sample(0:1, Amax-1, replace=T, prob=c(N,1-N))  # randomly sample
   # Amax-1 number of values 0 or 1 with a 50% probability between the two values.
   h.vec[h.vec == "1"] <- "a"  # change 1 from sample function to "a"
   h.vec[h.vec == "0"] <- "n"  # change 0 from sample function to "n"
@@ -470,7 +470,7 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
  #               E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
 #                ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
 #                Ws, r, Smax, W, # vars for Terminal fitness function
-#                Wstep.n, Wstep, tmax, seeds, F.vec)
+#                Wstep.n, Wstep, tmax, seeds, F.vec, N)
 
 #colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
 

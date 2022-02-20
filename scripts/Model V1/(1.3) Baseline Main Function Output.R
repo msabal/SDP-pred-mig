@@ -31,7 +31,7 @@ while(t > 1)
   Temp.out2 <- OVER.STATES(Wc, A, t, U, Wmax, Amax,
                            E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P,
                            qa, qn, ya, yn, yo, dn0, Ba, Bn, Bo,
-                           seeds, F.vec)  # Get all F.best, Beh.best, and S.day for all W and A for the current Time.
+                           seeds, F.vec, N)  # Get all F.best, Beh.best, and S.day for all W and A for the current Time.
   # Temp.out2 also has the updated F.vec!
   
   TempF.vec <- Temp.out2[,1:2,] # Get F.vec out of Temp.out2 (first two columns).
@@ -104,7 +104,7 @@ for(X in 1:length(Wstart)){
 h.vec <- rep(NA, Amax) # create blank vector for habitats for each Area.
 h.vec[Amax] <- "o" # make the last area (Amax) the ocean: "o"
 set.seed(seeds)  # set.seed to keep altered and natural habitat distribution constant for now.
-h.vec[1:Amax-1] <- sample(0:1, Amax-1, replace=T, prob=c(0.5,0.5))  # randomly sample
+h.vec[1:Amax-1] <- sample(0:1, Amax-1, replace=T, prob=c(N,1-N))  # randomly sample
 # Amax-1 number of values 0 or 1 with a 50% probability between the two values.
 h.vec[h.vec == "1"] <- "a"  # change 1 from sample function to "a"
 h.vec[h.vec == "0"] <- "n"  # change 0 from sample function to "n"

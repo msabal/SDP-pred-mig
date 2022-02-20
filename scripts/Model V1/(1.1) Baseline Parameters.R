@@ -5,6 +5,7 @@
 
 # seeds for h.vec
 seeds <- 1 # can change
+N <- 0.5
 
 # W: salmon weight (g)
 Wmin <- 7

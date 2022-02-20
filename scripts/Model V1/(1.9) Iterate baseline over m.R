@@ -20,7 +20,7 @@ for(i in 1:length(m)) {
                   E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m[i], y, P, # vars in functions
                   qa, qn, ya, yn, yo, dn0, Ba, Bn, Bo, # vars that vary by habitat (h.vec)
                   Ws, r, Smax, W, # vars for Terminal fitness function
-                  Wstep.n, Wstep, tmax, seeds, F.vec)
+                  Wstep.n, Wstep, tmax, seeds, F.vec, N)
   
   colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
   

@@ -137,8 +137,8 @@ data.tracks$Wstart <- as.factor(data.tracks$Wstart) # convert Wstart to salmon w
 levels(data.tracks$Wstart) <- c(WctoW(Wstart))
 
 ## Export DF.SEEDS for Figures 1 and 2!
-#write.csv(data.tracks, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BASE.TRACKS.csv")
-#data.tracks <- read.csv("C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BASE.TRACKS.csv", sep=",")
+write.csv(data.tracks, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BASE.TRACKS.csv")
+data.tracks <- read.csv("C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BASE.TRACKS.csv", sep=",")
 
 
 #make vector of how to color A x-axis labels by habitat type.

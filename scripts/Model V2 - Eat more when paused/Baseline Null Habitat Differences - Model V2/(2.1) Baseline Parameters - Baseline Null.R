@@ -39,7 +39,7 @@ v     <- 0.027
 #river growth by speed
 z     <- -0.01 # -0.01 when more food when moving slower, 0 to test without this effect.
 ka    <- 1 # can vary btw 0.9 and 1.3
-kn    <- 1 # can vary btw 0.9 and 1.3
+kn    <- 1.3 # can vary btw 0.9 and 1.3
 
 # ocean growth
 f     <- 0.75

@@ -89,7 +89,7 @@ DF.K <- rbind(DF.KA, DF.KN)
 DF.K$kn_ka <- DF.K$kn / DF.K$ka
 
 
-## Export DF.Q
+## Export DF.K
 write.csv(DF.K, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.K.V2.Baseline-Null.csv")
 DF.K <- read.csv("H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.K.V2.Baseline-Null.csv", sep=",")
 
@@ -109,7 +109,7 @@ levels(bar.cp$h) <- c("Altered", "Natural")
 
 plot_kn_ka <- ggplot(data=bar.cp, aes(x=log(kn_ka), y=p.tot, fill=h, color=h)) + 
   geom_vline(xintercept = 0, linetype="dashed",  color = "gray24", size=0.5) +
-  geom_vline(xintercept = log(1.3/0.9), linetype="dashed",  color = "skyblue", size=0.5) +
+  geom_vline(xintercept = log(1.3/1.3), linetype="dashed",  color = "skyblue", size=0.5) +
   geom_line(size=0.5, aes(color=h)) +
   geom_errorbar(aes(ymax=p.tot + se, ymin=p.tot - se, color=h), width=0, size=0.5) +
   geom_point(size=2, shape=21, color="black") + 
@@ -121,9 +121,9 @@ plot_kn_ka <- ggplot(data=bar.cp, aes(x=log(kn_ka), y=p.tot, fill=h, color=h)) +
         axis.title.y = element_text(size=11), axis.title.x = element_text(size=11),
         legend.title = element_blank(), legend.text = element_text(size=11)) +
   theme(legend.position = c(0.8, 0.8), legend.background = element_rect(fill="transparent")) +
-  annotate(geom="text", x=-0.2, y=1, label="less food\nin natural", color="forestgreen", fontface="bold") +
-  annotate(geom="text", x=0.2, y=1, label="less food\nin altered", color="mediumpurple", fontface="bold") +
-  annotate(geom="text", x=log(1.3/0.9), y=0.5, label="baseline", color="skyblue", fontface="bold")
+  annotate(geom="text", x=-0.2, y=1, label="more food\nin altered", color="mediumpurple", fontface="bold") +
+  annotate(geom="text", x=0.2, y=1, label="more food\nin natural", color="forestgreen", fontface="bold") +
+  annotate(geom="text", x=log(1.3/1.3), y=0.5, label="baseline", color="skyblue", fontface="bold")
 
 
 plot_kn_ka

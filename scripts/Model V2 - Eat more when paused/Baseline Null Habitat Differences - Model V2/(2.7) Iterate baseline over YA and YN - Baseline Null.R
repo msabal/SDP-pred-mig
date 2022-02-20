@@ -107,7 +107,7 @@ levels(bar.cp$h) <- c("Altered", "Natural")
 # Plots!
 plot_yn_ya <- ggplot(data=bar.cp, aes(x=log(yn_ya), y=p.tot, fill=h, color=h)) + 
   geom_vline(xintercept = 0, linetype="dashed",  color = "gray24", size=0.5) +
-  geom_vline(xintercept = log(1/1.03), linetype="dashed",  color = "skyblue", size=0.5) +
+  geom_vline(xintercept = log(1/1), linetype="dashed",  color = "skyblue", size=0.5) +
   geom_line(size=0.5, aes(color=h)) +
   geom_errorbar(aes(ymax=p.tot + se, ymin=p.tot - se, color=h), width=0, size=0.5) +
   geom_point(size=2, shape=21, color="black") + 
@@ -119,9 +119,9 @@ plot_yn_ya <- ggplot(data=bar.cp, aes(x=log(yn_ya), y=p.tot, fill=h, color=h)) +
         axis.title.y = element_text(size=11), axis.title.x = element_text(size=11),
         legend.title = element_blank(), legend.text = element_text(size=11)) +
   theme(legend.position = c(0.8, 0.8), legend.background = element_rect(fill="transparent")) +
-  annotate(geom="text", x=-1.3, y=1, label="lower predator\nabundance in natural", color="forestgreen", fontface="bold") +
-  annotate(geom="text", x=1.3, y=1, label="lower predator\nabundance in altered", color="mediumpurple", fontface="bold") +
-  annotate(geom="text", x=log(1/1.02)-0.5, y=0.8, label="baseline", color="skyblue", fontface="bold")
+  annotate(geom="text", x=-1.3, y=1, label="greater predator\nabundance in altered", color="mediumpurple", fontface="bold") +
+  annotate(geom="text", x=1.3, y=1, label="greater predator\nabundance in natural", color="forestgreen", fontface="bold") +
+  annotate(geom="text", x=log(1/1), y=0.8, label="baseline", color="skyblue", fontface="bold")
 
 plot_yn_ya
 
