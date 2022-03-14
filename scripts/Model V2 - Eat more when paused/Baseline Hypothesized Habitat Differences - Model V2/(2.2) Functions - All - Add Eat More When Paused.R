@@ -82,7 +82,7 @@ FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh cho
   h.vec <- rep(NA, Amax) # create blank vector for habitats for each Area.
   h.vec[Amax] <- "o" # make the last area (Amax) the ocean: "o"
   set.seed(seeds)  # set.seed to keep altered and natural habitat distribution constant for now.
-  h.vec[1:Amax-1] <- sample(0:1, Amax-1, replace=T, prob=c(N,1-N))  # randomly sample
+  h.vec[1:Amax-1] <- sample(0:1, Amax-1, replace=T, prob=c(1-N,N))  # randomly sample
   # Amax-1 number of values 0 or 1 with a 50% probability between the two values.
   h.vec[h.vec == "1"] <- "a"  # change 1 from sample function to "a"
   h.vec[h.vec == "0"] <- "n"  # change 0 from sample function to "n"

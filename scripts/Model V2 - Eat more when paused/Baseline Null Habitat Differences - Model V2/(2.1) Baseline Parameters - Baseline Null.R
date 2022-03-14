@@ -18,7 +18,7 @@ Amin <- 1
 Amax <- 26
 
 # t: time
-tmin <- 1
+tmin <- 15
 tmax <- 60
 # Behavioral choice
 U <- c(0, 1, 2)
@@ -33,13 +33,13 @@ E     <- 0.03
 a     <- 0.86
 Alpha <- 0.00607
 d     <- 1
-dn0   <- 0.7
+dn0   <- 1
 v     <- 0.027
 
 #river growth by speed
 z     <- -0.01 # -0.01 when more food when moving slower, 0 to test without this effect.
-ka    <- 1 # can vary btw 0.9 and 1.3
-kn    <- 1.3 # can vary btw 0.9 and 1.3
+ka    <- 1.1 # can vary btw 0.9 and 1.3
+kn    <- 1.1 # can vary btw 0.9 and 1.3
 
 # ocean growth
 f     <- 0.75
