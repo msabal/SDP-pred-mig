@@ -95,7 +95,7 @@ DF.B <- rbind(DF.BA, DF.BN)
 DF.B$Bn_Ba <- DF.B$Bn / DF.B$Ba   # have ratios up to 10 -  log transform in plots!
 
 ## Export DF.Y
-write.csv(DF.B, "G:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.B.V2.YnGreaterYa.csv")
+write.csv(DF.B, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.B.V2.YnGreaterYa.csv")
 DF.B <- read.csv("G:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.B.V2.YnGreaterYa.csv", sep=",")
 
 # Aggregate  by Wstart (salmon size)
