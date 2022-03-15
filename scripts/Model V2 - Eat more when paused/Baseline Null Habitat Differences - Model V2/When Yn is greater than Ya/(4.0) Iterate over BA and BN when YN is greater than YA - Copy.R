@@ -7,8 +7,8 @@ library(abind); library(ggplot2); library(plyr); library(reshape2)
 options(scipen=999)
 
 #### Reset baseline: there are more predators in natural then altered.
-Yn <- 1     # twice as many predators in natural.
-Ya <- 0.5
+yn <- 1     # twice as many predators in natural.
+ya <- 0.5
 
 #### Iterate Main Function over varying parameters
 Bn <- 1
