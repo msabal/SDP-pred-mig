@@ -138,7 +138,7 @@ levels(data.tracks$Wstart) <- c(WctoW(Wstart))
 
 ## Export DF.SEEDS for Figures 1 and 2!
 write.csv(data.tracks, "C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BASE.TRACKS.csv")
-data.tracks <- read.csv("C:\\Users\\megan\\Google Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BASE.TRACKS.csv", sep=",")
+data.tracks <- read.csv("G:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BASE.TRACKS.csv", sep=",")
 
 
 #make vector of how to color A x-axis labels by habitat type.
@@ -184,6 +184,12 @@ pdf("Baseline_growthtraj.pdf", width=6, height=7)
 plot_base_growth
 
 dev.off()
+
+
+data.tracks
+
+
+
 
 
 # Plot baseline patterns by Wstart (size)
@@ -303,6 +309,11 @@ OUT$G.riv.day <- OUT$G.riv / (OUT$dur)
 OUT$G.ocean.day <- OUT$G.ocean / (60-OUT$dur)
 
 OUT
+
+
+OUT$sgr <- ((log(as.numeric(OUT$Wstart) + OUT$G.riv) - log(as.numeric(OUT$Wstart))) / OUT$dur) *100
+
+hist(OUT$sgr)
 
 #Summary stats
 mean(OUT$G.riv.day)

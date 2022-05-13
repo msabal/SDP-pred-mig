@@ -304,6 +304,12 @@ OUT$G.ocean.day <- OUT$G.ocean / (60-OUT$dur)
 
 OUT
 
+OUT$sgr <- ((log(as.numeric(OUT$Wstart) + OUT$G.riv) - log(as.numeric(OUT$Wstart))) / OUT$dur) *100
+
+hist(OUT$sgr)
+
+
+
 #Summary stats
 mean(OUT$G.riv.day)
 range(OUT$G.riv.day)
