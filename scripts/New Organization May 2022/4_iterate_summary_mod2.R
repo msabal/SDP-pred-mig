@@ -2,6 +2,7 @@
 
 # load libraries
 library(abind); library(ggplot2); library(plyr); library(reshape2)
+library(gridExtra); library(grid)
 
 #remove scientific notation
 options(scipen=999)
@@ -173,18 +174,30 @@ plot_var <- ggplot(data=ag.param, aes(x=ka, y=p.tot, fill=h, color=h)) +
 plot_var
 
 
+# Av. growth plots
+
+fig_gr <- ggplot(data=DF.SUM, aes(x=ka, y=G.riv/dur, color=Wstart)) +
+  geom_line() + geom_point() + theme_classic() + 
+  theme(legend.position = "bottom") + ylim(c(0,1.5))
+fig_gr
+
+fig_go <- ggplot(data=DF.SUM, aes(x=ka, y=G.ocean/(tmax - dur), color=Wstart)) +
+  geom_line() + geom_point() + theme_classic() +
+  theme(legend.position = "bottom") + ylim(c(0,1.5))
+fig_go
 
 ## Save all plots together
-library(gridExtra); library(grid)
 
-grid.arrange(fig_p1, fig_p2, plot_var,
+grid.arrange(fig_p1, plot_var,
+             fig_gr, fig_go,
              nrow = 2,
              bottom=textGrob("PARAMETERS: X, Y, Z"))
 
 
 ggsave(
   "C:/Users/sabalm/Desktop//sdp_ggplot.png",
-  plot = grid.arrange(fig_p1, fig_p2, plot_var,
+  plot = grid.arrange(fig_p1, plot_var,
+                      fig_gr, fig_go,
                       nrow = 2,
                       bottom=textGrob("PARAMETERS: X, Y, Z")),# put ggplot in here...
   width = 10,
