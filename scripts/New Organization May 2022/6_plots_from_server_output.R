@@ -33,10 +33,7 @@ base_dat2 <- base_dat %>%
   mutate(yn_ya = log(yn/ya),  # Calculate natural:altered habitat ratios
          Bn_Ba = log(Bn/Ba),
          kn_ka = log(kn/ka),
-         dn0_d = log(dn0/d)) %>% 
-  mutate(hab_it = ifelse(param_name %in% c("yn", "ya"), "yn_ya", 
-                         ifelse(param_name %in% c("Bn", "Ba"), "Bn_Ba", 
-                                ifelse(param_name %in% c("kn", "ka"), "kn_ka", "dn0_d"))))
+         dn0_d = log(dn0/d))
 
 colnames(base_dat2) # all ratio columns were calculated, just can't see them all in View.
 
@@ -44,14 +41,21 @@ View(base_dat %>% select(baseline, param_value, param_name) %>% distinct()) # hm
 
 
 
+
+
+######################
+## Copy and paste parameter column (e.g., ya_ya, Bn_Ba, dn0) AND iteration (e.g., null, habitat_hypoth)
+
+
 # First plot:
 y_dat <- base_dat2 %>% 
-  filter(hab_it == "Bn_Ba" & h != "o")
+  filter(param_name == "dn0" & h != "o" &  # param_name %in% c("yn", "ya")
+           baseline == "habitat_hypoth")
   
   # 1 - Proportion of moves by habitat: Tot
   
   # summarize data for barplot
-  bar.beh<-aggregate(p.tot ~ h + Beh + Bn_Ba + baseline, data= y_dat, mean)
+  bar.beh<-aggregate(p.tot ~ h + Beh + dn0, data= y_dat, mean) #+ baseline
 sum(bar.beh$p) # this should equal the number of iterations because sum to 1 for each of them.
 
 bar.beh$h<-as.factor(bar.beh$h)
@@ -60,14 +64,70 @@ bar.beh$Beh<-as.factor(bar.beh$Beh)
 bar.beh <- bar.beh[order(bar.beh$h, bar.beh$Beh),]
 
 fig_p1 <- ggplot(data=bar.beh, aes(x=h, y=p.tot, fill=Beh)) + geom_bar(stat="identity", color="black") +
-  facet_wrap(~baseline + Bn_Ba, ncol = 1) + theme_bw() +
+  facet_wrap(~dn0, ncol=10) + theme_bw() +
   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
   theme(legend.key=element_blank(), legend.background=element_blank()) +
   scale_fill_manual(values=c("lightsteelblue2", "steelblue1", "royalblue"), labels = c("move 0 (0 km/d)", "move 1 (20 km/d)", "move 2 (40 km/d)")) +
   theme(legend.title = element_blank()) +
   scale_x_discrete("Shoreline Habitat", labels = c("a" = "Altered","n" = "Natural")) +
   scale_y_continuous("Frequency of movement choices") +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom") + ggtitle(label = "Iteration: habitat_hypoth") +
+  theme(plot.title = element_text(hjust = 0.5))
 fig_p1
 
 
+# 2 - Proportion of moves by habitat: By habitat
+
+# summarize data for barplot
+bar.beh<-aggregate(p ~ h + Beh + dn0, data=y_dat, mean)
+sum(bar.beh$p) # this should equal the number of iterations x2 because sum to 1 for each of them.
+
+bar.beh$h<-as.factor(bar.beh$h)
+bar.beh$Beh<-as.factor(bar.beh$Beh)
+
+bar.beh <- bar.beh[order(bar.beh$h, bar.beh$Beh),]
+
+fig_p2 <- ggplot(data=bar.beh, aes(x=h, y=p, fill=Beh)) + geom_bar(stat="identity", color="black") +
+  facet_wrap(~dn0, ncol=10) + theme_bw() +
+  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank(), legend.background=element_blank()) +
+  scale_fill_manual(values=c("lightsteelblue2", "steelblue1", "royalblue"), labels = c("move 0 (0 km/d)", "move 1 (20 km/d)", "move 2 (40 km/d)")) +
+  theme(legend.title = element_blank()) +
+  scale_x_discrete("Shoreline Habitat", labels = c("a" = "Altered","n" = "Natural")) +
+  scale_y_continuous("Frequency of movement choices") +
+  theme(legend.position = "bottom") + ggtitle(label = "Iteration: habitat_hypoth") +
+  theme(plot.title = element_text(hjust = 0.5))
+fig_p1
+fig_p2
+
+
+# 3 - Freq of move 0 by habitat by iterations
+
+# Aggregate  by Wstart (salmon size)
+ag.param<-aggregate(p.tot ~ h + dn0, data=y_dat, mean)
+a<-aggregate(p.tot ~ h + dn0, data=y_dat, sd); colnames(a)[3]<-"sd"
+b<-aggregate(p.tot ~ h + dn0, data=y_dat, length); colnames(b)[3]<-"n"
+ag.param<-join(ag.param, a); ag.param<-join(ag.param, b)
+ag.param$se<-ag.param$sd / sqrt(ag.param$n)
+
+ag.param$h<-as.factor(ag.param$h)
+levels(ag.param$h) <- c("Altered", "Natural")
+
+
+# Plots!
+
+plot_var <- ggplot(data=ag.param, aes(x=dn0, y=p.tot, fill=h, color=h)) + 
+  geom_line(size=0.5, aes(color=h)) +
+  geom_errorbar(aes(ymax=p.tot + se, ymin=p.tot - se, color=h), width=0, size=0.5) +
+  geom_point(size=2, shape=21, color="black") + 
+  theme_classic() + ylim(c(0,1)) +
+  scale_color_manual(values=c("mediumpurple", "forestgreen")) +
+  scale_fill_manual(values=c("mediumpurple", "forestgreen")) +
+  ylab("Frequency of move 0")  +
+  theme(legend.title = element_blank()) +
+  theme(legend.position = "bottom", legend.background = element_rect(fill="transparent")) + 
+  ggtitle(label = "Iteration: habitat_hypoth") +
+  theme(plot.title = element_text(hjust = 0.5))
+fig_p1
+
+plot_var

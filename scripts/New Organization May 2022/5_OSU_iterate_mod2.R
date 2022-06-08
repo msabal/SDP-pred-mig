@@ -710,7 +710,7 @@ MAIN_FUN_TRACKS <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constra
 
 ## Iterate Main Function over: yn ----
 
-yn <- seq(0.1,0.2, by=0.2)  #seq(0.1,1, by=0.2)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+yn <- seq(0.1,1, by=0.2)
 
 OUT.SUM <- list() # make object to save function output
 
@@ -742,7 +742,7 @@ DF.ALL<-ldply(OUT.SUM, as.vector)
 ## Iterate Main Function over: ya ----
 ya <- seq(0.1,1, by=0.2)
 
-yn <- param_dat['null','yn'] # put yn back to baseline: null
+yn <- param_dat['null','yn'] # put var back to baseline: null
 
 OUT.SUM <- list()
 
@@ -774,7 +774,7 @@ DF.ALL <- rbind(DF.ALL, DF.SUM)
 ## Iterate Main Function over: Bn ----
 ya <- param_dat['null','ya'] # put var back to baseline: null
 
-Bn <- seq(0.1,0.2, by=0.2) # seq(0.1,0.2, by=0.2)!!!!!!!!!!!!!!
+Bn <- seq(0.1,0.2, by=0.2)
 
 OUT.SUM <- list()
 
@@ -804,12 +804,12 @@ DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 
 ## Iterate Main Function over: Ba ----
-Bn <- 1 # put last var back to baseline: null 
+Bn <- param_dat['null','Bn'] # put var back to baseline: null 
 
 Ba <- seq(0.1,1, by=0.2)
 
 
-OUT.SUM2 <- list()
+OUT.SUM <- list()
 
 # Start looping MAIN_FUN over different qa values
 for(i in 1:length(Ba)) {
@@ -826,23 +826,23 @@ for(i in 1:length(Ba)) {
   OUT$param_name <- rep("Ba", length(OUT$Wstart))
   OUT$baseline <- rep("null", length(OUT$Wstart))
   
-  OUT.SUM2[[i]] <- OUT
+  OUT.SUM[[i]] <- OUT
   
 } # end loop.
 
-DF.SUM2<-ldply(OUT.SUM2, as.vector)
+DF.SUM<-ldply(OUT.SUM, as.vector)
 
 # Rbind rows.
-DF.ALL <- rbind(DF.ALL, DF.SUM2)
+DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 
 ## Iterate Main Function over: kn ----
-Ba <- 1 # put last var back to baseline: null 
+Ba <- param_dat['null','Ba'] # put var back to baseline: null 
 
 kn <- seq(0.9,1.3, by=0.1)
 
 
-OUT.SUM2 <- list()
+OUT.SUM <- list()
 
 # Start looping MAIN_FUN over different qa values
 for(i in 1:length(kn)) {
@@ -859,22 +859,22 @@ for(i in 1:length(kn)) {
   OUT$param_name <- rep("kn", length(OUT$Wstart))
   OUT$baseline <- rep("null", length(OUT$Wstart))
   
-  OUT.SUM2[[i]] <- OUT
+  OUT.SUM[[i]] <- OUT
   
 } # end loop.
 
-DF.SUM2<-ldply(OUT.SUM2, as.vector)
+DF.SUM<-ldply(OUT.SUM, as.vector)
 
 # Rbind rows.
-DF.ALL <- rbind(DF.ALL, DF.SUM2)
+DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 ## Iterate Main Function over: ka ----
-kn <- 1.3 # put last var back to baseline: null 
+kn <- param_dat['null','kn'] # put var back to baseline: null 
 
 ka <- seq(0.9,1.3, by=0.1)
 
 
-OUT.SUM2 <- list()
+OUT.SUM <- list()
 
 # Start looping MAIN_FUN over different qa values
 for(i in 1:length(ka)) {
@@ -891,23 +891,23 @@ for(i in 1:length(ka)) {
   OUT$param_name <- rep("ka", length(OUT$Wstart))
   OUT$baseline <- rep("null", length(OUT$Wstart))
   
-  OUT.SUM2[[i]] <- OUT
+  OUT.SUM[[i]] <- OUT
   
 } # end loop.
 
-DF.SUM2<-ldply(OUT.SUM2, as.vector)
+DF.SUM<-ldply(OUT.SUM, as.vector)
 
 # Rbind rows.
-DF.ALL <- rbind(DF.ALL, DF.SUM2)
+DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 
 # Iterate Main Function over: dn0
-ka <- 1.3 # put last var back to baseline: null 
+ka <- param_dat['null','ka'] # put var back to baseline: nulll 
 
 dn0 <- seq(0.1,1, by=0.2)
 
 
-OUT.SUM2 <- list()
+OUT.SUM <- list()
 
 # Start looping MAIN_FUN over different qa values
 for(i in 1:length(dn0)) {
@@ -924,23 +924,23 @@ for(i in 1:length(dn0)) {
   OUT$param_name <- rep("dn0", length(OUT$Wstart))
   OUT$baseline <- rep("null", length(OUT$Wstart))
   
-  OUT.SUM2[[i]] <- OUT
+  OUT.SUM[[i]] <- OUT
   
 } # end loop.
 
-DF.SUM2<-ldply(OUT.SUM2, as.vector)
+DF.SUM<-ldply(OUT.SUM, as.vector)
 
 # Rbind rows.
-DF.ALL <- rbind(DF.ALL, DF.SUM2)
+DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 
 # Iterate Main Function over: dn0
-dn0 <- 1 # put last var back to baseline: null 
+dn0 <- param_dat['null','dn0'] # put var back to baseline: null
 
 d <- seq(0.1,1, by=0.2)
 
 
-OUT.SUM2 <- list()
+OUT.SUM <- list()
 
 # Start looping MAIN_FUN over different qa values
 for(i in 1:length(d)) {
@@ -957,14 +957,14 @@ for(i in 1:length(d)) {
   OUT$param_name <- rep("d", length(OUT$Wstart))
   OUT$baseline <- rep("null", length(OUT$Wstart))
   
-  OUT.SUM2[[i]] <- OUT
+  OUT.SUM[[i]] <- OUT
   
 } # end loop.
 
-DF.SUM2<-ldply(OUT.SUM2, as.vector)
+DF.SUM<-ldply(OUT.SUM, as.vector)
 
 # Rbind rows.
-DF.ALL <- rbind(DF.ALL, DF.SUM2)
+DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 ########################################################
 
@@ -973,61 +973,61 @@ DF.ALL <- rbind(DF.ALL, DF.SUM2)
 # Hypothesized Habitat Differences ----
 
 # seeds for h.vec
-seeds <- 1 # can change
-N <- 0.5  
+seeds <- param_dat['habitat_hypoth','seeds']
+N <- param_dat['habitat_hypoth','N'] 
 
 # W: salmon weight (g)
-Wmin <- 7
-Wmax <- 60   # 
-Wstep <- 0.1 # checked 0.05 steps and no big difference. This is good.
+Wmin <- param_dat['habitat_hypoth','Wmin']
+Wmax <- param_dat['habitat_hypoth','Wmax'] 
+Wstep <- param_dat['habitat_hypoth','Wstep']
 Wstep.n <- ((Wmax-Wmin)/Wstep)
 
 # A: salmon area
-Amin <- 1
-Amax <- 26
+Amin <- param_dat['habitat_hypoth','Amin']
+Amax <- param_dat['habitat_hypoth','Amax']
 
 # t: time
-tmin <- 1
-tmax <- 60
+tmin <- param_dat['habitat_hypoth','tmin']
+tmax <- param_dat['habitat_hypoth','tmax']
 # Behavioral choice
 U <- c(0, 1, 2)
 
 # Terminal fitness
-Ws    <- 40
-r     <- 0.1
-Smax  <- 0.3
+Ws    <- param_dat['habitat_hypoth','Ws']
+r     <- param_dat['habitat_hypoth','r']
+Smax  <- param_dat['habitat_hypoth','Smax']
 
 # Growth
-E     <- 0.03
-a     <- 0.86
-Alpha <- 0.00607
-d     <- 1
-dn0   <- 0.7
-v     <- 0.027
+E     <- param_dat['habitat_hypoth','E']
+a     <- param_dat['habitat_hypoth','a']
+Alpha <- param_dat['habitat_hypoth','Alpha']
+d     <- param_dat['habitat_hypoth','d']
+dn0   <- param_dat['habitat_hypoth','dn0']
+v     <- param_dat['habitat_hypoth','v']
 
 #river growth by speed
-z     <- -0.01 # -0.01 when more food when moving slower, 0 to test without this effect.
-ka    <- 0.9 # can vary btw 0.9 and 1.3
-kn    <- 1.2 # can vary btw 0.9 and 1.3
+z     <- param_dat['habitat_hypoth','z']
+ka    <- param_dat['habitat_hypoth','ka']
+kn    <- param_dat['habitat_hypoth','kn']
 
 # ocean growth
-f     <- 0.75
-g     <- 1.2
-c     <- 40
-j     <- 0.05
+f     <- param_dat['habitat_hypoth','f']
+g     <- param_dat['habitat_hypoth','g']
+c     <- param_dat['habitat_hypoth','c']
+j     <- param_dat['habitat_hypoth','j']
 
 # Risk
 Bu    <- c(0.7, 1, 0.7) # B0, B1, B2 (can concatenate because we will loop over behavior choices?)
-Ba    <- 1
-Bn    <- 0.7 #can change
-Bo    <- 1
-Bw    <- 2
-M     <- 0.002
-m     <- -0.37
-ya    <- 1  #can change
-yn    <- 1  #can change
-yo    <- 1  #can change
-P     <- 20
+Ba    <- param_dat['habitat_hypoth','Ba']
+Bn    <- param_dat['habitat_hypoth','Bn']
+Bo    <- param_dat['habitat_hypoth','Bo']
+Bw    <- param_dat['habitat_hypoth','Bw']
+M     <- param_dat['habitat_hypoth','M']
+m     <- param_dat['habitat_hypoth','m']
+ya    <- param_dat['habitat_hypoth','ya']
+yn    <- param_dat['habitat_hypoth','yn']
+yo    <- param_dat['habitat_hypoth','yo']
+P     <- param_dat['habitat_hypoth','P']
 
 
 ## Iterate Main Function over: yn ----
@@ -1057,18 +1057,18 @@ for(i in 1:length(yn)) {
 } # end loop.
 
 
-DF.SUM2<-ldply(OUT.SUM, as.vector)
+DF.SUM<-ldply(OUT.SUM, as.vector)
 
 # Rbind rows.
-DF.ALL <- rbind(DF.ALL, DF.SUM2)
+DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 
 ## Iterate Main Function over: ya ----
 ya <- seq(0.1,1, by=0.2)
 
-yn <- 1 # put yn back to baseline: habitat_hypoth
+yn <-  param_dat['habitat_hypoth','yn'] # put var back to baseline: null
 
-OUT.SUM2 <- list()
+OUT.SUM <- list()
 
 # Start looping MAIN_FUN over different qa values
 for(i in 1:length(ya)) {
@@ -1085,23 +1085,23 @@ for(i in 1:length(ya)) {
   OUT$param_name <- rep("ya", length(OUT$Wstart))
   OUT$baseline <- rep("habitat_hypoth", length(OUT$Wstart))
   
-  OUT.SUM2[[i]] <- OUT
+  OUT.SUM[[i]] <- OUT
   
 } # end loop.
 
-DF.SUM2<-ldply(OUT.SUM2, as.vector)
+DF.SUM<-ldply(OUT.SUM, as.vector)
 
 # Rbind rows.
-DF.ALL <- rbind(DF.SUM, DF.SUM2)
+DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 
 ## Iterate Main Function over: Bn ----
-ya <- 1 # put last var back to baseline: habitat_hypoth 
+ya <-  param_dat['habitat_hypoth','ya'] # put var back to baseline: null
 
 Bn <- seq(0.1,1, by=0.2)
 
 
-OUT.SUM2 <- list()
+OUT.SUM <- list()
 
 # Start looping MAIN_FUN over different qa values
 for(i in 1:length(Bn)) {
@@ -1118,23 +1118,23 @@ for(i in 1:length(Bn)) {
   OUT$param_name <- rep("Bn", length(OUT$Wstart))
   OUT$baseline <- rep("habitat_hypoth", length(OUT$Wstart))
   
-  OUT.SUM2[[i]] <- OUT
+  OUT.SUM[[i]] <- OUT
   
 } # end loop.
 
-DF.SUM2<-ldply(OUT.SUM2, as.vector)
+DF.SUM<-ldply(OUT.SUM, as.vector)
 
 # Rbind rows.
-DF.ALL <- rbind(DF.ALL, DF.SUM2)
+DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 
 ## Iterate Main Function over: Ba ----
-Bn <- 0.7 # put last var back to baseline: habitat_hypoth 
+Bn <-  param_dat['habitat_hypoth','Bn'] # put var back to baseline: null 
 
 Ba <- seq(0.1,1, by=0.2)
 
 
-OUT.SUM2 <- list()
+OUT.SUM <- list()
 
 # Start looping MAIN_FUN over different qa values
 for(i in 1:length(Ba)) {
@@ -1151,23 +1151,23 @@ for(i in 1:length(Ba)) {
   OUT$param_name <- rep("Ba", length(OUT$Wstart))
   OUT$baseline <- rep("habitat_hypoth", length(OUT$Wstart))
   
-  OUT.SUM2[[i]] <- OUT
+  OUT.SUM[[i]] <- OUT
   
 } # end loop.
 
-DF.SUM2<-ldply(OUT.SUM2, as.vector)
+DF.SUM<-ldply(OUT.SUM, as.vector)
 
 # Rbind rows.
-DF.ALL <- rbind(DF.ALL, DF.SUM2)
+DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 
 ## Iterate Main Function over: kn ----
-Ba <- 1 # put last var back to baseline: habitat_hypoth 
+Ba <-  param_dat['habitat_hypoth','Ba'] # put var back to baseline: null 
 
 kn <- seq(0.9,1.3, by=0.1)
 
 
-OUT.SUM2 <- list()
+OUT.SUM <- list()
 
 # Start looping MAIN_FUN over different qa values
 for(i in 1:length(kn)) {
@@ -1184,22 +1184,22 @@ for(i in 1:length(kn)) {
   OUT$param_name <- rep("kn", length(OUT$Wstart))
   OUT$baseline <- rep("habitat_hypoth", length(OUT$Wstart))
   
-  OUT.SUM2[[i]] <- OUT
+  OUT.SUM[[i]] <- OUT
   
 } # end loop.
 
-DF.SUM2<-ldply(OUT.SUM2, as.vector)
+DF.SUM<-ldply(OUT.SUM, as.vector)
 
 # Rbind rows.
-DF.ALL <- rbind(DF.ALL, DF.SUM2)
+DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 ## Iterate Main Function over: ka ----
-kn <- 1.2 # put last var back to baseline: habitat_hypoth 
+kn <-  param_dat['habitat_hypoth','kn'] # put var back to baseline: null 
 
 ka <- seq(0.9,1.3, by=0.1)
 
 
-OUT.SUM2 <- list()
+OUT.SUM <- list()
 
 # Start looping MAIN_FUN over different qa values
 for(i in 1:length(ka)) {
@@ -1216,23 +1216,23 @@ for(i in 1:length(ka)) {
   OUT$param_name <- rep("ka", length(OUT$Wstart))
   OUT$baseline <- rep("habitat_hypoth", length(OUT$Wstart))
   
-  OUT.SUM2[[i]] <- OUT
+  OUT.SUM[[i]] <- OUT
   
 } # end loop.
 
-DF.SUM2<-ldply(OUT.SUM2, as.vector)
+DF.SUM<-ldply(OUT.SUM, as.vector)
 
 # Rbind rows.
-DF.ALL <- rbind(DF.ALL, DF.SUM2)
+DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 
 # Iterate Main Function over: dn0
-ka <- 0.9 # put last var back to baseline: habitat_hypoth 
+ka <-  param_dat['habitat_hypoth','ka'] # put var back to baseline: null
 
 dn0 <- seq(0.1,1, by=0.2)
 
 
-OUT.SUM2 <- list()
+OUT.SUM <- list()
 
 # Start looping MAIN_FUN over different qa values
 for(i in 1:length(dn0)) {
@@ -1249,23 +1249,23 @@ for(i in 1:length(dn0)) {
   OUT$param_name <- rep("dn0", length(OUT$Wstart))
   OUT$baseline <- rep("habitat_hypoth", length(OUT$Wstart))
   
-  OUT.SUM2[[i]] <- OUT
+  OUT.SUM[[i]] <- OUT
   
 } # end loop.
 
-DF.SUM2<-ldply(OUT.SUM2, as.vector)
+DF.SUM<-ldply(OUT.SUM, as.vector)
 
 # Rbind rows.
-DF.ALL <- rbind(DF.ALL, DF.SUM2)
+DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 
 # Iterate Main Function over: dn0
-dn0 <- 0.7 # put last var back to baseline: habitat_hypoth 
+dn0 <-  param_dat['habitat_hypoth','dn0'] # put var back to baseline: null 
 
 d <- seq(0.1,1, by=0.2)
 
 
-OUT.SUM2 <- list()
+OUT.SUM <- list()
 
 # Start looping MAIN_FUN over different qa values
 for(i in 1:length(d)) {
@@ -1282,14 +1282,14 @@ for(i in 1:length(d)) {
   OUT$param_name <- rep("d", length(OUT$Wstart))
   OUT$baseline <- rep("habitat_hypoth", length(OUT$Wstart))
   
-  OUT.SUM2[[i]] <- OUT
+  OUT.SUM[[i]] <- OUT
   
 } # end loop.
 
-DF.SUM2<-ldply(OUT.SUM2, as.vector)
+DF.SUM<-ldply(OUT.SUM, as.vector)
 
 # Rbind rows.
-DF.ALL <- rbind(DF.ALL, DF.SUM2)
+DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 
 # Export csv file!!!!
