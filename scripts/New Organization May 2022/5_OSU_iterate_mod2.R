@@ -23,64 +23,69 @@ library(abind); library(ggplot2); library(plyr); library(reshape2)
 #remove scientific notation
 options(scipen=999)
 
+# Load parameters tracking
+param_dat <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//raw-data//Parameter_Iterations_Tracking.csv")
+param_dat <- read.csv("Parameter_Iterations_Tracking.csv")
+row.names(param_dat) <- param_dat$baseline
+
 # Parameters: Null Habitat Differences ----
 
 # seeds for h.vec
-seeds <- 1 # can change
-N <- 0.5  
+seeds <- param_dat['null','seeds']
+N <- param_dat['null','N'] 
 
 # W: salmon weight (g)
-Wmin <- 7
-Wmax <- 60   # 
-Wstep <- 0.1 # checked 0.05 steps and no big difference. This is good.
+Wmin <- param_dat['null','Wmin']
+Wmax <- param_dat['null','Wmax'] 
+Wstep <- param_dat['null','Wstep']
 Wstep.n <- ((Wmax-Wmin)/Wstep)
 
 # A: salmon area
-Amin <- 1
-Amax <- 26
+Amin <- param_dat['null','Amin']
+Amax <- param_dat['null','Amax']
 
 # t: time
-tmin <- 1
-tmax <- 60
+tmin <- param_dat['null','tmin']
+tmax <- param_dat['null','tmax']
 # Behavioral choice
 U <- c(0, 1, 2)
 
 # Terminal fitness
-Ws    <- 40
-r     <- 0.1
-Smax  <- 0.3
+Ws    <- param_dat['null','Ws']
+r     <- param_dat['null','r']
+Smax  <- param_dat['null','Smax']
 
 # Growth
-E     <- 0.03
-a     <- 0.86
-Alpha <- 0.00607
-d     <- 1
-dn0   <- 0.7
-v     <- 0.027
+E     <- param_dat['null','E']
+a     <- param_dat['null','a']
+Alpha <- param_dat['null','Alpha']
+d     <- param_dat['null','d']
+dn0   <- param_dat['null','dn0']
+v     <- param_dat['null','v']
 
 #river growth by speed
-z     <- -0.01 # -0.01 when more food when moving slower, 0 to test without this effect.
-ka    <- 1.3 # can vary btw 0.9 and 1.3
-kn    <- 1.3 # can vary btw 0.9 and 1.3
+z     <- param_dat['null','z']
+ka    <- param_dat['null','ka']
+kn    <- param_dat['null','kn']
 
 # ocean growth
-f     <- 0.75
-g     <- 1.2
-c     <- 40
-j     <- 0.05
+f     <- param_dat['null','f']
+g     <- param_dat['null','g']
+c     <- param_dat['null','c']
+j     <- param_dat['null','j']
 
 # Risk
 Bu    <- c(0.7, 1, 0.7) # B0, B1, B2 (can concatenate because we will loop over behavior choices?)
-Ba    <- 1
-Bn    <- 1 #can change
-Bo    <- 1
-Bw    <- 2
-M     <- 0.002
-m     <- -0.37
-ya    <- 1  #can change
-yn    <- 1  #can change
-yo    <- 1  #can change
-P     <- 20
+Ba    <- param_dat['null','Ba']
+Bn    <- param_dat['null','Bn']
+Bo    <- param_dat['null','Bo']
+Bw    <- param_dat['null','Bw']
+M     <- param_dat['null','M']
+m     <- param_dat['null','m']
+ya    <- param_dat['null','ya']
+yn    <- param_dat['null','yn']
+yo    <- param_dat['null','yo']
+P     <- param_dat['null','P']
 #######################################
 
 
@@ -552,11 +557,11 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
 
 # Test MAIN_FUN
 
-OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-                E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-                ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
-                Ws, r, Smax, W, # vars for Terminal fitness function
-                Wstep.n, Wstep, tmax, seeds, F.vec, N)
+# OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+#                 E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+#                 ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+#                 Ws, r, Smax, W, # vars for Terminal fitness function
+#                 Wstep.n, Wstep, tmax, seeds, F.vec, N)
 
 #colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
 
@@ -705,7 +710,7 @@ MAIN_FUN_TRACKS <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constra
 
 ## Iterate Main Function over: yn ----
 
-yn <- seq(0.1,1, by=0.2)
+yn <- seq(0.1,0.2, by=0.2)  #seq(0.1,1, by=0.2)!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 OUT.SUM <- list() # make object to save function output
 
@@ -730,16 +735,16 @@ for(i in 1:length(yn)) {
 } # end loop.
 
 
-DF.SUM<-ldply(OUT.SUM, as.vector)
+DF.ALL<-ldply(OUT.SUM, as.vector)
 
 
 
 ## Iterate Main Function over: ya ----
 ya <- seq(0.1,1, by=0.2)
 
-yn <- 1 # put yn back to baseline: null
+yn <- param_dat['null','yn'] # put yn back to baseline: null
 
-OUT.SUM2 <- list()
+OUT.SUM <- list()
 
 # Start looping MAIN_FUN over different qa values
 for(i in 1:length(ya)) {
@@ -756,23 +761,22 @@ for(i in 1:length(ya)) {
   OUT$param_name <- rep("ya", length(OUT$Wstart))
   OUT$baseline <- rep("null", length(OUT$Wstart))
   
-  OUT.SUM2[[i]] <- OUT
+  OUT.SUM[[i]] <- OUT
   
 } # end loop.
 
-DF.SUM2<-ldply(OUT.SUM2, as.vector)
+DF.SUM<-ldply(OUT.SUM, as.vector)
 
 # Rbind rows.
-DF.ALL <- rbind(DF.SUM, DF.SUM2)
+DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 
 ## Iterate Main Function over: Bn ----
-ya <- 1 # put last var back to baseline: null 
+ya <- param_dat['null','ya'] # put var back to baseline: null
 
-Bn <- seq(0.1,1, by=0.2)
+Bn <- seq(0.1,0.2, by=0.2) # seq(0.1,0.2, by=0.2)!!!!!!!!!!!!!!
 
-
-OUT.SUM2 <- list()
+OUT.SUM <- list()
 
 # Start looping MAIN_FUN over different qa values
 for(i in 1:length(Bn)) {
@@ -789,14 +793,14 @@ for(i in 1:length(Bn)) {
   OUT$param_name <- rep("Bn", length(OUT$Wstart))
   OUT$baseline <- rep("null", length(OUT$Wstart))
   
-  OUT.SUM2[[i]] <- OUT
+  OUT.SUM[[i]] <- OUT
   
 } # end loop.
 
-DF.SUM2<-ldply(OUT.SUM2, as.vector)
+DF.SUM<-ldply(OUT.SUM, as.vector)
 
 # Rbind rows.
-DF.ALL <- rbind(DF.ALL, DF.SUM2)
+DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 
 ## Iterate Main Function over: Ba ----
