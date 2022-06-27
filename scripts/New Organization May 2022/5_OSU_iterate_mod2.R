@@ -24,7 +24,7 @@ library(abind); library(ggplot2); library(plyr); library(reshape2)
 options(scipen=999)
 
 # Load parameters tracking
-param_dat <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//raw-data//Parameter_Iterations_Tracking.csv")
+#param_dat <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//raw-data//Parameter_Iterations_Tracking.csv")
 param_dat <- read.csv("Parameter_Iterations_Tracking.csv")
 row.names(param_dat) <- param_dat$baseline
 
@@ -774,7 +774,7 @@ DF.ALL <- rbind(DF.ALL, DF.SUM)
 ## Iterate Main Function over: Bn ----
 ya <- param_dat['null','ya'] # put var back to baseline: null
 
-Bn <- seq(0.1,0.2, by=0.2)
+Bn <- seq(0.1,1, by=0.2)
 
 OUT.SUM <- list()
 
@@ -840,7 +840,7 @@ DF.ALL <- rbind(DF.ALL, DF.SUM)
 Ba <- param_dat['null','Ba'] # put var back to baseline: null 
 
 kn <- seq(0.9,1.3, by=0.1)
-
+kn[5] <- 1.35 # shift slightly so not to get a zero when log(kn/ka)
 
 OUT.SUM <- list()
 
@@ -872,7 +872,7 @@ DF.ALL <- rbind(DF.ALL, DF.SUM)
 kn <- param_dat['null','kn'] # put var back to baseline: null 
 
 ka <- seq(0.9,1.3, by=0.1)
-
+ka[5] <- 1.28 # shift slightly so not to get a zero in log(kn/ka)
 
 OUT.SUM <- list()
 
@@ -901,7 +901,7 @@ DF.SUM<-ldply(OUT.SUM, as.vector)
 DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 
-# Iterate Main Function over: dn0
+## Iterate Main Function over: dn0 ----
 ka <- param_dat['null','ka'] # put var back to baseline: nulll 
 
 dn0 <- seq(0.1,1, by=0.2)
@@ -934,7 +934,7 @@ DF.SUM<-ldply(OUT.SUM, as.vector)
 DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 
-# Iterate Main Function over: dn0
+## Iterate Main Function over: d ----
 dn0 <- param_dat['null','dn0'] # put var back to baseline: null
 
 d <- seq(0.1,1, by=0.2)
@@ -1132,6 +1132,7 @@ DF.ALL <- rbind(DF.ALL, DF.SUM)
 Bn <-  param_dat['habitat_hypoth','Bn'] # put var back to baseline: null 
 
 Ba <- seq(0.1,1, by=0.2)
+Ba[4] <- 0.75 # shift a little so don't end up with a zero log(Bn/Ba)
 
 
 OUT.SUM <- list()
@@ -1165,7 +1166,8 @@ DF.ALL <- rbind(DF.ALL, DF.SUM)
 Ba <-  param_dat['habitat_hypoth','Ba'] # put var back to baseline: null 
 
 kn <- seq(0.9,1.3, by=0.1)
-
+kn[1]<- 9.3 # shift slightly to avoid zero in log(kn/ka)
+kn[4]<- 0.87 # shift to avoid a duplicate value and add another point where ka > kn.
 
 OUT.SUM <- list()
 
@@ -1197,7 +1199,7 @@ DF.ALL <- rbind(DF.ALL, DF.SUM)
 kn <-  param_dat['habitat_hypoth','kn'] # put var back to baseline: null 
 
 ka <- seq(0.9,1.3, by=0.1)
-
+ka[4]<-1.25 # shift slightly so not to get a zero in log(kn/ka)
 
 OUT.SUM <- list()
 
@@ -1226,7 +1228,7 @@ DF.SUM<-ldply(OUT.SUM, as.vector)
 DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 
-# Iterate Main Function over: dn0
+## Iterate Main Function over: dn0 ----
 ka <-  param_dat['habitat_hypoth','ka'] # put var back to baseline: null
 
 dn0 <- seq(0.1,1, by=0.2)
@@ -1259,11 +1261,11 @@ DF.SUM<-ldply(OUT.SUM, as.vector)
 DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 
-# Iterate Main Function over: dn0
+## Iterate Main Function over: d ----
 dn0 <-  param_dat['habitat_hypoth','dn0'] # put var back to baseline: null 
 
 d <- seq(0.1,1, by=0.2)
-
+d[4] <- 0.75 # shift slightly to don't end up with zero for log(dn0/d)
 
 OUT.SUM <- list()
 
