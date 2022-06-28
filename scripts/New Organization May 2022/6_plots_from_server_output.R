@@ -53,7 +53,10 @@ freq_fun <- function(x, iter, beh){
   ag_dat$h<-as.factor(ag_dat$h)
   levels(ag_dat$h) <- c("Altered", "Natural")
   
+  vline_base <- param_dat %>% filter(baseline == iter) %>% select(x) %>% pull()
+  
   ggplot(ag_dat, aes(x=.data[[x]], y=(mean), fill=h, color=h)) +
+    geom_vline(xintercept = vline_base, linetype="dashed", size=1, color="lightblue") +
     geom_vline(xintercept = 0, color="gray80", size=1, linetype="dashed") +
     geom_line(size=0.5, aes(color=h)) + geom_errorbar(aes(ymax=mean+se, ymin=mean-se, color=h), width=0, size=0.5) +
     geom_point(size=2, shape=21, color="black") + theme_classic() +
@@ -63,15 +66,15 @@ freq_fun <- function(x, iter, beh){
     theme(legend.title=element_blank(), legend.position= "bottom") + ylim(values=c(0,1))
 }
 
-p_y1 <- freq_fun(x="yn_ya", iter = "null", beh=2); p_y1
-p_b1 <- freq_fun(x="Bn_Ba", iter = "null", beh=2); p_b1
-p_k1 <- freq_fun(x="kn_ka", iter = "null", beh=2); p_k1
-p_d1 <- freq_fun(x="dn0_d", iter = "null", beh=2); p_d1
+p_y1 <- freq_fun(x="yn_ya", iter = "null", beh=0); p_y1
+p_b1 <- freq_fun(x="Bn_Ba", iter = "null", beh=0); p_b1
+p_k1 <- freq_fun(x="kn_ka", iter = "null", beh=0); p_k1
+p_d1 <- freq_fun(x="dn0_d", iter = "null", beh=0); p_d1
 
-p_y2 <- freq_fun(x="yn_ya", iter = "habitat_hypoth", beh=2); p_y2
-p_b2 <- freq_fun(x="Bn_Ba", iter = "habitat_hypoth", beh=2); p_b2
-p_k2 <- freq_fun(x="kn_ka", iter = "habitat_hypoth", beh=2); p_k2
-p_d2 <- freq_fun(x="dn0_d", iter = "habitat_hypoth", beh=2); p_d2
+p_y2 <- freq_fun(x="yn_ya", iter = "habitat_hypoth", beh=0); p_y2
+p_b2 <- freq_fun(x="Bn_Ba", iter = "habitat_hypoth", beh=0); p_b2
+p_k2 <- freq_fun(x="kn_ka", iter = "habitat_hypoth", beh=0); p_k2
+p_d2 <- freq_fun(x="dn0_d", iter = "habitat_hypoth", beh=0); p_d2
 
 grid.arrange(p_y1, p_b1, p_k1, p_d1, 
              p_y2, p_b2, p_k2, p_d2, ncol=4)
