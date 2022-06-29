@@ -1166,8 +1166,8 @@ DF.ALL <- rbind(DF.ALL, DF.SUM)
 Ba <-  param_dat['habitat_hypoth','Ba'] # put var back to baseline: null 
 
 kn <- seq(0.9,1.3, by=0.1)
-kn[1]<- 9.3 # shift slightly to avoid zero in log(kn/ka)
-kn[4]<- 0.87 # shift to avoid a duplicate value and add another point where ka > kn.
+kn[1]<- 0.95 # shift slightly to avoid zero in log(kn/ka)
+kn[4]<- 1.21 # shift to avoid a duplicate value and add another point where ka > kn.
 
 OUT.SUM <- list()
 
