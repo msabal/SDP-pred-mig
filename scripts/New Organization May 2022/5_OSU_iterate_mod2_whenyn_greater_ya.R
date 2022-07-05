@@ -807,44 +807,44 @@ DF.SUM<-ldply(OUT.SUM, as.vector)
 DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 
-## Iterate Main Function over: Bn + kn when yn > ya ----
-dn0 <- param_dat['null','dn0'] # put var back to baseline: null 
-
-# make data.frame of all possible combinations of the three other habitat vars EXCEPT yn and ya.
-df <- data.frame(Bn = seq(0.1, 0.9, length.out=5), 
-           ka = seq(0.9, 1.3, length.out=5),
-           dn0 = seq(0.1, 0.9, length.out=5))
-
-df_expand <- expand.grid(df) # this would be cool....but 125 iterations! My other script runs 80 interactions and takes about 1.5 days. This could take 2.5 days to run.
-df_expand$index <- seq(1, length(df_expand$Bn), by=1)
-
-# practice
-#df_expand <- df_expand[1:2,]
-
-OUT.SUM <- list()
-
-# Start looping MAIN_FUN over different qa values
-for(i in 1:length(df_expand$Bn)) {
-  
-  OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-                  ya, yn, yo, dn0=df_expand[i,3], Ba, Bn=df_expand[i,1], Bo, ka=df_expand[i,2], kn, # vars that vary by habitat (h.vec)
-                  Ws, r, Smax, W, # vars for Terminal fitness function
-                  Wstep.n, Wstep, tmax, seeds, F.vec, N)
-  
-  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
-  
-  OUT$iter_index <- rep(df_expand[i,4], length(OUT$Wstart)) # add column with seeds value for that iteration.
-  
-  OUT.SUM[[i]] <- OUT
-  
-} # end loop.
-
-DF.SUM<-ldply(OUT.SUM, as.vector)
-
-
-# Rbind rows.
-DF.ALL <- rbind(DF.ALL, DF.SUM)
+# ## Iterate Main Function over: Bn + kn when yn > ya ----
+# dn0 <- param_dat['null','dn0'] # put var back to baseline: null 
+# 
+# # make data.frame of all possible combinations of the three other habitat vars EXCEPT yn and ya.
+# df <- data.frame(Bn = seq(0.1, 0.9, length.out=5), 
+#            ka = seq(0.9, 1.3, length.out=5),
+#            dn0 = seq(0.1, 0.9, length.out=5))
+# 
+# df_expand <- expand.grid(df) # this would be cool....but 125 iterations! My other script runs 80 interactions and takes about 1.5 days. This could take 2.5 days to run.
+# df_expand$index <- seq(1, length(df_expand$Bn), by=1)
+# 
+# # practice
+# #df_expand <- df_expand[1:2,]
+# 
+# OUT.SUM <- list()
+# 
+# # Start looping MAIN_FUN over different qa values
+# for(i in 1:length(df_expand$Bn)) {
+#   
+#   OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+#                   E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+#                   ya, yn, yo, dn0=df_expand[i,3], Ba, Bn=df_expand[i,1], Bo, ka=df_expand[i,2], kn, # vars that vary by habitat (h.vec)
+#                   Ws, r, Smax, W, # vars for Terminal fitness function
+#                   Wstep.n, Wstep, tmax, seeds, F.vec, N)
+#   
+#   colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
+#   
+#   OUT$iter_index <- rep(df_expand[i,4], length(OUT$Wstart)) # add column with seeds value for that iteration.
+#   
+#   OUT.SUM[[i]] <- OUT
+#   
+# } # end loop.
+# 
+# DF.SUM<-ldply(OUT.SUM, as.vector)
+# 
+# 
+# # Rbind rows.
+# DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 # Export csv file!!!!
 write.csv(DF.ALL, "iterate_when_yn_greater_ya.csv")

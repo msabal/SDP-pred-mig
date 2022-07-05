@@ -37,7 +37,7 @@ base_dat2 <- base_dat %>%
 
 colnames(base_dat2) # all ratio columns were calculated, just can't see them all in View.
 
-View(base_dat2 %>% select(baseline, param_value, param_name, yn_ya, Bn_Ba, kn_ka, dn0_d) %>% distinct()) # hmmm missing a bunch of null iterations...
+#View(base_dat2 %>% select(baseline, param_value, param_name, yn_ya, Bn_Ba, kn_ka, dn0_d) %>% distinct()) # hmmm missing a bunch of null iterations...
 base_dat %>% select(baseline, param_value, param_name) %>% distinct() %>% group_by(baseline,param_name) %>% count() # good, each baseline + param_name has 5 iterations.
 
 
@@ -66,21 +66,21 @@ freq_fun <- function(x, iter, beh){
     theme(legend.title=element_blank(), legend.position= "bottom") + ylim(values=c(0,1))
 }
 
-p_y1 <- freq_fun(x="yn_ya", iter = "null", beh=0); p_y1
-p_b1 <- freq_fun(x="Bn_Ba", iter = "null", beh=0); p_b1
-p_k1 <- freq_fun(x="kn_ka", iter = "null", beh=0); p_k1
-p_d1 <- freq_fun(x="dn0_d", iter = "null", beh=0); p_d1
+p_y1 <- freq_fun(x="yn_ya", iter = "null", beh=2); p_y1
+p_b1 <- freq_fun(x="Bn_Ba", iter = "null", beh=2); p_b1
+p_k1 <- freq_fun(x="kn_ka", iter = "null", beh=2); p_k1
+p_d1 <- freq_fun(x="dn0_d", iter = "null", beh=2); p_d1
 
-p_y2 <- freq_fun(x="yn_ya", iter = "habitat_hypoth", beh=0); p_y2
-p_b2 <- freq_fun(x="Bn_Ba", iter = "habitat_hypoth", beh=0); p_b2
-p_k2 <- freq_fun(x="kn_ka", iter = "habitat_hypoth", beh=0); p_k2
-p_d2 <- freq_fun(x="dn0_d", iter = "habitat_hypoth", beh=0); p_d2
+p_y2 <- freq_fun(x="yn_ya", iter = "habitat_hypoth", beh=2); p_y2
+p_b2 <- freq_fun(x="Bn_Ba", iter = "habitat_hypoth", beh=2); p_b2
+p_k2 <- freq_fun(x="kn_ka", iter = "habitat_hypoth", beh=2); p_k2
+p_d2 <- freq_fun(x="dn0_d", iter = "habitat_hypoth", beh=2); p_d2
 
 grid.arrange(p_y1, p_b1, p_k1, p_d1, 
              p_y2, p_b2, p_k2, p_d2, ncol=4)
 
 setwd("C:/Users/sabalm/Desktop/")
-pdf("Freq_plots_null_habitat_2.pdf", width=12, height=6)
+pdf("Freq_plots_null_habitat.pdf", width=12, height=6)
 
 grid.arrange(p_y1, p_b1, p_k1, p_d1, 
              p_y2, p_b2, p_k2, p_d2, ncol=4)
@@ -112,6 +112,78 @@ p.tot_fun <- function(x, iter){
 }
 
 p.tot_fun(x="yn_ya", iter="null") # this works, but we perhaps don't want all these plots.
+p.tot_fun(x="Bn_Ba", iter="null") # this works, but we perhaps don't want all these plots.
+p.tot_fun(x="kn_ka", iter="null") # this works, but we perhaps don't want all these plots.
+p.tot_fun(x="dn0_d", iter="null") # this works, but we perhaps don't want all these plots.
+
+
+
+####### p.tot
+
+p.tot_fun <- function(x, iter){
+  ag_dat <- base_dat2 %>% filter(baseline == iter & h != "o" & UQ(sym(x)) != 0) %>%
+    group_by(baseline, .data[[x]], h, Beh) %>% summarise(mean = mean(p.tot))
+  
+  ag_dat$h<-as.factor(ag_dat$h)
+  ag_dat$Beh<-as.factor(ag_dat$Beh)
+  ag_dat <- ag_dat[order(ag_dat$h, ag_dat$Beh),]
+  
+  ggplot(data=ag_dat, aes(x=h, y=mean, fill=Beh)) + geom_bar(stat="identity", color="black") +
+    facet_wrap(~.data[[x]], ncol=10) + theme_bw() +
+    theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+    theme(legend.key=element_blank(), legend.background=element_blank()) +
+    scale_fill_manual(values=c("lightsteelblue2", "steelblue1", "royalblue"), labels = c("move 0 (0 km/d)", "move 1 (20 km/d)", "move 2 (40 km/d)")) +
+    theme(legend.title = element_blank()) +
+    scale_x_discrete("Shoreline Habitat", labels = c("a" = "Altered","n" = "Natural")) +
+    scale_y_continuous("Frequency of movement choices") +
+    theme(legend.position = "bottom") + ggtitle(label = str_c("Iteration: null & ", x)) +
+    theme(plot.title = element_text(hjust = 0.5))
+}
+
+p.tot_fun(x="yn_ya", iter="null") # this works, but we perhaps don't want all these plots.
+p.tot_fun(x="Bn_Ba", iter="null") # this works, but we perhaps don't want all these plots.
+p.tot_fun(x="kn_ka", iter="null") # this works, but we perhaps don't want all these plots.
+p.tot_fun(x="dn0_d", iter="null") # this works, but we perhaps don't want all these plots.
+
+p.tot_fun(x="yn_ya", iter="habitat_hypoth") # this works, but we perhaps don't want all these plots.
+p.tot_fun(x="Bn_Ba", iter="habitat_hypoth") # this works, but we perhaps don't want all these plots.
+p.tot_fun(x="kn_ka", iter="habitat_hypoth") # this works, but we perhaps don't want all these plots.
+p.tot_fun(x="dn0_d", iter="habitat_hypoth") # this works, but we perhaps don't want all these plots.
+
+
+####### p
+
+p_fun <- function(x, iter){
+  ag_dat <- base_dat2 %>% filter(baseline == iter & h != "o" & UQ(sym(x)) != 0) %>%
+    group_by(baseline, .data[[x]], h, Beh) %>% summarise(mean = mean(p))
+  
+  ag_dat$h<-as.factor(ag_dat$h)
+  ag_dat$Beh<-as.factor(ag_dat$Beh)
+  ag_dat <- ag_dat[order(ag_dat$h, ag_dat$Beh),]
+  
+  ggplot(data=ag_dat, aes(x=h, y=mean, fill=Beh)) + geom_bar(stat="identity", color="black") +
+    facet_wrap(~.data[[x]], ncol=10) + theme_bw() +
+    theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+    theme(legend.key=element_blank(), legend.background=element_blank()) +
+    scale_fill_manual(values=c("lightsteelblue2", "steelblue1", "royalblue"), labels = c("move 0 (0 km/d)", "move 1 (20 km/d)", "move 2 (40 km/d)")) +
+    theme(legend.title = element_blank()) +
+    scale_x_discrete("Shoreline Habitat", labels = c("a" = "Altered","n" = "Natural")) +
+    scale_y_continuous("Frequency of movement choices") +
+    theme(legend.position = "bottom") + ggtitle(label = str_c("Iteration: null & ", x)) +
+    theme(plot.title = element_text(hjust = 0.5))
+}
+
+p_fun(x="yn_ya", iter="null") # this works, but we perhaps don't want all these plots.
+p_fun(x="Bn_Ba", iter="null") # this works, but we perhaps don't want all these plots.
+p_fun(x="kn_ka", iter="null") # this works, but we perhaps don't want all these plots.
+p_fun(x="dn0_d", iter="null") # this works, but we perhaps don't want all these plots.
+
+p_fun(x="yn_ya", iter="habitat_hypoth") # this works, but we perhaps don't want all these plots.
+p_fun(x="Bn_Ba", iter="habitat_hypoth") # this works, but we perhaps don't want all these plots.
+p_fun(x="kn_ka", iter="habitat_hypoth") # this works, but we perhaps don't want all these plots.
+p_fun(x="dn0_d", iter="habitat_hypoth") # this works, but we perhaps don't want all these plots.
+
+
 
 
 
@@ -120,32 +192,6 @@ p.tot_fun(x="yn_ya", iter="null") # this works, but we perhaps don't want all th
 y_dat <- base_dat2 %>% 
   filter(param_name %in% c("yn", "ya") & h != "o" &  # param_name %in% c("yn", "ya")
            baseline == "null")
-
-# 1 - Proportion of moves by habitat: Tot
-
-# summarize data for barplot
-bar.beh<-aggregate(p.tot ~ h + Beh + yn_ya, data= y_dat, mean) #+ baseline
-sum(bar.beh$p) # this should equal the number of iterations because sum to 1 for each of them.
-
-bar.beh$h<-as.factor(bar.beh$h)
-bar.beh$Beh<-as.factor(bar.beh$Beh)
-
-bar.beh <- bar.beh[order(bar.beh$h, bar.beh$Beh),]
-
-fig_p1 <- ggplot(data=bar.beh, aes(x=h, y=p.tot, fill=Beh)) + geom_bar(stat="identity", color="black") +
-  facet_wrap(~yn_ya, ncol=10) + theme_bw() +
-  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
-  theme(legend.key=element_blank(), legend.background=element_blank()) +
-  scale_fill_manual(values=c("lightsteelblue2", "steelblue1", "royalblue"), labels = c("move 0 (0 km/d)", "move 1 (20 km/d)", "move 2 (40 km/d)")) +
-  theme(legend.title = element_blank()) +
-  scale_x_discrete("Shoreline Habitat", labels = c("a" = "Altered","n" = "Natural")) +
-  scale_y_continuous("Frequency of movement choices") +
-  theme(legend.position = "bottom") + ggtitle(label = "Iteration: null & yn_ya") +
-  theme(plot.title = element_text(hjust = 0.5))
-fig_p1
-
-
-
 
 
 
