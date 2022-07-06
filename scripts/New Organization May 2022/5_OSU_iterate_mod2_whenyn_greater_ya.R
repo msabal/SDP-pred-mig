@@ -713,128 +713,57 @@ MAIN_FUN_TRACKS <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constra
 ya <- 0.7 # 30% less
 yn <- 1
 
-# Can Bn > Ba ever cause salmon to still optimally pause in natural?
-Bn <- seq(0.1, 1, by=0.1)
-Ba <- 1
-
-OUT.SUM <- list() # make object to save function output
-
-
-# Start looping MAIN_FUN over different parameter values
-for(i in 1:length(Bn)) {
-  
-  OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-                  ya, yn, yo, dn0, Ba, Bn[i], Bo, ka, kn, # vars that vary by habitat (h.vec)
-                  Ws, r, Smax, W, # vars for Terminal fitness function
-                  Wstep.n, Wstep, tmax, seeds, F.vec, N)
-  
-  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
-  
-  OUT$param_value <- rep(Bn[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
-  OUT$param_name <- rep("Bn", length(OUT$Wstart))
-  OUT$baseline <- rep("null", length(OUT$Wstart))
-  
-  OUT.SUM[[i]] <- OUT
-  
-} # end loop.
-
-
-DF.ALL<-ldply(OUT.SUM, as.vector)  
-  
-
-## Iterate Main Function over: kn when yn > ya ----
-Bn <- param_dat['null','Bn'] # put var back to baseline: null 
-
-kn <- seq(0.9,1.3, by=0.1)
-
-OUT.SUM <- list()
-
-# Start looping MAIN_FUN over different qa values
-for(i in 1:length(kn)) {
-  
-  OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-                  ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn[i], # vars that vary by habitat (h.vec)
-                  Ws, r, Smax, W, # vars for Terminal fitness function
-                  Wstep.n, Wstep, tmax, seeds, F.vec, N)
-  
-  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
-  
-  OUT$param_value <- rep(kn[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
-  OUT$param_name <- rep("kn", length(OUT$Wstart))
-  OUT$baseline <- rep("null", length(OUT$Wstart))
-  
-  OUT.SUM[[i]] <- OUT
-  
-} # end loop.
-
-DF.SUM<-ldply(OUT.SUM, as.vector)
-
-# Rbind rows.
-DF.ALL <- rbind(DF.ALL, DF.SUM)
-
-
-## Iterate Main Function over: dn0 when yn > ya ----
-kn <- param_dat['null','kn'] # put var back to baseline: null 
-
-dn0 <- seq(0.1,1, by=0.1)
-
-OUT.SUM <- list()
-
-# Start looping MAIN_FUN over different qa values
-for(i in 1:length(dn0)) {
-  
-  OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-                  ya, yn, yo, dn0[i], Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
-                  Ws, r, Smax, W, # vars for Terminal fitness function
-                  Wstep.n, Wstep, tmax, seeds, F.vec, N)
-  
-  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
-  
-  OUT$param_value <- rep(dn0[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
-  OUT$param_name <- rep("dn0", length(OUT$Wstart))
-  OUT$baseline <- rep("null", length(OUT$Wstart))
-  
-  OUT.SUM[[i]] <- OUT
-  
-} # end loop.
-
-DF.SUM<-ldply(OUT.SUM, as.vector)
-
-# Rbind rows.
-DF.ALL <- rbind(DF.ALL, DF.SUM)
-
-
-# ## Iterate Main Function over: Bn + kn when yn > ya ----
-# dn0 <- param_dat['null','dn0'] # put var back to baseline: null 
+# # Can Bn > Ba ever cause salmon to still optimally pause in natural?
+# Bn <- seq(0.1, 1, by=0.1)
+# Ba <- 1
 # 
-# # make data.frame of all possible combinations of the three other habitat vars EXCEPT yn and ya.
-# df <- data.frame(Bn = seq(0.1, 0.9, length.out=5), 
-#            ka = seq(0.9, 1.3, length.out=5),
-#            dn0 = seq(0.1, 0.9, length.out=5))
+# OUT.SUM <- list() # make object to save function output
 # 
-# df_expand <- expand.grid(df) # this would be cool....but 125 iterations! My other script runs 80 interactions and takes about 1.5 days. This could take 2.5 days to run.
-# df_expand$index <- seq(1, length(df_expand$Bn), by=1)
 # 
-# # practice
-# #df_expand <- df_expand[1:2,]
-# 
-# OUT.SUM <- list()
-# 
-# # Start looping MAIN_FUN over different qa values
-# for(i in 1:length(df_expand$Bn)) {
+# # Start looping MAIN_FUN over different parameter values
+# for(i in 1:length(Bn)) {
 #   
 #   OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
 #                   E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-#                   ya, yn, yo, dn0=df_expand[i,3], Ba, Bn=df_expand[i,1], Bo, ka=df_expand[i,2], kn, # vars that vary by habitat (h.vec)
+#                   ya, yn, yo, dn0, Ba, Bn[i], Bo, ka, kn, # vars that vary by habitat (h.vec)
 #                   Ws, r, Smax, W, # vars for Terminal fitness function
 #                   Wstep.n, Wstep, tmax, seeds, F.vec, N)
 #   
 #   colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
 #   
-#   OUT$iter_index <- rep(df_expand[i,4], length(OUT$Wstart)) # add column with seeds value for that iteration.
+#   OUT$param_value <- rep(Bn[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
+#   OUT$param_name <- rep("Bn", length(OUT$Wstart))
+#   OUT$baseline <- rep("null", length(OUT$Wstart))
+#   
+#   OUT.SUM[[i]] <- OUT
+#   
+# } # end loop.
+# 
+# 
+# DF.ALL<-ldply(OUT.SUM, as.vector)  
+#   
+# 
+# ## Iterate Main Function over: ka when yn > ya ----
+# Bn <- param_dat['null','Bn'] # put var back to baseline: null 
+# 
+# ka <- seq(0.9,1.3, by=0.1)
+# 
+# OUT.SUM <- list()
+# 
+# # Start looping MAIN_FUN over different qa values
+# for(i in 1:length(kn)) {
+#   
+#   OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+#                   E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+#                   ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn[i], # vars that vary by habitat (h.vec)
+#                   Ws, r, Smax, W, # vars for Terminal fitness function
+#                   Wstep.n, Wstep, tmax, seeds, F.vec, N)
+#   
+#   colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
+#   
+#   OUT$param_value <- rep(kn[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
+#   OUT$param_name <- rep("kn", length(OUT$Wstart))
+#   OUT$baseline <- rep("null", length(OUT$Wstart))
 #   
 #   OUT.SUM[[i]] <- OUT
 #   
@@ -842,9 +771,80 @@ DF.ALL <- rbind(DF.ALL, DF.SUM)
 # 
 # DF.SUM<-ldply(OUT.SUM, as.vector)
 # 
+# # Rbind rows.
+# DF.ALL <- rbind(DF.ALL, DF.SUM)
+# 
+# 
+# ## Iterate Main Function over: dn0 when yn > ya ----
+# kn <- param_dat['null','kn'] # put var back to baseline: null 
+# 
+# dn0 <- seq(0.1,1, by=0.1)
+# 
+# OUT.SUM <- list()
+# 
+# # Start looping MAIN_FUN over different qa values
+# for(i in 1:length(dn0)) {
+#   
+#   OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+#                   E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+#                   ya, yn, yo, dn0[i], Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+#                   Ws, r, Smax, W, # vars for Terminal fitness function
+#                   Wstep.n, Wstep, tmax, seeds, F.vec, N)
+#   
+#   colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
+#   
+#   OUT$param_value <- rep(dn0[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
+#   OUT$param_name <- rep("dn0", length(OUT$Wstart))
+#   OUT$baseline <- rep("null", length(OUT$Wstart))
+#   
+#   OUT.SUM[[i]] <- OUT
+#   
+# } # end loop.
+# 
+# DF.SUM<-ldply(OUT.SUM, as.vector)
 # 
 # # Rbind rows.
 # DF.ALL <- rbind(DF.ALL, DF.SUM)
+
+
+## Iterate Main Function over: Bn + kn when yn > ya ----
+dn0 <- param_dat['null','dn0'] # put var back to baseline: null
+
+# make data.frame of all possible combinations of the three other habitat vars EXCEPT yn and ya.
+df <- data.frame(Bn = seq(0.1, 0.9, length.out=5),
+           ka = seq(0.9, 1.3, length.out=5),
+           dn0 = seq(0.1, 0.9, length.out=5))
+
+df_expand <- expand.grid(df) # this would be cool....but 125 iterations! My other script runs 80 interactions and takes about 1.5 days. This could take 2.5 days to run.
+df_expand$index <- seq(1, length(df_expand$Bn), by=1)
+
+# practice
+#df_expand <- df_expand[1:2,]
+
+OUT.SUM <- list()
+
+# Start looping MAIN_FUN over different qa values
+for(i in 1:length(df_expand$Bn)) {
+
+  OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+                  ya, yn, yo, dn0=df_expand[i,3], Ba, Bn=df_expand[i,1], Bo, ka=df_expand[i,2], kn, # vars that vary by habitat (h.vec)
+                  Ws, r, Smax, W, # vars for Terminal fitness function
+                  Wstep.n, Wstep, tmax, seeds, F.vec, N)
+
+  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
+
+  OUT$iter_index <- rep(df_expand[i,4], length(OUT$Wstart)) # add column with seeds value for that iteration.
+
+  OUT.SUM[[i]] <- OUT
+
+} # end loop.
+
+DF.SUM<-ldply(OUT.SUM, as.vector)
+
+
+# Rbind rows.
+DF.ALL <- rbind(DF.ALL, DF.SUM)
 
 # Export csv file!!!!
 write.csv(DF.ALL, "iterate_when_yn_greater_ya.csv")

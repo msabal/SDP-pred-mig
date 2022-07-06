@@ -10,14 +10,16 @@ options(scipen=999)
 
 
 # load files
+param_dat <- read_csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//raw-data//Parameter_Iterations_Tracking.csv")
 
 # OSU server ran on 6/1/2022: null and habitat hypotheses with original parameters.
 base_dat <- read_csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//OSU_server_output//iterate_sum_null_and_hab.csv")
 
-param_dat <- read_csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//raw-data//Parameter_Iterations_Tracking.csv")
+# OSU server ran on 7/5/2022: when yn > ya - vary Bn, kn, dn0 SEPARATELY.
+yn_greater_dat <- read_csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//OSU_server_output//iterate_when_yn_greater_ya.csv")
 
 
-# Manipulate data
+# Manipulate/check data
 
 base_dat2 <- base_dat %>%
   select(-1) %>% 
@@ -43,11 +45,28 @@ base_dat %>% select(baseline, param_value, param_name) %>% distinct() %>% group_
 
 ####
 
-freq_fun <- function(x, iter, beh){
+freq_fun <- function(data, x, iter, beh){
+  
+  base_dat2 <- data %>%
+    select(-1) %>% 
+    left_join(param_dat) %>% 
+    mutate(yn = ifelse(param_name == "yn", param_value, yn), # replace the joined column with baseline yn with the iterated value.
+           ya = ifelse(param_name == "ya", param_value, ya),
+           Bn = ifelse(param_name == "Bn", param_value, Bn),
+           Ba = ifelse(param_name == "Ba", param_value, Ba),
+           kn = ifelse(param_name == "kn", param_value, kn),
+           ka = ifelse(param_name == "ka", param_value, ka),
+           dn0 = ifelse(param_name == "dn0", param_value, dn0),
+           d = ifelse(param_name == "d", param_value, d)) %>% 
+    mutate(yn_ya = log(yn/ya),  # Calculate natural:altered habitat ratios
+           Bn_Ba = log(Bn/Ba),
+           kn_ka = log(kn/ka),
+           dn0_d = log(dn0/d))
+  
   ag_dat <- base_dat2 %>% filter(baseline == iter & h != "o" & Beh == beh & UQ(sym(x)) != 0) %>% # UQ(sym(x)) takes x provided with quotes and makes it a symbol.
     group_by(baseline, .data[[x]], h) %>% summarise(mean = mean(p.tot),
-                                                                 sd = sd(p.tot),
-                                                                 n = n()) %>% 
+                                                    sd = sd(p.tot),
+                                                    n = n()) %>% 
     mutate(se = sd / sqrt(n))
   
   ag_dat$h<-as.factor(ag_dat$h)
@@ -66,15 +85,39 @@ freq_fun <- function(x, iter, beh){
     theme(legend.title=element_blank(), legend.position= "bottom") + ylim(values=c(0,1))
 }
 
-p_y1 <- freq_fun(x="yn_ya", iter = "null", beh=2); p_y1
-p_b1 <- freq_fun(x="Bn_Ba", iter = "null", beh=2); p_b1
-p_k1 <- freq_fun(x="kn_ka", iter = "null", beh=2); p_k1
-p_d1 <- freq_fun(x="dn0_d", iter = "null", beh=2); p_d1
 
-p_y2 <- freq_fun(x="yn_ya", iter = "habitat_hypoth", beh=2); p_y2
-p_b2 <- freq_fun(x="Bn_Ba", iter = "habitat_hypoth", beh=2); p_b2
-p_k2 <- freq_fun(x="kn_ka", iter = "habitat_hypoth", beh=2); p_k2
-p_d2 <- freq_fun(x="dn0_d", iter = "habitat_hypoth", beh=2); p_d2
+# freq_fun <- function(x, iter, beh){
+#   ag_dat <- base_dat2 %>% filter(baseline == iter & h != "o" & Beh == beh & UQ(sym(x)) != 0) %>% # UQ(sym(x)) takes x provided with quotes and makes it a symbol.
+#     group_by(baseline, .data[[x]], h) %>% summarise(mean = mean(p.tot),
+#                                                                  sd = sd(p.tot),
+#                                                                  n = n()) %>% 
+#     mutate(se = sd / sqrt(n))
+#   
+#   ag_dat$h<-as.factor(ag_dat$h)
+#   levels(ag_dat$h) <- c("Altered", "Natural")
+#   
+#   vline_base <- param_dat %>% filter(baseline == iter) %>% select(x) %>% pull()
+#   
+#   ggplot(ag_dat, aes(x=.data[[x]], y=(mean), fill=h, color=h)) +
+#     geom_vline(xintercept = vline_base, linetype="dashed", size=1, color="lightblue") +
+#     geom_vline(xintercept = 0, color="gray80", size=1, linetype="dashed") +
+#     geom_line(size=0.5, aes(color=h)) + geom_errorbar(aes(ymax=mean+se, ymin=mean-se, color=h), width=0, size=0.5) +
+#     geom_point(size=2, shape=21, color="black") + theme_classic() +
+#     scale_color_manual(values=c("mediumpurple", "forestgreen")) +
+#     scale_fill_manual(values=c("mediumpurple", "forestgreen")) +
+#     ylab(str_c("Frequency of move ", beh)) + xlab(str_c("log(", x, ")")) +
+#     theme(legend.title=element_blank(), legend.position= "bottom") + ylim(values=c(0,1))
+# }
+
+p_y1 <- freq_fun(data=base_dat, x="yn_ya", iter = "null", beh=2); p_y1
+p_b1 <- freq_fun(data=base_dat, x="Bn_Ba", iter = "null", beh=2); p_b1
+p_k1 <- freq_fun(data=base_dat, x="kn_ka", iter = "null", beh=2); p_k1
+p_d1 <- freq_fun(data=base_dat, x="dn0_d", iter = "null", beh=2); p_d1
+
+p_y2 <- freq_fun(data=base_dat, x="yn_ya", iter = "habitat_hypoth", beh=2); p_y2
+p_b2 <- freq_fun(data=base_dat, x="Bn_Ba", iter = "habitat_hypoth", beh=2); p_b2
+p_k2 <- freq_fun(data=base_dat, x="kn_ka", iter = "habitat_hypoth", beh=2); p_k2
+p_d2 <- freq_fun(data=base_dat, x="dn0_d", iter = "habitat_hypoth", beh=2); p_d2
 
 grid.arrange(p_y1, p_b1, p_k1, p_d1, 
              p_y2, p_b2, p_k2, p_d2, ncol=4)
@@ -86,6 +129,64 @@ grid.arrange(p_y1, p_b1, p_k1, p_d1,
              p_y2, p_b2, p_k2, p_d2, ncol=4)
 
 dev.off()
+
+# make a plot when the x-axis is not log transformed.
+freq_fun_no_log <- function(data, x, iter, beh, vline){
+  
+  base_dat2 <- data %>%
+    select(-1) %>% 
+    left_join(param_dat) %>% 
+    mutate(yn = ifelse(param_name == "yn", param_value, yn), # replace the joined column with baseline yn with the iterated value.
+           ya = ifelse(param_name == "ya", param_value, ya),
+           Bn = ifelse(param_name == "Bn", param_value, Bn),
+           Ba = ifelse(param_name == "Ba", param_value, Ba),
+           kn = ifelse(param_name == "kn", param_value, kn),
+           ka = ifelse(param_name == "ka", param_value, ka),
+           dn0 = ifelse(param_name == "dn0", param_value, dn0),
+           d = ifelse(param_name == "d", param_value, d)) %>% 
+    mutate(yn_ya = log(yn/ya),  # Calculate natural:altered habitat ratios
+           Bn_Ba = log(Bn/Ba),
+           kn_ka = log(kn/ka),
+           dn0_d = log(dn0/d))
+  
+  ag_dat <- base_dat2 %>% filter(baseline == iter & h != "o" & Beh == beh & param_name == x) %>% # UQ(sym(x)) takes x provided with quotes and makes it a symbol.
+    group_by(param_value, h) %>% summarise(mean = mean(p.tot),
+                                                    sd = sd(p.tot),
+                                                    n = n()) %>% 
+    mutate(se = sd / sqrt(n))
+  
+  ag_dat$h<-as.factor(ag_dat$h)
+  levels(ag_dat$h) <- c("Altered", "Natural")
+  
+  vline_base <- param_dat %>% filter(baseline == iter) %>% select(x) %>% pull()
+  
+  ggplot(ag_dat, aes(x=param_value, y=(mean), fill=h, color=h)) +
+    geom_vline(xintercept = vline, color="gray80", size=1, linetype="dashed") + # if not log-transformed than the equal benchmark is 1
+    geom_line(size=0.5, aes(color=h)) + geom_errorbar(aes(ymax=mean+se, ymin=mean-se, color=h), width=0, size=0.5) +
+    geom_point(size=2, shape=21, color="black") + theme_classic() +
+    scale_color_manual(values=c("mediumpurple", "forestgreen")) +
+    scale_fill_manual(values=c("mediumpurple", "forestgreen")) +
+    ylab(str_c("Frequency of move ", beh)) + xlab(x) +
+    theme(legend.title=element_blank(), legend.position= "bottom") + ylim(values=c(0,1))
+}
+
+f1 <- freq_fun_no_log(data=yn_greater_dat, x="Bn", iter="null", beh=0, vline=1); f1 # same data: actual paramater value as x-axis
+freq_fun(data=yn_greater_dat, x="Bn_Ba", iter="null", beh=0) # same data: log ratio as x-axis
+
+f2 <- freq_fun_no_log(data=yn_greater_dat, x="kn", iter="null", beh=0, vline=1.3); f2
+f3 <- freq_fun_no_log(data=yn_greater_dat, x="dn0", iter="null", beh=0, vline=1); f3
+
+
+setwd("C:/Users/sabalm/Desktop/")
+pdf("Freq_plots_yn_greater_ya.pdf", width=3, height=8)
+
+grid.arrange(f1, f2, f3, ncol=1)
+
+dev.off()
+# update with shared legend for multiple plots (I did this for my bycatch plots, but can't remember which package/code.)
+
+
+
 
 
 
@@ -182,6 +283,42 @@ p_fun(x="yn_ya", iter="habitat_hypoth") # this works, but we perhaps don't want 
 p_fun(x="Bn_Ba", iter="habitat_hypoth") # this works, but we perhaps don't want all these plots.
 p_fun(x="kn_ka", iter="habitat_hypoth") # this works, but we perhaps don't want all these plots.
 p_fun(x="dn0_d", iter="habitat_hypoth") # this works, but we perhaps don't want all these plots.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
