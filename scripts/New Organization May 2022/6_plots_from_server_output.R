@@ -3,7 +3,7 @@
 
 
 # Load libraries ----
-library(tidyverse); library(gridExtra)
+library(tidyverse); library(gridExtra); library(viridis)
 
 #remove scientific notation
 options(scipen=999)
@@ -16,7 +16,11 @@ param_dat <- read_csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mi
 base_dat <- read_csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//OSU_server_output//iterate_sum_null_and_hab.csv")
 
 # OSU server ran on 7/5/2022: when yn > ya - vary Bn, kn, dn0 SEPARATELY.
-yn_greater_dat <- read_csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//OSU_server_output//iterate_when_yn_greater_ya.csv")
+yn_greater_dat <- read_csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//OSU_server_output//iterate_when_yn_greater_ya_alone.csv")
+
+# OSU server ran on 7/5/2022: when yn > ya - vary Bn, kn, dn0 SEPARATELY.
+yn_greater_dat_tog <- read_csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//OSU_server_output//iterate_when_yn_greater_ya_all_together.csv")
+
 
 
 # Manipulate/check data
@@ -170,20 +174,91 @@ freq_fun_no_log <- function(data, x, iter, beh, vline){
     theme(legend.title=element_blank(), legend.position= "bottom") + ylim(values=c(0,1))
 }
 
-f1 <- freq_fun_no_log(data=yn_greater_dat, x="Bn", iter="null", beh=0, vline=1); f1 # same data: actual paramater value as x-axis
-freq_fun(data=yn_greater_dat, x="Bn_Ba", iter="null", beh=0) # same data: log ratio as x-axis
+f1 <- freq_fun_no_log(data=yn_greater_dat, x="Bn", iter="null", beh=2, vline=1); f1 # same data: actual parameter value as x-axis
+freq_fun(data=yn_greater_dat, x="Bn_Ba", iter="null", beh=2) # same data: log ratio as x-axis
 
-f2 <- freq_fun_no_log(data=yn_greater_dat, x="kn", iter="null", beh=0, vline=1.3); f2
-f3 <- freq_fun_no_log(data=yn_greater_dat, x="dn0", iter="null", beh=0, vline=1); f3
+f2 <- freq_fun_no_log(data=yn_greater_dat, x="ka", iter="null", beh=2, vline=1.3); f2
+f3 <- freq_fun_no_log(data=yn_greater_dat, x="dn0", iter="null", beh=2, vline=1); f3
 
 
 setwd("C:/Users/sabalm/Desktop/")
-pdf("Freq_plots_yn_greater_ya.pdf", width=3, height=8)
+pdf("Freq_plots_yn_greater_ya.pdf", width=9, height=3)
 
-grid.arrange(f1, f2, f3, ncol=1)
+grid.arrange(f1, f2, f3, ncol=3)
 
 dev.off()
 # update with shared legend for multiple plots (I did this for my bycatch plots, but can't remember which package/code.)
+
+
+
+# Figures varying multiple parameters together for when yn > ya
+
+yn_greater_dat_tog
+
+# make data.frame of all possible combinations of the three other habitat vars EXCEPT yn and ya.
+df <- data.frame(Bn = seq(0.1, 0.9, length.out=5),
+           ka = seq(0.9, 1.3, length.out=5),
+           dn0 = seq(0.1, 0.9, length.out=5))
+
+df_expand <- expand.grid(df) # this would be cool....but 125 iterations! My other script runs 80 interactions and takes about 1.5 days. This could take 2.5 days to run.
+df_expand$iter_index <- seq(1, length(df_expand$Bn), by=1)
+
+yn_greater_dat_tog <- yn_greater_dat_tog %>% left_join(df_expand) # join the iterated paramters to the data output by iter_index.
+
+tog_plot_fun <- function(data, beh){
+  ag_dat <- data %>% filter(h != "o" & Beh == beh) %>%
+    group_by(h, iter_index) %>% summarise(mean = mean(p.tot)) %>%
+    pivot_wider(id_cols = iter_index, names_from = h, values_from = mean) %>%
+    left_join(df_expand) %>% 
+    mutate(more_n = n - a) %>% 
+    mutate(more_n_cat = ifelse(more_n > 0, 1, 2)) # 1 is more in natural, 2 is more in altered
+  
+  # Make plot! 
+  ag_dat$dn0 <- as.factor(ag_dat$dn0)
+  levels(ag_dat$dn0) <-  c("dn0 = 0.1", "dn0 = 0.3", "dn0 = 0.5", "dn0 = 0.7", "dn0 = 0.9")
+  
+  ggplot(data=ag_dat, aes(x=Bn, y=ka, fill=as.factor(more_n_cat))) + geom_tile() + theme_classic() +
+    facet_wrap(~dn0, ncol=5) + theme(legend.position = "bottom", legend.title = element_blank()) +
+    scale_fill_manual(values=c("forestgreen", "mediumpurple"), labels = c(str_c("More move ", beh, " in natural"), str_c("More move ", beh, " in altered")))
+}
+
+tog_plot_fun_grad <- function(data, beh){
+  ag_dat <- data %>% filter(h != "o" & Beh == beh) %>%
+    group_by(h, iter_index) %>% summarise(mean = mean(p.tot)) %>%
+    pivot_wider(id_cols = iter_index, names_from = h, values_from = mean) %>%
+    left_join(df_expand) %>% 
+    mutate(more_n = n - a) %>% 
+    mutate(more_n_cat = ifelse(more_n > 0, 1, 2)) # 1 is more in natural, 2 is more in altered
+  
+  # Make plot! 
+  ag_dat$dn0 <- as.factor(ag_dat$dn0)
+  levels(ag_dat$dn0) <-  c("dn0 = 0.1", "dn0 = 0.3", "dn0 = 0.5", "dn0 = 0.7", "dn0 = 0.9")
+  
+  ggplot(data=ag_dat, aes(x=Bn, y=ka, fill=more_n)) + geom_tile() + theme_classic() +
+    facet_wrap(~dn0, ncol=5) + theme(legend.position = "bottom")
+}
+
+
+t1 <- tog_plot_fun(yn_greater_dat_tog, beh=0); t1 # these plots are awesome!
+t2 <- tog_plot_fun(yn_greater_dat_tog, beh=1); t2
+t3 <- tog_plot_fun(yn_greater_dat_tog, beh=2); t3
+
+t4 <- tog_plot_fun_grad(yn_greater_dat_tog, beh=0); t4 # these plots are awesome!
+t5 <- tog_plot_fun_grad(yn_greater_dat_tog, beh=1); t5
+t6 <- tog_plot_fun_grad(yn_greater_dat_tog, beh=2); t6
+
+
+setwd("C:/Users/sabalm/Desktop/")
+pdf("Freq_plots_yn_greater_ya_tog3.pdf", width=12, height=3.5)
+
+t3
+
+dev.off()
+
+
+
+
+
 
 
 
