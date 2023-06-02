@@ -1,0 +1,1616 @@
+
+# All analyses for manuscript draft
+
+
+# Outline ----
+# 1. Load libraries and set settings
+# 2. Set habitat hypotheses parameters
+# 3. Load all functions
+# 4. Scenario 1: habitat-hypotheses - do movement choices vary between shoreline habitats?
+# 5. Scenario 2: null habitat-hypotheses - which mechanism most affects the frequency of pauses?
+# 6. Scenario 3: greater predator abundances in natural - can it ever be optimal to pause in natural despite more predators?
+# 7. Scenario 4: habitat restoration - how do movement choices, river growth, survival to ocean, and fitness vary over % of natural habitats?
+
+
+#..................................................................................................
+# 1. Load libraries and set settings ----
+library(abind); library(ggplot2); library(plyr); library(reshape2);library(colorRamps)
+library(ggpubr)
+
+#remove scientific notation
+options(scipen=999)
+
+
+#..................................................................................................
+# 2. Set habitat hypotheses parameters ----
+
+# Load parameters
+param_dat <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//raw-data//Parameter_Iterations_Tracking.csv")
+#param_dat <- read.csv("Parameter_Iterations_Tracking.csv")
+row.names(param_dat) <- param_dat$baseline
+
+# Parameters: Habitat-hypothesized Differences
+
+# seeds for h.vec
+seeds <- param_dat['habitat_hypoth','seeds']
+N <- param_dat['habitat_hypoth','N'] 
+
+# W: salmon weight (g)
+Wmin <- param_dat['habitat_hypoth','Wmin']
+Wmax <- param_dat['habitat_hypoth','Wmax'] 
+Wstep <- param_dat['habitat_hypoth','Wstep']
+Wstep.n <- ((Wmax-Wmin)/Wstep)
+Wstart_setup <- seq(7, 10, length.out = 6); Wstart_setup[1] <- 7.1 # needs to be start at 7.1
+
+# A: salmon area
+Amin <- param_dat['habitat_hypoth','Amin']
+Amax <- param_dat['habitat_hypoth','Amax']
+
+# t: time
+tmin <- param_dat['habitat_hypoth','tmin']
+tmax <- param_dat['habitat_hypoth','tmax']
+# Behavioral choice
+U <- c(0, 1, 2)
+
+# Terminal fitness
+Ws    <- param_dat['habitat_hypoth','Ws']
+r     <- param_dat['habitat_hypoth','r']
+Smax  <- param_dat['habitat_hypoth','Smax']
+
+# Growth
+E     <- param_dat['habitat_hypoth','E']
+a     <- param_dat['habitat_hypoth','a']
+Alpha <- param_dat['habitat_hypoth','Alpha']
+d     <- param_dat['habitat_hypoth','d']
+dn0   <- param_dat['habitat_hypoth','dn0']
+v     <- param_dat['habitat_hypoth','v']
+
+#river growth by speed
+z     <- param_dat['habitat_hypoth','z']
+ka    <- param_dat['habitat_hypoth','ka']
+kn    <- param_dat['habitat_hypoth','kn']
+
+# ocean growth
+f     <- param_dat['habitat_hypoth','f']
+g     <- param_dat['habitat_hypoth','g']
+c     <- param_dat['habitat_hypoth','c']
+j     <- param_dat['habitat_hypoth','j']
+
+# Risk
+Bu    <- c(0.7, 1, 0.7) # B0, B1, B2 (can concatenate because we will loop over behavior choices?)
+Ba    <- param_dat['habitat_hypoth','Ba']
+Bn    <- param_dat['habitat_hypoth','Bn']
+Bo    <- param_dat['habitat_hypoth','Bo']
+Bw    <- param_dat['habitat_hypoth','Bw']
+M     <- param_dat['habitat_hypoth','M']
+m     <- param_dat['habitat_hypoth','m']
+ya    <- param_dat['habitat_hypoth','ya']
+yn    <- param_dat['habitat_hypoth','yn']
+yo    <- param_dat['habitat_hypoth','yo']
+P     <- param_dat['habitat_hypoth','P']
+
+
+
+#..................................................................................................
+# 3. Load all functions ----
+
+## Outline of this R script
+
+# 1. WtoWc and WctoW (convert between salmon weight in grams and computer index)
+
+# 2. TERM.FUN (terminal fitness function: relate salmon area and weight to probability of survival to age 3 adult)
+
+# 3. GROWTH.FUN
+
+# 4. OCEAN.Q
+
+# 5. SURV.FUN
+
+# 6. FITNESS
+
+# 7. OVER.BEH
+
+# 8. OVER.STATES
+
+# 9. TRACK.SUM.FUN
+
+# 10. MAIN_FUN (returns summary data from tracks)
+
+# 11. MAIN_FUN_TRACKS (returns tracks instead of summary data)
+
+#### (1) Make functions to convert between W in grams and W in computer discrete indexing
+
+# Make a data frame to covert between real W (grams) and computer discrete index (Wc)
+Wconvdf <- data.frame(W = seq(Wmin+Wstep, Wmax, 0.1), Wc = seq(1,Wstep.n,1))
+
+plot(W ~ Wc, Wconvdf)
+summary(lm(W ~ Wc, Wconvdf)) # y-int: 7, slope: 0.1
+m.Wc <- 0.1
+y.Wc <- 7
+
+plot(Wc ~ W, Wconvdf)
+summary(lm(Wc ~ W, Wconvdf)) # y-int: -70, slope: 10
+m.W <- 10
+y.W <- -70
+
+# Build functions to convert between W and Wc
+WtoWc <- function(W){ round(m.W*W + y.W, digits=Wstep) }
+WctoW <- function(Wc){ m.Wc*Wc + y.Wc }
+
+# # Test
+# WtoWc(10); WtoWc(10.1); WtoWc(10.11) # Good. 30, 31, 31.
+# WctoW(30); WctoW(31) # Good.
+
+
+
+#### Terminal fitness function - how does salmon weight at tmax and Amax relate to probability of
+#    surviving to a returning adult? Larger salmon more likely to survive to a returning adult.
+#    Sigmoidal function that asymptotes at Smax.
+
+#ONLY applicable for salmon at A 26 at tmax!!!! Otherwise, fitness is 0!
+TERM.FUN <- function(W, Ws, r, Smax){ Smax/(1+exp(-r*(W-Ws))) }
+
+# plot Terminal Fitness function
+#curve(TERM.FUN(W, Ws=Ws , r=r, Smax=Smax), xname="W", xlim=c(7,80), ylim=c(0,0.31), ylab="adult marine survival (to age 3)")
+
+
+
+# Functions used inside the Fitness function (see Final State Dynamics.R for more details)
+GROWTH.FUN <- function(W, E, q, a, Alpha, d, v, U)    { q*E*W^a - d*Alpha*W*exp(v*U) }
+OCEAN.Q <-    function(t, f, g, c, j)                 { f + g*exp(-(t-c)^2/2*j^2) }
+RIVER.Q <-    function(U, z, kh)                      { z*U + kh }
+SURV.FUN <-   function(W, Bu, Bh, Bw, M, m, y, P)     { (1-M*(Bu + Bh + Bw*W^m))^(y*P) }
+
+
+# Fitness function (described above)
+FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                    E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+                    ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+                    seeds, F.vec, N) # vectors describing habitats of areas and stored Fitness values
+  
+{ # start of function
+  
+  #define h.vec based on variable seeds
+  h.vec <- rep(NA, Amax) # create blank vector for habitats for each Area.
+  h.vec[Amax] <- "o" # make the last area (Amax) the ocean: "o"
+  set.seed(seeds)  # set.seed to keep altered and natural habitat distribution constant for now.
+  h.vec[1:Amax-1] <- sample(0:1, Amax-1, replace=T, prob=c(N,1-N))  # randomly sample
+  # Amax-1 number of values 0 or 1 with a 50% probability between the two values.
+  h.vec[h.vec == "1"] <- "a"  # change 1 from sample function to "a"
+  h.vec[h.vec == "0"] <- "n"  # change 0 from sample function to "n"
+  
+  #define or change input parameters that depend on U, habitat, or Area.
+  U  <- ifelse(U == 1, 20, ifelse(U == 2, 40, 0))
+  d  <- ifelse(U == 0 & h.vec[A] == "n", dn0, d)
+  q  <- ifelse(h.vec[A] == "o", OCEAN.Q(t=t, f=f, g=g, c=c, j=j),
+               ifelse(h.vec[A] == "n", RIVER.Q(U=U, z=z, kh=kn), RIVER.Q(U=U, z=z, kh=ka)))
+  Bh <- ifelse(h.vec[A] == "n", Bn, ifelse(h.vec[A] == "a", Ba, Bo))
+  y  <- ifelse(h.vec[A] == "n", yn, ifelse(h.vec[A] == "a", ya, yo))
+  W  <- WctoW(Wc) # convert Wc (discrete 1 to 730 to W in grams)
+  
+  Wnew <- W + GROWTH.FUN(W=W, E=E, a=a, v=v, Alpha= Alpha, U=U, d=d, q=q)
+  
+  Wnew <- min(Wnew, Wmax) # if Wnew is greater than max value, keep at max value (this will be unlikely to happen since our Wmax is BIG.)
+  Wcnew <- WtoWc(Wnew)
+  
+  Anew <- A + ifelse(U == 20, 1, ifelse(U == 40, 2, 0))           # salmon's new location is its current A plus movement choice U.
+  Anew <- min(Anew, Amax) # if salmon are in the ocean (Amax) keep them in the ocean.
+  
+  Fit <- matrix(NA, 1, 3)
+  Fit[,1] <- ifelse(Wnew > Wmin, SURV.FUN(W=W, Bu=Bu, Bw=Bw, M=M, m=m,
+                                          P=P, Bh=Bh, y=y)*F.vec[Wcnew, 2, Anew], 0)
+  Fit[,2] <- SURV.FUN(W=W, Bu=Bu, Bw=Bw, M=M, m=m,
+                      P=P, Bh=Bh, y=y)
+  Fit[,3] <- GROWTH.FUN(W=W, E=E, a=a, v=v, Alpha= Alpha, U=U, d=d, q=q)
+  
+  return(Fit)
+  
+} # end function.
+
+#Test Fitness function
+# F.vec <- array(NA, dim=c(Wstep.n, 2, Amax))  #(rows: weight, cols: F(x,t), F(x, t+1), matrices: area)
+# F.vec[1:Wstep.n, 2, Amax] <- TERM.FUN(W = seq(Wmin+Wstep, Wmax , Wstep), Ws=Ws, r=r, Smax=Smax)
+# F.vec[,2,1:Amax-1] <- 0    #if salmon end in any area besides the last (Amax), then their fitness is 0!
+# 
+# FITNESS(Wc=1, A=Amax, t=tmax, U=2, Wmax, Amax,
+#         E, q, a, Alpha, d, v, f, g, c, j, Bu=Bu[2], Bw, M, m, y, P, z,
+#         ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
+#         seeds=1, F.vec, N) # # (Expected Fitness) and # (daily survival) and # growth rate (for that time step)!!!!!
+# 
+
+
+#### OVER.BEH function to apply over BEHAVIORAL CHOICES (move 0, 1, 2).
+# Function used to apply FITNESS using for loop over all behavioral choices.
+# Returns the maximum fitness (F.best), best choice (Beh.best), and daily survival (Surv.day).
+# F.best saved in appro first col of F.vec.
+# Returns Temp.out: copy of updated F.vec with extra rows at bottom with F.best and Beh.best.
+
+OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                     E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+                     ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+                     seeds, F.vec, N)
+  
+{ # start function
+  F.beh.surv <- matrix(NA, 3, 3)  #matrix to save fitness (Fit) from each (3) behavioral choice.
+  
+  # run a for loop over all behavioral choices to get FITNESS (Fit) from each one.
+  for(i in 1:length(U)){ F.beh.surv[i,] <- FITNESS(Wc, A, t, U[i], Wmax, Amax,
+                                                   E, q, a, Alpha, d, v, f, g, c, j, Bu[i], Bw, M, m, y, P, z,
+                                                   ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
+                                                   seeds, F.vec, N) }
+  
+  F.best <- max(F.beh.surv[,1])  # Get maximum expected fitness from all three behavioral choices.
+  S.day <- ifelse(F.best > 0, F.beh.surv[F.beh.surv[,1] == F.best, 2], NA) # Get the daily survival from the max expected fitness.
+  G.day <- ifelse(F.best > 0, F.beh.surv[F.beh.surv[,1] == F.best, 3], NA) # Get the daily growth from the max expected fitness.
+  
+  Temp <- data.frame(Fit = F.beh.surv[,1], beh = seq(0,2,1), Surv = F.beh.surv[,2], Growth = F.beh.surv[,3])  # make temp dataframe with each fitness (Fit) for each behavior (0,1,2), and daily survival (Surv).
+  Beh.best <- ifelse(F.best > 0, Temp[Temp$Fit == max(Temp$Fit),2], NA)  #get single value of best behavior choice (0,1,2). If F.best is 0 for all behavioral types, than no beh is best, return NA.
+  
+  F.vec[Wc,1,A] <- F.best  # save best fitness in the appropriate F.vec column 1 for that specific state W and A.
+  
+  Temp.out <- array(NA, dim=c(Wstep.n+2, 2, Amax)) #(rows: salmon weight, cols: F(x,t), F(x, t+1), matrices: area). Same size as F.vec, but add 2 rows to save F.best, Best.beh, and Surv.day.
+  Temp.out[Wstep.n+1,,] <- c(F.best, Beh.best)
+  Temp.out[Wstep.n+2,,] <- c(S.day, G.day)
+  Temp.out[1:Wstep.n,,] <- F.vec  # Temp.out needs ALL the info that will be used in the next function/loop. 
+  # F.vec AND F.best, S.day, and Beh.best. Will split up later to use in different ways in the next function OVER.STATES.
+  return(Temp.out)
+  
+} # end function.
+
+# # Check if loop inside OVER.BEH works
+# F.vec <- array(NA, dim=c(Wstep.n, 2, Amax))  #(rows: weight, cols: F(x,t), F(x, t+1), matrices: area)
+# F.vec[1:Wstep.n, 2, Amax] <- TERM.FUN(W = seq(Wmin+Wstep, Wmax , Wstep), Ws=Ws, r=r, Smax=Smax)
+# F.vec[,2,1:Amax-1] <- 0    #if salmon end in any area besides the last (Amax), then their fitness is 0!
+# 
+# F.beh.surv <- matrix(NA, 3, 3)
+# for(i in 1:length(U)){ F.beh.surv[i,] <- FITNESS(Wc=1, A=Amax, t=tmax, U[i], Wmax, Amax,
+#                                                  E, q, a, Alpha, d, v, f, g, c, j, Bu[i], Bw, M, m, y, P, z,
+#                                                  ya, yn, yo, dn0, Ba, Bn, Bo, kn, ka,
+#                                                  seeds=1, F.vec, N) }
+# F.beh.surv # Works!!!
+# 
+# rm(F.beh.surv) #remove after done checking.
+
+
+# # Check if OVER.BEH works for a specific W and A state for tmax-1.
+# Test.beh <- OVER.BEH(Wc=1, A=Amax, t=tmax, U, Wmax, Amax,
+#                     E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
+#                     ya, yn, yo, dn0, Ba, Bn, Bo, kn, ka,
+#                     seeds=1, F.vec, N)
+# head(Test.beh[,,Amax])
+# tail(Test.beh[,,Amax])
+# # Works!!! Look for a value in column one at W<-# and
+# # in rows 731 and 731 where we stored Fit, Beh.best, S.day, and G.day.
+# rm(Test.beh)
+
+
+#### OVER.STATES function to apply over BEHAVIORAL CHOICES (move 0, 1, 2) AND AREA (1 to 26).
+# Function used to iterate OVER.BEH over both states W and A using nested for loops.
+# Run OVER.BEH and get Temp.out. Split Temp.out to F.vec and best.F.beh (only F.best and Beh.best).
+# Put Beh.best in appro Store spot. Combine F.vec and Store in an array,
+# Temp.out2 with 4 cols (F(x,t), F(x,t+1), F.best, Beh.best, S.day).
+
+OVER.STATES <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                        E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+                        ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+                        seeds, F.vec, N)
+{ # start function
+  
+  Store <- array(NA, dim=c(Wstep.n, 4, Amax)) # Array to store all F.best (col 1), Beh.best (col 2), and S.day (col 3), G.day (col 4)
+  # from OVER.BEH for each state W (rows) and A (matrices).
+  
+  for(Wc in 1:Wstep.n){
+    for(A in 1:Amax){
+      Temp.out <- OVER.BEH(Wc, A, t, U, Wmax, Amax,
+                           E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
+                           ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
+                           seeds, F.vec, N) # this returns Temp.out from OVER.BEH, which looks like...
+      # an array: (rows: salmon weight (length: Wstep.n+2),
+      # 2 cols: F(x,t), F(x, t+1), matrices: area (length: Amax)).
+      # Same size as F.vec, but add 2 rows to Wstep.n to save
+      # F.best [in Wstep.n+1 row, 1st col], Best.beh [in Wstep.n+1 row, 2nd col],
+      # Surv.day [Wstep.n=2 row, 1st col], and G.day [Wstep.n=2 row, 2nd col].
+      
+      F.vec <- Temp.out[1:Wstep.n,,] # get F.vec by itself out of Temp.out (without last two rows).
+      best.F.beh.S <- c(Temp.out[Wstep.n+1,1,1], Temp.out[Wstep.n+1,2,1], Temp.out[Wstep.n+2,1,1], Temp.out[Wstep.n+2,2,1]) # get F.best, Beh.best, S.day, G.day.
+      
+      Store[Wc,,A] <- best.F.beh.S # put F.best, Beh.best, S.day, G.day in Store for appro loop state combo.
+      
+    }} #end nested for loops.
+  
+  # Combine Store values with F.vec in Temp.out2 as the vessel leaving this function to bring important info to next for loop!
+  Temp.out2 <- abind(F.vec, Store, along = 2) # add Store columns to F.vec. This should be an array (rows: Wstep.n, matrices: Amax)
+  # with 5 columns: F(X,t), F(X,t+1), F.best, Beh.best. S.day.
+  # along = 2 tells to bind the columns (dimension 2) together!
+  return(Temp.out2)
+  
+} # end function.
+
+
+# # check to see if OVER.STATES works and returns Temp.out2
+# F.vec <- array(NA, dim=c(Wstep.n, 2, Amax))  #(rows: weight, cols: F(x,t), F(x, t+1), matrices: area)
+# F.vec[1:Wstep.n, 2, Amax] <- TERM.FUN(W = seq(Wmin+Wstep, Wmax , Wstep), Ws=Ws, r=r, Smax=Smax)
+# F.vec[,2,1:Amax-1] <- 0    #if salmon end in any area besides the last (Amax), then their fitness is 0!
+# 
+# Test.States <- OVER.STATES(Wc, A, t=tmax-1, U, Wmax, Amax,
+#                            E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
+#                            ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
+#                            seeds=1, F.vec, N)
+# 
+# View(Test.States[,,Amax-1]) # works!!
+# rm(Test.States)
+# # View(Test.States[,,Amax]) Col 2 (F(W,t+1)) has values from terminal fitness, optimal choice has to be move 0
+# # View(Test.States[,,Amax-1]) Col 2 (F(W,t+1)) has 0s from terminal fitness, optimal choice can be move 1 or 2
+# # View(Test.States[,,Amax-2]) Col 2 (F(W,t+1)) has 0s from terminal fitness, optimal choice has to be move 2
+# # View(Test.States[,,Amax-3]) Col 2 (F(W,t+1)) has 0s from terminal fitness, F.best all 0s because can't make it
+# # to A26 in by tmax. Therefore, Beh.best and S.day all NAs.
+
+
+# Get summary info from salmon tracks function - TRYING TO ADD MOVEMENT CHOICE PROPORTIONS, GETTING ERRORS.
+TRACK.SUM.FUN <- function(A, h, Beh, Time, Fit, S.day, S.cum, W){ # start function.
+  df <- data.frame (A, h, Beh, Time, Fit, S.day, S.cum, W)
+  df$Beh <- as.factor(df$Beh)
+  df$h <- as.factor(df$h)
+  
+  S.cum.riv <- min(df[df$h == "n" | df$h == "a", 7], na.rm=T)
+  G.riv <- max(df[df$h == "n" | df$h == "a", 8], na.rm=T) - min(df[df$h == "n" | df$h == "a", 8], na.rm=T) # in river
+  G.ocean <- max(df[df$h == "o", 8], na.rm=T) - min(df[df$h == "o", 8], na.rm=T) # in ocean
+  Fit <- max(df$Fit, na.rm=T)
+  
+  df2 <- subset(df, df$h != "o")          # ignore data once in the ocean
+  dur <- length(df2$Beh)  
+  
+  ag.h <- aggregate(A ~ Beh + h, df2, length)   # aggregate number of different choices (Beh: 0, 1, 2) BY habitat
+  dur.h <- aggregate(A ~ h, df2, length)
+  colnames(dur.h)[2] <- "dur.h"
+  ag.h <- join(ag.h, dur.h)
+  ag.h$p <- ag.h$A / ag.h$dur.h # calculate proportion of moves by habitat out of the total moves PER HABITAT.
+  ag.h$p.tot <- ag.h$A / dur       # calculate proportion of moves by habitat out of the total moves OVERALL.
+  
+  p0.n <- ifelse(length(ag.h[ag.h$Beh == 0 & ag.h$h == "n",5]) > 0, ag.h[ag.h$Beh == 0 & ag.h$h == "n",5], 0)
+  p1.n <- ifelse(length(ag.h[ag.h$Beh == 1 & ag.h$h == "n",5]) > 0, ag.h[ag.h$Beh == 1 & ag.h$h == "n",5], 0)
+  p2.n <- ifelse(length(ag.h[ag.h$Beh == 2 & ag.h$h == "n",5]) > 0, ag.h[ag.h$Beh == 2 & ag.h$h == "n",5], 0)
+  p0.a <- ifelse(length(ag.h[ag.h$Beh == 0 & ag.h$h == "a",5]) > 0, ag.h[ag.h$Beh == 0 & ag.h$h == "a",5], 0)
+  p1.a <- ifelse(length(ag.h[ag.h$Beh == 1 & ag.h$h == "a",5]) > 0, ag.h[ag.h$Beh == 1 & ag.h$h == "a",5], 0)
+  p2.a <- ifelse(length(ag.h[ag.h$Beh == 2 & ag.h$h == "a",5]) > 0, ag.h[ag.h$Beh == 2 & ag.h$h == "a",5], 0)
+  
+  p0.n.tot <- ifelse(length(ag.h[ag.h$Beh == 0 & ag.h$h == "n",6]) > 0, ag.h[ag.h$Beh == 0 & ag.h$h == "n",6], 0)
+  p1.n.tot <- ifelse(length(ag.h[ag.h$Beh == 1 & ag.h$h == "n",6]) > 0, ag.h[ag.h$Beh == 1 & ag.h$h == "n",6], 0)
+  p2.n.tot <- ifelse(length(ag.h[ag.h$Beh == 2 & ag.h$h == "n",6]) > 0, ag.h[ag.h$Beh == 2 & ag.h$h == "n",6], 0)
+  p0.a.tot <- ifelse(length(ag.h[ag.h$Beh == 0 & ag.h$h == "a",6]) > 0, ag.h[ag.h$Beh == 0 & ag.h$h == "a",6], 0)
+  p1.a.tot <- ifelse(length(ag.h[ag.h$Beh == 1 & ag.h$h == "a",6]) > 0, ag.h[ag.h$Beh == 1 & ag.h$h == "a",6], 0)
+  p2.a.tot <- ifelse(length(ag.h[ag.h$Beh == 2 & ag.h$h == "a",6]) > 0, ag.h[ag.h$Beh == 2 & ag.h$h == "a",6], 0)
+  
+  out.final <- cbind(S.cum.riv, G.riv, G.ocean, dur, p0.n, p1.n, p2.n, p0.a, p1.a, p2.a, p0.n.tot, p1.n.tot, p2.n.tot, p0.a.tot, p1.a.tot, p2.a.tot, Fit)
+  
+  out.final # return out.final: vector of summary variables.
+  
+} #end function.
+
+
+MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                     E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+                     ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+                     Ws, r, Smax, W, # vars for Terminal fitness function
+                     Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N)
+{ # start function
+  
+  #make objects to store loop outputs.
+  F.all <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
+  Best.beh <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
+  Surv.day <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
+  G.day <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
+  
+  # Set up F.vec - does this need to be outside the loops/functions to store properly?
+  F.vec <- array(NA, dim=c(Wstep.n, 2, Amax))  #(rows: weight, cols: F(x,t), F(x, t+1), matrices: area)
+  F.vec[1:Wstep.n, 2, Amax] <- TERM.FUN(W = seq(Wmin+Wstep, Wmax , Wstep), Ws=Ws, r=r, Smax=Smax)
+  F.vec[,2,1:Amax-1] <- 0    #if salmon end in any area besides the last (Amax), then their fitness is 0!
+  
+  t <- tmax # Start iterations over time, time starts with tmax.
+  
+  # Use while loop starting at Time = tmax, decrement with each loop, until time is 1 and then exit the loop.
+  while(t > 1)
+  { # start while loop
+    
+    t <- t - 1 # This takes the Time from the prior loop and decrements it by one for the next loop.
+    
+    Temp.out2 <- OVER.STATES(Wc, A, t, U, Wmax, Amax,
+                             E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
+                             ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
+                             seeds, F.vec, N)  # Get all F.best, Beh.best, and S.day for all W and A for the current Time.
+    # Temp.out2 also has the updated F.vec!
+    
+    TempF.vec <- Temp.out2[,1:2,] # Get F.vec out of Temp.out2 (first two columns).
+    
+    for (J in 1:Wstep.n){    # for each state W and A, update F.vec with the new F.vec (TempF.vec) from the OVER.STATES function (column 1),
+      for(K in 1:Amax){   # and put those values back into F.vec in the second column to be ready for the next time iteration.
+        F.vec[J,2,K] <- TempF.vec[J,1,K] }} # end of while loop.
+    
+    Best.beh[t,,] <- Temp.out2[,4,]  # save best behavior in Best.beh (decision matrix!)
+    F.all[t,,] <- Temp.out2[,3,]     # save best fitness in F.all
+    Surv.day[t,,] <- Temp.out2[,5,]  # save daily Survival in Surv.day
+    G.day[t,,] <- Temp.out2[,6,]     # save daily growth in G.day
+    
+    
+  } # end while loop.
+  
+  #### FORWARD SIMULATIONS
+  # create subset of salmon starting computer weights (Wc) to simulate tracks for
+  Wstart <- Wstart_setup # pick starting weights (g) to simulate
+  Wstart <- WtoWc(Wstart) # convert from W in grams to Wc
+  
+  # create output objects to store outcomes from for loop
+  output.A <- matrix(NA, tmax, length(Wstart))  # roWstart: time, columns: weight (W). Output to track best behaviors over time for each state.
+  output.A[1,] <- 1 # salmon start in area 1
+  
+  output.S <- matrix(NA, tmax, length(Wstart)) # output to store daily Surv
+  output.Scum <- matrix(NA, tmax, length(Wstart)) # output to store cumulative survival over time.
+  
+  output.Fit <- matrix(NA, tmax, length(Wstart)) # output to store expected Fitness
+  output.beh <- matrix(NA, tmax, length(Wstart)) # output to store best behavior
+  
+  output.Wc <- matrix(NA, tmax, length(Wstart)) # output to store changing W over time.
+  output.Wc[1,] <- Wstart
+  
+  # for loop tracking new areas for individuals starting at A = 1, and my chosen salmon weights (W in sim.sam).
+  
+  for(X in 1:length(Wstart)){            # iterate over chosen starting salmon weights
+    for(t in 1:(tmax-1)){                    # iterate over time
+      
+      Wc <-output.Wc[t,X]                    # current Wc (computer weight) is from the appro spot in output.Wc
+      A <- output.A[t,X]                     # current area is the value in the current row of time (t)
+      
+      W <- WctoW(Wc)                         # convert to W (salmon weight in g)
+      W.new <- W + G.day[t,Wc,A]              # new salmon weight is current W (g) plus growth increment from certain choice stored in G.day
+      W.new <- ifelse(W.new > Wmax, Wmax, W.new)  #W.new must be less than Wmax to look up a value in G.day - but really if this is happening, should increase Wmax.
+      Wc.new <- WtoWc(W.new)                 # convert new W to new Wc
+      output.Wc[t+1,X] <- Wc.new             # store new Wc in output.Wc
+      
+      Anew <- A + Best.beh[t,Wc,A]            # area in next time step is the current location plus how much they move (Best.beh)
+      Anew <- min(Anew, Amax)                # area cannot be greater than Amax 
+      output.A[t+1,X] <- Anew                # store new area in the next row (t+1)
+      
+      output.S[t,X] <- Surv.day[t,Wc,A]       #  get appro daily survival from Surv.day and save it in output.S
+      output.Fit[t,X] <- F.all[t,Wc,A]        #  get appro expected fitness from F.all and save it in output.Fit
+      output.beh[t,X] <- Best.beh[t,Wc,A]     #  get appro best beh from Best.beh and save it in output.beh
+      
+    }} # end for loops.
+  
+  output.W <- WctoW(output.Wc) # convert output.W from Wc to W (grams)
+  
+  # for loop for cumulative survival
+  for(X in 1:length(Wstart)){
+    for(t in 1:(tmax)){
+      output.Scum[t,X] <- prod(output.S[1:t,X])
+    }} # end of loop.
+  
+  
+  
+  ## Make Data Tracks.
+  
+  # Re-make h.vec
+  h.vec <- rep(NA, Amax) # create blank vector for habitats for each Area.
+  h.vec[Amax] <- "o" # make the last area (Amax) the ocean: "o"
+  set.seed(seeds)  # set.seed to keep altered and natural habitat distribution constant for now.
+  h.vec[1:Amax-1] <- sample(0:1, Amax-1, replace=T, prob=c(N,1-N))  # randomly sample
+  # Amax-1 number of values 0 or 1 with a 50% probability between the two values.
+  h.vec[h.vec == "1"] <- "a"  # change 1 from sample function to "a"
+  h.vec[h.vec == "0"] <- "n"  # change 0 from sample function to "n"
+  
+  data.tracks <- melt(output.A) # melt output.A
+  colnames(data.tracks)<- c("Time", "Wstart", "A")
+  data.tracks <- join(data.tracks, data.frame(h = h.vec, A = seq(1,Amax,1)))
+  
+  data.tracks.S <- melt(output.S) # melt output.S
+  colnames(data.tracks.S)<- c("Time", "Wstart", "S.day")
+  data.tracks <- join(data.tracks, data.tracks.S)
+  
+  data.tracks.Fit <- melt(output.Fit)  # melt output.Fit
+  colnames(data.tracks.Fit)<- c("Time", "Wstart", "Fit")
+  data.tracks <- join(data.tracks, data.tracks.Fit)
+  
+  data.tracks.beh <- melt(output.beh) # melt output.beh
+  colnames(data.tracks.beh)<- c("Time", "Wstart", "Beh")
+  data.tracks <- join(data.tracks, data.tracks.beh)
+  
+  data.tracks.Scum <- melt(output.Scum)  # melt output.beh
+  colnames(data.tracks.Scum)<- c("Time", "Wstart", "S.cum")
+  data.tracks <- join(data.tracks, data.tracks.Scum)
+  
+  data.tracks.W<- melt(output.W)  # melt output.W
+  colnames(data.tracks.W)<- c("Time", "Wstart", "W")
+  data.tracks <- join(data.tracks, data.tracks.W)
+  
+  data.tracks$Wstart <- as.factor(data.tracks$Wstart) # convert Wstart to salmon weigh units and as a factor.
+  levels(data.tracks$Wstart) <- c(WctoW(Wstart))
+  
+  
+  #Apply TRACK.SUM.FUN on data.tracks
+  data.tracks.L <- droplevels(data.tracks)
+  data.tracks.L <- split(data.tracks.L, data.tracks.L$Wstart)
+  
+  out.L<-lapply(data.tracks.L, function(x) TRACK.SUM.FUN(x$A, x$h, x$Beh, x$Time, x$Fit, x$S.day, x$S.cum, x$W))
+  
+  out.df<-ldply(out.L, as.vector)
+  colnames(out.df)[1]<-"Wstart"
+  
+  # Melt dataframe to get into long format: proportion of moves by habitat PER HABITAT
+  df.l.beh <- out.df[,c(1, 6, 7, 8)]
+  df.l.beh <- melt(df.l.beh, variable.name = "Beh", value.name = "p", id.vars = c("Wstart"))
+  levels(df.l.beh$Beh) <- c("0", "1", "2")
+  df.l.beh$h <- rep("n", length(df.l.beh$Wstart))
+  
+  # by habitat and movement choice: altered
+  df.l.beh1 <- out.df[,c(1, 9, 10, 11)]
+  df.l.beh1 <- melt(df.l.beh1, variable.name = "Beh", value.name = "p", id.vars = c("Wstart"))
+  levels(df.l.beh1$Beh) <- c("0", "1", "2")
+  df.l.beh1$h <- rep("a", length(df.l.beh1$Wstart))
+  
+  DF.LONG.h <- rbind(df.l.beh, df.l.beh1)
+  
+  # Melt dataframe to get into long format: proportion of moves by habitat TOTAL
+  df.l.beh <- out.df[,c(1, 12, 13, 14)]
+  df.l.beh <- melt(df.l.beh, variable.name = "Beh", value.name = "p.tot", id.vars = c("Wstart"))
+  levels(df.l.beh$Beh) <- c("0", "1", "2")
+  df.l.beh$h <- rep("n", length(df.l.beh$Wstart))
+  
+  # by habitat and movement choice: altered
+  df.l.beh1 <- out.df[,c(1, 15, 16, 17)]
+  df.l.beh1 <- melt(df.l.beh1, variable.name = "Beh", value.name = "p.tot", id.vars = c("Wstart"))
+  levels(df.l.beh1$Beh) <- c("0", "1", "2")
+  df.l.beh1$h <- rep("a", length(df.l.beh1$Wstart))
+  
+  DF.LONG.tot <- rbind(df.l.beh, df.l.beh1)
+  
+  DF.LONG <- join(DF.LONG.h, DF.LONG.tot)
+  DF.LONG <- join(DF.LONG, out.df[c(1:5,18)])
+  
+  return(DF.LONG) # return DF.LONG dataframe by Wstart.
+  
+} # end function.
+
+
+# Test MAIN_FUN
+
+# OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+#                 E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+#                 ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+#                 Ws, r, Smax, W, # vars for Terminal fitness function
+#                 Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N)
+# 
+# colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
+# 
+# OUT
+
+
+MAIN_FUN_TRACKS <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                            E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+                            ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+                            Ws, r, Smax, W, # vars for Terminal fitness function
+                            Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N)
+{ # start function
+  
+  #make objects to store loop outputs.
+  F.all <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
+  Best.beh <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
+  Surv.day <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
+  G.day <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
+  
+  # Set up F.vec - does this need to be outside the loops/functions to store properly?
+  F.vec <- array(NA, dim=c(Wstep.n, 2, Amax))  #(rows: weight, cols: F(x,t), F(x, t+1), matrices: area)
+  F.vec[1:Wstep.n, 2, Amax] <- TERM.FUN(W = seq(Wmin+Wstep, Wmax , Wstep), Ws=Ws, r=r, Smax=Smax)
+  F.vec[,2,1:Amax-1] <- 0    #if salmon end in any area besides the last (Amax), then their fitness is 0!
+  
+  t <- tmax # Start iterations over time, time starts with tmax.
+  
+  # Use while loop starting at Time = tmax, decrement with each loop, until time is 1 and then exit the loop.
+  while(t > 1)
+  { # start while loop
+    
+    t <- t - 1 # This takes the Time from the prior loop and decrements it by one for the next loop.
+    
+    Temp.out2 <- OVER.STATES(Wc, A, t, U, Wmax, Amax,
+                             E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
+                             ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
+                             seeds, F.vec, N)  # Get all F.best, Beh.best, and S.day for all W and A for the current Time.
+    # Temp.out2 also has the updated F.vec!
+    
+    TempF.vec <- Temp.out2[,1:2,] # Get F.vec out of Temp.out2 (first two columns).
+    
+    for (J in 1:Wstep.n){    # for each state W and A, update F.vec with the new F.vec (TempF.vec) from the OVER.STATES function (column 1),
+      for(K in 1:Amax){   # and put those values back into F.vec in the second column to be ready for the next time iteration.
+        F.vec[J,2,K] <- TempF.vec[J,1,K] }} # end of while loop.
+    
+    Best.beh[t,,] <- Temp.out2[,4,]  # save best behavior in Best.beh (decision matrix!)
+    F.all[t,,] <- Temp.out2[,3,]     # save best fitness in F.all
+    Surv.day[t,,] <- Temp.out2[,5,]  # save daily Survival in Surv.day
+    G.day[t,,] <- Temp.out2[,6,]     # save daily growth in G.day
+    
+    
+  } # end while loop.
+  
+  #### FORWARD SIMULATIONS
+  # create subset of salmon starting computer weights (Wc) to simulate tracks for
+  Wstart <- Wstart_setup # pick starting weights (g) to simulate
+  Wstart <- WtoWc(Wstart) # convert from W in grams to Wc
+  
+  # create output objects to store outcomes from for loop
+  output.A <- matrix(NA, tmax, length(Wstart))  # roWstart: time, columns: weight (W). Output to track best behaviors over time for each state.
+  output.A[1,] <- 1 # salmon start in area 1
+  
+  output.S <- matrix(NA, tmax, length(Wstart)) # output to store daily Surv
+  output.Scum <- matrix(NA, tmax, length(Wstart)) # output to store cumulative survival over time.
+  
+  output.Fit <- matrix(NA, tmax, length(Wstart)) # output to store expected Fitness
+  output.beh <- matrix(NA, tmax, length(Wstart)) # output to store best behavior
+  
+  output.Wc <- matrix(NA, tmax, length(Wstart)) # output to store changing W over time.
+  output.Wc[1,] <- Wstart
+  
+  # for loop tracking new areas for individuals starting at A = 1, and my chosen salmon weights (W in sim.sam).
+  
+  for(X in 1:length(Wstart)){            # iterate over chosen starting salmon weights
+    for(t in 1:(tmax-1)){                    # iterate over time
+      
+      Wc <-output.Wc[t,X]                    # current Wc (computer weight) is from the appro spot in output.Wc
+      A <- output.A[t,X]                     # current area is the value in the current row of time (t)
+      
+      W <- WctoW(Wc)                         # convert to W (salmon weight in g)
+      W.new <- W + G.day[t,Wc,A]              # new salmon weight is current W (g) plus growth increment from certain choice stored in G.day
+      W.new <- ifelse(W.new > Wmax, Wmax, W.new)  #W.new must be less than Wmax to look up a value in G.day - but really if this is happening, should increase Wmax.
+      Wc.new <- WtoWc(W.new)                 # convert new W to new Wc
+      output.Wc[t+1,X] <- Wc.new             # store new Wc in output.Wc
+      
+      Anew <- A + Best.beh[t,Wc,A]            # area in next time step is the current location plus how much they move (Best.beh)
+      Anew <- min(Anew, Amax)                # area cannot be greater than Amax 
+      output.A[t+1,X] <- Anew                # store new area in the next row (t+1)
+      
+      output.S[t,X] <- Surv.day[t,Wc,A]       #  get appro daily survival from Surv.day and save it in output.S
+      output.Fit[t,X] <- F.all[t,Wc,A]        #  get appro expected fitness from F.all and save it in output.Fit
+      output.beh[t,X] <- Best.beh[t,Wc,A]     #  get appro best beh from Best.beh and save it in output.beh
+      
+    }} # end for loops.
+  
+  output.W <- WctoW(output.Wc) # convert output.W from Wc to W (grams)
+  
+  # for loop for cumulative survival
+  for(X in 1:length(Wstart)){
+    for(t in 1:(tmax)){
+      output.Scum[t,X] <- prod(output.S[1:t,X])
+    }} # end of loop.
+  
+  ## Make Data Tracks.
+  
+  # Re-make h.vec
+  h.vec <- rep(NA, Amax) # create blank vector for habitats for each Area.
+  h.vec[Amax] <- "o" # make the last area (Amax) the ocean: "o"
+  set.seed(seeds)  # set.seed to keep altered and natural habitat distribution constant for now.
+  h.vec[1:Amax-1] <- sample(0:1, Amax-1, replace=T, prob=c(N,1-N))  # randomly sample
+  # Amax-1 number of values 0 or 1 with a 50% probability between the two values.
+  h.vec[h.vec == "1"] <- "a"  # change 1 from sample function to "a"
+  h.vec[h.vec == "0"] <- "n"  # change 0 from sample function to "n"
+  
+  data.tracks <- melt(output.A) # melt output.A
+  colnames(data.tracks)<- c("Time", "Wstart", "A")
+  data.tracks <- join(data.tracks, data.frame(h = h.vec, A = seq(1,Amax,1)))
+  
+  data.tracks.S <- melt(output.S) # melt output.S
+  colnames(data.tracks.S)<- c("Time", "Wstart", "S.day")
+  data.tracks <- join(data.tracks, data.tracks.S)
+  
+  data.tracks.Fit <- melt(output.Fit)  # melt output.Fit
+  colnames(data.tracks.Fit)<- c("Time", "Wstart", "Fit")
+  data.tracks <- join(data.tracks, data.tracks.Fit)
+  
+  data.tracks.beh <- melt(output.beh) # melt output.beh
+  colnames(data.tracks.beh)<- c("Time", "Wstart", "Beh")
+  data.tracks <- join(data.tracks, data.tracks.beh)
+  
+  data.tracks.Scum <- melt(output.Scum)  # melt output.beh
+  colnames(data.tracks.Scum)<- c("Time", "Wstart", "S.cum")
+  data.tracks <- join(data.tracks, data.tracks.Scum)
+  
+  data.tracks.W<- melt(output.W)  # melt output.W
+  colnames(data.tracks.W)<- c("Time", "Wstart", "W")
+  data.tracks <- join(data.tracks, data.tracks.W)
+  
+  data.tracks$Wstart <- as.factor(data.tracks$Wstart) # convert Wstart to salmon weigh units and as a factor.
+  levels(data.tracks$Wstart) <- c(WctoW(Wstart))
+  
+  return(data.tracks) # return data.tracks by Wstart.
+  
+} # end function.
+
+
+
+#..................................................................................................
+# 4. Scenario 1: habitat-hypotheses - do movement choices vary between shoreline habitats? ----
+
+# Iterate data tracks over seeds
+
+# Set iterations
+df_iters <- data.frame(seeds = seq(1, 6, by=1)) # Loop over 6 different random orientations of river habitat (natural vs. shoreline)
+Wstart_setup                                    # Loop over 6 different starting salmon weights
+
+# Start simulation
+OUT.SUM <- list() # make object to save function output
+
+# Start looping MAIN_FUN over different qa values
+for(i in 1:length(df_iters[,1])) {
+  
+  OUT <- MAIN_FUN_TRACKS(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                         E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+                         ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+                         Ws, r, Smax, W, # vars for Terminal fitness function
+                         Wstep.n, Wstep, Wstart_setup, tmax, seeds=df_iters[i,1], F.vec, N)
+  
+  OUT$iter_index <- rep(df_iters[i,(length(colnames(df_iters)))], length(OUT$Wstart)) # add column with seeds value for that iteration.
+  
+  OUT.SUM[[i]] <- OUT
+  
+} # end loop.
+
+DF.SUM<-ldply(OUT.SUM, as.vector)
+DF.SUM$seeds <- DF.SUM$iter_index
+
+
+write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario1.csv")
+DF.SUM <- read.csv("C://Users//sabalm//Desktop//scenario1.csv")
+
+
+
+## Figure 2 ----
+
+seeds <- 5 # choose one seeds for Fig 2a
+
+# Re-make h.vec
+h.vec <- rep(NA, Amax) # create blank vector for habitats for each Area.
+h.vec[Amax] <- "o" # make the last area (Amax) the ocean: "o"
+set.seed(seeds)  # set.seed to keep altered and natural habitat distribution constant for now.
+h.vec[1:Amax-1] <- sample(0:1, Amax-1, replace=T, prob=c(0.5,0.5))  # randomly sample
+# Amax-1 number of values 0 or 1 with a 50% probability between the two values.
+h.vec[h.vec == "1"] <- "a"  # change 1 from sample function to "a"
+h.vec[h.vec == "0"] <- "n"  # change 0 from sample function to "n"
+
+h.colors <- data.frame(h = h.vec, A = seq(1, Amax, by=1)) %>% as_tibble() %>% 
+  mutate(h.col = ifelse(h == "a", "mediumpurple", 
+                        ifelse(h == "n", "forestgreen", "blue2")))
+
+
+fig_2a <- ggplot(data=filter(DF.SUM, iter_index == 5), aes(x=Time, y=A, color=as.factor(Wstart))) +
+  geom_line(size=1, position=position_dodge(0.4), alpha=0.7) +
+  geom_point(position=position_dodge(0.4), alpha=1) +
+  theme_classic() +
+  theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+  theme(legend.key=element_blank(), legend.position=c(0.75, 0.5), legend.background=element_blank(), legend.text = element_text(size=8)) + 
+  #coord_equal() +
+  scale_x_continuous(breaks = seq(1,tmax,2)) +
+  scale_y_continuous(breaks = seq(1,Amax,1)) +
+  theme(axis.text.y = element_text(color=h.colors$h.col, face="bold")) +
+  ylab("Area") + 
+  scale_color_brewer(palette = "Blues", name= "Starting salmon size (g)") +
+  annotate(geom="text", label="(a)", x=1, y=25, size=7); fig_2a
+
+
+# Figure 2b: proportion of moves
+moves_dat <- DF.SUM %>% as_tibble() %>% group_by(h, Beh) %>% 
+  summarise(count_moves = n()) %>% filter(h != "o") %>% 
+  mutate(tot_moves = sum(.$count_moves)) %>% 
+  mutate(p_moves = count_moves/tot_moves, 
+         h = ifelse(h == "a", "Altered", "Natural"))
+
+moves_dat
+
+fig_2b <- ggplot(data=moves_dat, aes(x=h, y=p_moves, fill=as.factor(Beh))) + 
+  geom_bar(stat="identity", color="black") + theme_classic() + 
+  scale_fill_brewer(palette = "Blues", labels = c("move 0\n(0 km/d)", "move 1\n(20 km/d)", "move 2\n(40 km/d)")) + 
+  scale_y_continuous(expand = c(0,0), limits=c(0,1), breaks = seq(0,1,by=0.2)) +
+  ylab("Proportion of movement choices") + xlab("Shoreline habitat") +
+  theme(legend.title=element_blank()) +
+  annotate(geom="text", label = "(b)", x=0.8, y=0.9, size=7); fig_2b
+
+
+# Save Figure 2
+pdf.options(reset = TRUE, onefile = FALSE)
+setwd("C:/Users/sabalm/Desktop/")
+pdf("Figure2.pdf", width=10, height=4)
+
+ggarrange(fig_2a, fig_2b, ncol=2, widths = c(2,1.2), heights=c(1,1)) # align = "h"
+
+dev.off()
+
+
+
+# # Figure S1 (all data tracks by seed)
+# fig_s1 <- ggplot(data=DF.SUM, aes(x=Time, y=A, color=as.factor(Wstart))) +
+#   geom_line(size=1, position=position_dodge(0.4), alpha=0.7) +
+#   geom_point(position=position_dodge(0.4), alpha=1) +
+#   facet_wrap(~iter_index, ncol=2) + theme_classic() +
+#   theme(axis.line = element_line(colour = "black"), panel.border = element_blank(), panel.background = element_blank()) +
+#   theme(legend.key=element_blank(), legend.position="bottom", legend.background=element_blank(), legend.text = element_text(size=8)) + 
+#   coord_equal() +
+#   scale_x_continuous(breaks = seq(1,tmax,4)) +
+#   scale_y_continuous(breaks = seq(1,Amax, 2)) +
+#   ylab("Area") + 
+#   scale_color_brewer(palette = "Blues", name= "Starting salmon size (g)"); fig_s1
+# 
+# # Save Figure 2
+# pdf.options(reset = TRUE, onefile = FALSE)
+# setwd("C:/Users/sabalm/Desktop/")
+# pdf("Figure_S1.pdf", width=8, height=10)
+# 
+# fig_s1
+# 
+# dev.off()
+
+
+## Figure S1 ----
+
+moves_dat <- DF.SUM %>% as_tibble() %>% group_by(iter_index, h, Beh) %>% 
+  summarise(count_moves = n()) %>% filter(h != "o") %>% 
+  ungroup() %>% group_by(iter_index) %>% 
+  mutate(tot_moves = sum(count_moves)) %>% 
+  mutate(p_moves = count_moves/tot_moves, 
+         h = ifelse(h == "a", "Altered", "Natural"))
+
+fig_s1 <- ggplot(data=moves_dat, aes(x=h, y=p_moves, fill=as.factor(Beh))) + 
+  geom_bar(stat="identity", color="black") + 
+  facet_wrap(~iter_index) +
+  theme_classic() +
+  scale_fill_brewer(palette = "Blues", labels = c("move 0\n(0 km/d)", "move 1\n(20 km/d)", "move 2\n(40 km/d)")) + 
+  scale_y_continuous(expand = c(0,0), limits=c(0,1), breaks = seq(0,1,by=0.2)) +
+  ylab("Proportion of movement choices") + xlab("Shoreline habitat") +
+  theme(legend.title = element_blank()); fig_s1
+
+pdf.options(reset = TRUE, onefile = FALSE)
+setwd("C:/Users/sabalm/Desktop/")
+pdf("Figure_S1.pdf", width=6, height=6)
+
+fig_s1
+
+dev.off()
+
+
+
+## Figure S2 ----
+
+moves_dat <- DF.SUM %>% as_tibble() %>% group_by(Wstart, h, Beh) %>% 
+  summarise(count_moves = n()) %>% filter(h != "o") %>% 
+  ungroup() %>% group_by(Wstart) %>% 
+  mutate(tot_moves = sum(count_moves)) %>% 
+  mutate(p_moves = count_moves/tot_moves, 
+         h = ifelse(h == "a", "Altered", "Natural"))
+
+fig_s2 <- ggplot(data=moves_dat, aes(x=h, y=p_moves, fill=as.factor(Beh))) + 
+  geom_bar(stat="identity", color="black") + 
+  facet_wrap(~Wstart) +
+  theme_classic() +
+  scale_fill_brewer(palette = "Blues", labels = c("move 0\n(0 km/d)", "move 1\n(20 km/d)", "move 2\n(40 km/d)")) + 
+  scale_y_continuous(expand = c(0,0), limits=c(0,1), breaks = seq(0,1,by=0.2)) +
+  ylab("Proportion of movement choices") + xlab("Shoreline habitat") +
+  theme(legend.title = element_blank()); fig_s2
+
+pdf.options(reset = TRUE, onefile = FALSE)
+setwd("C:/Users/sabalm/Desktop/")
+pdf("Figure_S2.pdf", width=6, height=6)
+
+fig_s2
+
+dev.off()
+
+
+
+#..................................................................................................
+# 5. Scenario 2: null habitat-hypotheses - which mechanism most affects the frequency of pauses? ----
+
+
+# Set baseline null habitat-hypotheses parameters
+# Parameters: Habitat-hypothesized Differences
+
+# seeds for h.vec
+seeds <- param_dat['null','seeds']
+N <- param_dat['null','N'] 
+
+# W: salmon weight (g)
+Wmin <- param_dat['null','Wmin']
+Wmax <- param_dat['null','Wmax'] 
+Wstep <- param_dat['null','Wstep']
+Wstep.n <- ((Wmax-Wmin)/Wstep)
+Wstart_setup <- seq(7, 10, length.out = 6); Wstart_setup[1] <- 7.1 # needs to be start at 7.1
+
+# A: salmon area
+Amin <- param_dat['null','Amin']
+Amax <- param_dat['null','Amax']
+
+# t: time
+tmin <- param_dat['null','tmin']
+tmax <- param_dat['null','tmax']
+# Behavioral choice
+U <- c(0, 1, 2)
+
+# Terminal fitness
+Ws    <- param_dat['null','Ws']
+r     <- param_dat['null','r']
+Smax  <- param_dat['null','Smax']
+
+# Growth
+E     <- param_dat['null','E']
+a     <- param_dat['null','a']
+Alpha <- param_dat['null','Alpha']
+d     <- param_dat['null','d']
+dn0   <- param_dat['null','dn0']
+v     <- param_dat['null','v']
+
+#river growth by speed
+z     <- param_dat['null','z']
+ka    <- param_dat['null','ka']
+kn    <- param_dat['null','kn']
+
+# ocean growth
+f     <- param_dat['null','f']
+g     <- param_dat['null','g']
+c     <- param_dat['null','c']
+j     <- param_dat['null','j']
+
+# Risk
+Bu    <- c(0.7, 1, 0.7) # B0, B1, B2 (can concatenate because we will loop over behavior choices?)
+Ba    <- param_dat['null','Ba']
+Bn    <- param_dat['null','Bn']
+Bo    <- param_dat['null','Bo']
+Bw    <- param_dat['null','Bw']
+M     <- param_dat['null','M']
+m     <- param_dat['null','m']
+ya    <- param_dat['null','ya']
+yn    <- param_dat['null','yn']
+yo    <- param_dat['null','yo']
+P     <- param_dat['null','P']
+
+
+## Predator abundance ##
+
+# Double check
+ya # should be 1
+yn # we will reduce to simulate fewer predators in natural habitats
+
+
+# Set iterations
+df_iters <- data.frame(yn = c(1, 0.9, 0.7, 0.5, 0.3, 0.1))
+
+
+# Start simulation
+OUT.SUM <- list() # make object to save function output
+
+# Start looping MAIN_FUN over different qa values
+for(i in 1:length(df_iters[,1])) {
+  
+  OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+                  ya, yn=df_iters[i,1], yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+                  Ws, r, Smax, W, # vars for Terminal fitness function
+                  Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N)
+  
+  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
+  
+  OUT$iter_val <- rep(df_iters[i,(length(colnames(df_iters)))], length(OUT$Wstart)) # add column with seeds value for that iteration.
+  
+  OUT.SUM[[i]] <- OUT
+  
+} # end loop.
+
+DF.SUM<-ldply(OUT.SUM, as.vector)
+
+DF.SUM <- DF.SUM %>% as_tibble() %>% mutate(iter_var = "yn")
+
+
+## Simulate over Bn
+
+# Double check
+Ba # should be 1
+Bn # we will reduce to simulate lower mortality (increased survival aka escape ability) in natural habitats
+
+
+# Set iterations
+df_iters <- data.frame(Bn = c(1, 0.9, 0.7, 0.5, 0.3, 0.1))
+
+
+# Start simulation
+OUT.SUM <- list() # make object to save function output
+
+# Start looping MAIN_FUN over different qa values
+for(i in 1:length(df_iters[,1])) {
+  
+  OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+                  ya, yn, yo, dn0, Ba, Bn=df_iters[i,1], Bo, ka, kn, # vars that vary by habitat (h.vec)
+                  Ws, r, Smax, W, # vars for Terminal fitness function
+                  Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N)
+  
+  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
+  
+  OUT$iter_val <- rep(df_iters[i,(length(colnames(df_iters)))], length(OUT$Wstart)) # add column with seeds value for that iteration.
+  
+  OUT.SUM[[i]] <- OUT
+  
+} # end loop.
+
+DF.SUM2<-ldply(OUT.SUM, as.vector)
+
+DF.SUM2 <- DF.SUM2 %>% as_tibble() %>% mutate(iter_var = "Bn")
+
+DF.SUM <- DF.SUM %>% bind_rows(DF.SUM2)
+
+
+
+## Simulate over dn0
+
+# Double check
+d # should be 1
+dn0 # we will reduce to simulate lower energy costs (more savings) in natural habitats
+
+
+# Set iterations
+df_iters <- data.frame(dn0 = c(1, 0.9, 0.7, 0.5, 0.3, 0.1))
+
+
+# Start simulation
+OUT.SUM <- list() # make object to save function output
+
+# Start looping MAIN_FUN over different qa values
+for(i in 1:length(df_iters[,1])) {
+  
+  OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+                  ya, yn, yo, dn0=df_iters[i,1], Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+                  Ws, r, Smax, W, # vars for Terminal fitness function
+                  Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N)
+  
+  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
+  
+  OUT$iter_val <- rep(df_iters[i,(length(colnames(df_iters)))], length(OUT$Wstart)) # add column with seeds value for that iteration.
+  
+  OUT.SUM[[i]] <- OUT
+  
+} # end loop.
+
+DF.SUM2<-ldply(OUT.SUM, as.vector)
+
+DF.SUM2 <- DF.SUM2 %>% as_tibble() %>% mutate(iter_var = "dn0")
+
+DF.SUM <- DF.SUM %>% bind_rows(DF.SUM2)
+
+
+## Simulate over ka
+
+# Double check
+kn # should be 1
+ka # we will reduce food in altered to simulate more food in natural habitats
+
+
+# Set iterations
+df_iters <- data.frame(ka = c(1.3, 1.2, 1.1, 1.0, 0.9))
+
+
+# Start simulation
+OUT.SUM <- list() # make object to save function output
+
+# Start looping MAIN_FUN over different qa values
+for(i in 1:length(df_iters[,1])) {
+  
+  OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+                  ya, yn, yo, dn0, Ba, Bn, Bo, ka=df_iters[i,1], kn, # vars that vary by habitat (h.vec)
+                  Ws, r, Smax, W, # vars for Terminal fitness function
+                  Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N)
+  
+  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
+  
+  OUT$iter_val <- rep(df_iters[i,(length(colnames(df_iters)))], length(OUT$Wstart)) # add column with seeds value for that iteration.
+  
+  OUT.SUM[[i]] <- OUT
+  
+} # end loop.
+
+DF.SUM2<-ldply(OUT.SUM, as.vector)
+
+DF.SUM2 <- DF.SUM2 %>% as_tibble() %>% mutate(iter_var = "ka")
+
+DF.SUM <- DF.SUM %>% bind_rows(DF.SUM2)
+
+
+# Save all data from scenario 2
+
+write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario2.csv") # UPDATE SAVE LOCATION!
+#DF.SUM <- read.csv("C://Users//sabalm//Desktop//scenario2.csv")
+
+
+
+## Figure 3 ----
+
+fig3_dat <- DF.SUM %>%
+  mutate(rel_nat_index = ifelse(iter_var == "ka", abs(log(1.3/iter_val)),
+                                abs(log(1/iter_val)))) %>% 
+  group_by(Beh, h, iter_var, rel_nat_index) %>% 
+  summarise(mean.p.tot = mean(p.tot))
+
+fig3_dat$iter_var <- factor(fig3_dat$iter_var, levels = c("yn", "Bn", "ka", "dn0"))
+levels(fig3_dat$iter_var) <- c("(a) Predator abundance", "(b) Salmon escape ability", 
+                               "(c) Foraging gain", "(d) Energy savings")
+
+fig3_dat$h <- factor(fig3_dat$h)
+levels(fig3_dat$h) <- c("Altered", "Natural")
+
+
+fig3 <- ggplot(filter(fig3_dat, Beh == 0), aes(x=rel_nat_index, y=mean.p.tot, color=h)) +
+  geom_line(size=1, alpha=0.7) + geom_point(size=2, alpha=1) + theme_classic() +
+  facet_wrap(~iter_var, scales = "free_x") +
+  scale_color_manual(values = c("mediumpurple", "forestgreen")) +
+  ylab("Proportion of pauses\n(move 0)") + 
+  xlab("Relative benefit in \nnatural habitats index") +
+  theme(strip.text.x = element_text(size=11),
+        legend.title = element_blank()) +
+  ylim(c(0,1)); fig3
+
+
+# theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+#                    strip.background = element_blank()) +
+
+
+# Save Figure 3
+pdf.options(reset = TRUE, onefile = FALSE)
+setwd("C:/Users/sabalm/Desktop/")
+pdf("Figure3.pdf", width=6, height=4)
+
+fig3
+
+dev.off()
+
+
+
+#..................................................................................................
+# 6. Scenario 3: greater predator abundances in natural - can it ever be optimal to pause in natural despite more predators? ----
+
+# Set baseline null habitat-hypotheses parameters
+# Parameters: Habitat-hypothesized Differences
+
+# seeds for h.vec
+seeds <- param_dat['null','seeds']
+N <- param_dat['null','N'] 
+
+# W: salmon weight (g)
+Wmin <- param_dat['null','Wmin']
+Wmax <- param_dat['null','Wmax'] 
+Wstep <- param_dat['null','Wstep']
+Wstep.n <- ((Wmax-Wmin)/Wstep)
+Wstart_setup <- seq(7, 10, length.out = 6); Wstart_setup[1] <- 7.1 # needs to be start at 7.1
+
+# A: salmon area
+Amin <- param_dat['null','Amin']
+Amax <- param_dat['null','Amax']
+
+# t: time
+tmin <- param_dat['null','tmin']
+tmax <- param_dat['null','tmax']
+# Behavioral choice
+U <- c(0, 1, 2)
+
+# Terminal fitness
+Ws    <- param_dat['null','Ws']
+r     <- param_dat['null','r']
+Smax  <- param_dat['null','Smax']
+
+# Growth
+E     <- param_dat['null','E']
+a     <- param_dat['null','a']
+Alpha <- param_dat['null','Alpha']
+d     <- param_dat['null','d']
+dn0   <- param_dat['null','dn0']
+v     <- param_dat['null','v']
+
+#river growth by speed
+z     <- param_dat['null','z']
+ka    <- param_dat['null','ka']
+kn    <- param_dat['null','kn']
+
+# ocean growth
+f     <- param_dat['null','f']
+g     <- param_dat['null','g']
+c     <- param_dat['null','c']
+j     <- param_dat['null','j']
+
+# Risk
+Bu    <- c(0.7, 1, 0.7) # B0, B1, B2 (can concatenate because we will loop over behavior choices?)
+Ba    <- param_dat['null','Ba']
+Bn    <- param_dat['null','Bn']
+Bo    <- param_dat['null','Bo']
+Bw    <- param_dat['null','Bw']
+M     <- param_dat['null','M']
+m     <- param_dat['null','m']
+ya    <- param_dat['null','ya']
+yn    <- param_dat['null','yn']
+yo    <- param_dat['null','yo']
+P     <- param_dat['null','P']
+
+
+
+# Set iterations
+
+ya <- 0.7 # set lower to simulate more predators in natural habitats.
+yn        # should be 1
+
+df <- data.frame(Bn = c(1, 0.9, 0.7, 0.5, 0.3, 0.1),
+                 ka = c(1.3, 1.2, 1.125, 1.05, 0.975, 0.9),
+                 dn0 = c(1, 0.9, 0.7, 0.5, 0.3, 0.1))
+
+df_iters <- expand.grid(df) %>% as_tibble() %>% slice(-1) # expand grid to all combinations but drop top row of all baseline values.
+df_iters$iter_index <- seq(1, length(df_iters$Bn), by=1)
+
+df_iters <- as.data.frame(df_iters) # needs to be a dataframe for indexing to work properly without using pull()
+
+
+
+# Start simulation
+OUT.SUM <- list() # make object to save function output
+
+# Start looping MAIN_FUN over different qa values
+for(i in 1:length(df_iters[,1])) {
+  
+  OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+                  ya, yn, yo, dn0=df_iters[i,3], Ba, Bn=df_iters[i,1], Bo, ka=df_iters[i,2], kn, # vars that vary by habitat (h.vec)
+                  Ws, r, Smax, W, # vars for Terminal fitness function
+                  Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N)
+  
+  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
+  
+  OUT$iter_index <- rep(df_iters[i,4], length(OUT$Wstart)) # add column with iter value
+  
+  OUT.SUM[[i]] <- OUT
+  
+} # end loop.
+
+DF.SUM<-ldply(OUT.SUM, as.vector)
+
+DF.SUM <- DF.SUM %>% as_tibble() %>% left_join(df_iters)
+
+
+# Make category column of how many mechanisms benefiting natural.
+DF.SUM <- DF.SUM %>% mutate(more_nat_preds_cat = ifelse(ka == 1.3 & Bn == 1 |
+                                        ka == 1.3 & dn0 == 1 |
+                                        Bn == 1 & dn0 == 1, 1, 
+                                        ifelse(ka != 1.3 & Bn != 1 & dn0 != 1,
+                                          3, 2)))
+
+nat_preds_cat_N <- DF.SUM %>% dplyr::select(iter_index, Bn, ka, dn0, more_nat_preds_cat) %>% distinct() %>% 
+  group_by(more_nat_preds_cat) %>% count()  # this returns the number of iterations in categories: 1, 2, or 3 mechanisms varied at a time.
+
+
+# Save all data from scenario 3
+
+write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario3.csv") # UPDATE SAVE LOCATION!
+#DF.SUM <- read.csv("C://Users//sabalm//Desktop//scenario3.csv")
+
+
+
+## Figure 4 ----
+
+# Contour plots
+
+cont_dat <- DF.SUM %>% filter(h != "o" & Beh == "0") %>%              # get rid of ocean time steps and focus only on pauses.
+  group_by(h, iter_index) %>% summarise(mean = mean(p.tot)) %>%       # get average proportion of pauses by habitat for each iteration.
+  pivot_wider(id_cols = iter_index, names_from = h, values_from = mean) %>%
+  left_join(df_iters) %>% 
+  mutate(more_n = n - a) %>% 
+  mutate(more_n_cat = ifelse(more_n > 0, "more_n", "more_a")) %>% # 1 indicates more natural, 2 indicates more altered
+  left_join(DF.SUM %>% dplyr::select(iter_index, more_nat_preds_cat) %>% distinct())#
+
+
+cont_dat$dn0 <- as.factor(cont_dat$dn0)
+cont_dat$Bn <- as.factor(cont_dat$Bn)
+cont_dat$ka <- as.factor(cont_dat$ka)
+
+
+eg1 <- cont_dat %>% filter(iter_index %in% c(1:35)) # example data where Bn and ka vary but dn0 is at baseline value
+
+
+# ggplot(data=eg1, aes(x=Bn, y=ka, fill=as.factor(more_n_cat))) + geom_tile(width=1, height = 1, color="black") + 
+#   theme_classic() + coord_equal() + 
+#   scale_fill_manual(values=c("forestgreen", "mediumpurple"), labels = c("more pauses in natural", "more pauses in altered")) +
+#   theme(legend.position = "bottom", legend.title = element_blank()) 
+# 
+
+# ggplot(data=eg1, aes(x=Bn, y=ka, fill=as.factor(more_n_cat))) + geom_tile(width=1, height = 1, color="black") + 
+#   theme_classic() + coord_equal() + 
+#   scale_fill_manual(values=c("gray88", "gray24"), labels = c("more pauses in natural", "more pauses in altered")) +
+#   theme(legend.position = "bottom", legend.title = element_blank()) 
+
+
+fig4a <- ggplot(data=eg1, aes(x=Bn, y=ka, fill=(more_n))) + geom_tile(width=1, height = 1, color="black") + 
+  theme_classic() +
+  scale_fill_gradient2(high = "#208B20", low = "#936EDB", name = "Difference in mean proportion\nof pauses (natural - altered)") +
+  theme(legend.position = "bottom") + 
+  ylab(expression(k[a])) + xlab(expression(B[n])) +
+  ggtitle(label = "(a)") + theme(plot.title = element_text(size=20)); fig4a
+  
+#coord_equal() 
+
+ 
+tally_dat <- cont_dat %>% group_by(more_nat_preds_cat, more_n_cat) %>% count() %>% 
+  rename(n_by_h = n) %>% 
+  left_join(nat_preds_cat_N) %>% mutate(p_by_h = n_by_h / n)
+  
+cont_dat %>% group_by(more_n_cat) %>% count() %>% mutate(p = n / 215)
+# 51.6 % of all simulations more pauses in altered
+# 48.4 % of all simulations more pauses in natural!!!!
+
+fig_4b <- ggplot(data=tally_dat, aes(x=more_nat_preds_cat, y=p_by_h, fill=more_n_cat)) + 
+  geom_bar(stat = "identity", color="black") + theme_classic() +
+  scale_y_continuous(expand = c(0,0)) + theme(legend.position = "bottom") +
+  scale_fill_manual(values = c("mediumpurple", "forestgreen"), labels = c("Altered", "Natural"), name = "More pauses in:") +
+  ylab("Proportion of simulations") + xlab("Number of mechanisms benefiting natural\nhabitats, despite 30% more predators") +
+  ggtitle(label = "(b)") + theme(plot.title = element_text(size=20)); fig_4b
+
+
+ggarrange(fig4a, fig_4b, align = "hv")
+
+
+# Save Figure 4
+pdf.options(reset = TRUE, onefile = FALSE)
+setwd("C:/Users/sabalm/Desktop/")
+pdf("Figure4.pdf", width=7, height=4.5)
+
+ggarrange(fig4a, fig_4b, align = "hv")
+
+dev.off()
+
+
+## Figure S3
+
+fig_s3 <- ggplot(data=cont_dat, aes(x=Bn, y=ka, fill=(more_n))) + geom_tile(width=1, height = 1, color="black") + 
+  theme_classic() + facet_wrap(~dn0) +
+  scale_fill_gradient2(high = "#208B20", low = "#936EDB", name = "Difference in mean proportion\nof pauses (natural - altered)") +
+  theme(legend.position = "bottom") + 
+  ylab(expression(k[a])) + xlab(expression(B[n])); fig_s3
+
+# Save Figure S3
+pdf.options(reset = TRUE, onefile = FALSE)
+setwd("C:/Users/sabalm/Desktop/")
+pdf("Figure_S3.pdf", width=7, height=6)
+
+fig_s3
+
+dev.off()
+
+
+
+#..................................................................................................
+# 7. Scenario 4: habitat restoration - how do movement choices, river growth, survival to ocean, and fitness vary over % of natural habitats? ----
+
+# Set habitat hypotheses parameters
+
+# Load parameters
+param_dat <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//raw-data//Parameter_Iterations_Tracking.csv")
+#param_dat <- read.csv("Parameter_Iterations_Tracking.csv")
+row.names(param_dat) <- param_dat$baseline
+
+# Parameters: Habitat-hypothesized Differences
+
+# seeds for h.vec
+seeds <- param_dat['habitat_hypoth','seeds']
+N <- param_dat['habitat_hypoth','N'] 
+
+# W: salmon weight (g)
+Wmin <- param_dat['habitat_hypoth','Wmin']
+Wmax <- param_dat['habitat_hypoth','Wmax'] 
+Wstep <- param_dat['habitat_hypoth','Wstep']
+Wstep.n <- ((Wmax-Wmin)/Wstep)
+Wstart_setup <- seq(7, 10, length.out = 6); Wstart_setup[1] <- 7.1 # needs to be start at 7.1
+
+# A: salmon area
+Amin <- param_dat['habitat_hypoth','Amin']
+Amax <- param_dat['habitat_hypoth','Amax']
+
+# t: time
+tmin <- param_dat['habitat_hypoth','tmin']
+tmax <- param_dat['habitat_hypoth','tmax']
+# Behavioral choice
+U <- c(0, 1, 2)
+
+# Terminal fitness
+Ws    <- param_dat['habitat_hypoth','Ws']
+r     <- param_dat['habitat_hypoth','r']
+Smax  <- param_dat['habitat_hypoth','Smax']
+
+# Growth
+E     <- param_dat['habitat_hypoth','E']
+a     <- param_dat['habitat_hypoth','a']
+Alpha <- param_dat['habitat_hypoth','Alpha']
+d     <- param_dat['habitat_hypoth','d']
+dn0   <- param_dat['habitat_hypoth','dn0']
+v     <- param_dat['habitat_hypoth','v']
+
+#river growth by speed
+z     <- param_dat['habitat_hypoth','z']
+ka    <- param_dat['habitat_hypoth','ka']
+kn    <- param_dat['habitat_hypoth','kn']
+
+# ocean growth
+f     <- param_dat['habitat_hypoth','f']
+g     <- param_dat['habitat_hypoth','g']
+c     <- param_dat['habitat_hypoth','c']
+j     <- param_dat['habitat_hypoth','j']
+
+# Risk
+Bu    <- c(0.7, 1, 0.7) # B0, B1, B2 (can concatenate because we will loop over behavior choices?)
+Ba    <- param_dat['habitat_hypoth','Ba']
+Bn    <- param_dat['habitat_hypoth','Bn']
+Bo    <- param_dat['habitat_hypoth','Bo']
+Bw    <- param_dat['habitat_hypoth','Bw']
+M     <- param_dat['habitat_hypoth','M']
+m     <- param_dat['habitat_hypoth','m']
+ya    <- param_dat['habitat_hypoth','ya']
+yn    <- param_dat['habitat_hypoth','yn']
+yo    <- param_dat['habitat_hypoth','yo']
+P     <- param_dat['habitat_hypoth','P']
+
+
+
+# 
+## Amount of natural habitat (N) ##
+
+
+# Set iterations
+df_iters <- data.frame(N = c(0, 0.25, 0.5, 0.75, 1))
+
+
+# Start simulation
+OUT.SUM <- list() # make object to save function output
+
+# Start looping MAIN_FUN over different qa values
+for(i in 1:length(df_iters[,1])) {
+  
+  OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+                  ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+                  Ws, r, Smax, W, # vars for Terminal fitness function
+                  Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N=df_iters[i,1])
+  
+  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
+  
+  OUT$iter_val <- rep(df_iters[i,(length(colnames(df_iters)))], length(OUT$Wstart)) # add column with seeds value for that iteration.
+  
+  OUT.SUM[[i]] <- OUT
+  
+} # end loop.
+
+DF.SUM<-ldply(OUT.SUM, as.vector)
+
+DF.SUM <- DF.SUM %>% as_tibble() %>% mutate(iter_var = "N")
+
+
+# Save all data from scenario 4
+
+write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario4.csv") # UPDATE SAVE LOCATION!
+DF4 <- read.csv("C://Users//sabalm//Desktop//scenario4.csv")
+
+
+
+## Run again but get the tracks
+
+# Set iterations
+df_iters <- data.frame(N = c(0, 0.25, 0.5, 0.75, 1))
+
+
+# Start simulation
+OUT.SUM <- list() # make object to save function output
+
+# Start looping MAIN_FUN over different qa values
+for(i in 1:length(df_iters[,1])) {
+  
+  OUT <- MAIN_FUN_TRACKS(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+                  ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+                  Ws, r, Smax, W, # vars for Terminal fitness function
+                  Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N=df_iters[i,1])
+  
+  OUT$iter_val <- rep(df_iters[i,(length(colnames(df_iters)))], length(OUT$Wstart)) # add column with seeds value for that iteration.
+  
+  OUT.SUM[[i]] <- OUT
+  
+} # end loop.
+
+DF.SUM<-ldply(OUT.SUM, as.vector)
+
+DF.SUM <- DF.SUM %>% as_tibble() %>% mutate(iter_var = "N")
+
+
+# Save all data from scenario 4
+
+write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario4_tracks.csv") # UPDATE SAVE LOCATION!
+DF4_tracks <- read.csv("C://Users//sabalm//Desktop//scenario4_tracks.csv")
+
+
+
+
+## Figure 5 ----
+
+# Fig 5a - proportion of river moves NOT by habitat
+
+moves_dat <- DF4_tracks %>% as_tibble() %>% group_by(iter_val, Beh) %>% filter(h != "o") %>% 
+  summarise(count_moves = n()) %>%   # number of movements in teh river between 0, 1, 2.
+  ungroup() %>% group_by(iter_val) %>% 
+  mutate(tot_moves = sum(count_moves)) %>% 
+  mutate(p_moves = count_moves/tot_moves,
+         iter_val = iter_val*100)
+
+fig_5a <- ggplot(data=moves_dat, aes(x=as.factor(iter_val), y=p_moves, fill=as.factor(Beh))) + 
+  geom_bar(stat="identity", color="black") + 
+  theme_classic() +
+  scale_fill_brewer(palette = "Blues", labels = c("move 0\n(0 km/d)", "move 1\n(20 km/d)", "move 2\n(40 km/d)")) + 
+  scale_y_continuous(expand = c(0,0), limits=c(0,1), breaks = seq(0,1,by=0.2)) +
+  ylab("Proportion of\nmovement choices") + xlab("Percent of natural habitat") +
+  theme(legend.title = element_blank()) +
+  theme(legend.position = "top") +
+  ggtitle(label = "(a)") + theme(plot.title = element_text(size=12)); fig_5a
+
+
+
+# Fig 5b-e - summarize metrics over starting salmon weights.
+
+sub_dat <- DF4 %>% group_by(iter_val) %>% summarise(mean_dur = mean(dur),
+                                                    mean_G_riv = mean(G.riv),
+                                                    mean_S_cum = mean(S.cum.riv),
+                                                    mean_Fit = mean(Fit)) %>% 
+  mutate(iter_val = iter_val*100)
+  
+# Fig 5b - Migration duration by percent of natural habitat.
+fig_5b <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_dur)) +
+  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
+  theme_classic() +
+  ylab("Mean duration of\nmigration (days)") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(b)") + theme(plot.title = element_text(size=12)); fig_5b
+
+
+# Fig 5c - Growth in river by percent of natural habitat.
+fig_5c <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_G_riv)) +
+  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
+  theme_classic() +
+  ylab("Mean growth\nin river (g)") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(c)") + theme(plot.title = element_text(size=12)); fig_5c
+
+
+# Fig 5d - Cumulative survival to ocean by percent of natural habitat.
+fig_5d <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_S_cum)) +
+  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
+  theme_classic() +
+  ylab("Mean cumulative\nsurvival to ocean") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(d)") + theme(plot.title = element_text(size=12)); fig_5d
+
+
+# Fig 5e - Fitness by percent of natural habitat.
+fig_5e <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_Fit)) +
+  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
+  theme_classic() +
+  ylab("Probability of returning\nas an adult (Fitness)") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(e)") + theme(plot.title = element_text(size=12)); fig_5e
+
+
+# All of Figure 5
+
+ggarrange(fig_5a, fig_5b, fig_5c, fig_5d, fig_5e,
+          ncol = 1)
+
+# Save Figure 5
+pdf.options(reset = TRUE, onefile = FALSE)
+setwd("C:/Users/sabalm/Desktop/")
+pdf("Figure5.pdf", width=3.5, height=12)
+
+ggarrange(fig_5a, fig_5b, fig_5c, fig_5d, fig_5e,
+          ncol = 1)
+
+dev.off()
+
+

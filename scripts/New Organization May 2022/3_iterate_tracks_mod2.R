@@ -18,6 +18,11 @@ data_tracks <- MAIN_FUN_TRACKS(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, cons
 data_tracks
 
 
+# Make h.col vector
+library(tidyverse)
+#data_tracks %>% as_tibble() %>% select(A, h) %>% distinct() %>% arrange(A)
+
+
 #### Key plots for tracks
 
 # 1 - Tracks: A ~ Time
@@ -31,9 +36,20 @@ data_tracks
 
 # 1 - Tracks: A ~ Time
 
-# Make vector of how to color A x-axis labels by habitat type.
-h.col <- ifelse(data_tracks$h == "a", "mediumpurple",
-                ifelse(data_tracks$h == "n", "forestgreen", "blue3"))
+# See code from inside main function.
+h.vec <- rep(NA, Amax) # create blank vector for habitats for each Area.
+h.vec[Amax] <- "o" # make the last area (Amax) the ocean: "o"
+set.seed(seeds)  # set.seed to keep altered and natural habitat distribution constant for now.
+h.vec[1:Amax-1] <- sample(0:1, Amax-1, replace=T, prob=c(1-N,N))  # randomly sample
+# Amax-1 number of values 0 or 1 with a 50% probability between the two values.
+h.vec[h.vec == "1"] <- "a"  # change 1 from sample function to "a"
+h.vec[h.vec == "0"] <- "n"  # change 0 from sample function to "n"
+
+# Make dataframe with Area habitat types and color for plotting.
+h.vec <- data_frame(h=h.vec, A=seq(1, Amax, by=1)) %>% as_tibble() %>% 
+  mutate(h.col = ifelse(.$h == "a", "mediumpurple",
+                        ifelse(.$h == "n", "forestgreen", "blue3")))
+
 
 # Simulated salmon tracks.
 
@@ -43,9 +59,9 @@ fig_tracks <- ggplot(data=data_tracks, aes(x=Time, y=A, color=as.factor(Wstart))
   theme(legend.key=element_blank(), legend.position="bottom", legend.background=element_blank()) + coord_equal() +
   scale_x_continuous(breaks = seq(1,tmax,2)) +
   scale_y_continuous(breaks = seq(1,Amax,1)) +
-  theme(axis.text.y = element_text(color=h.col, face="bold"), axis.text.x = element_text(face = "bold")) +
-  ylab("Area") + scale_color_brewer(palette = "Set3", name= "Starting salmon size (g)")
-fig_tracks
+  theme(axis.text.y = element_text(color=h.vec$h.col, face="bold"), axis.text.x = element_text(face = "bold")) +
+  ylab("Area") + scale_color_brewer(palette = "Blues", name= "Starting salmon size (g)") +
+  annotate(geom="text", label="(a)", x=3, y=26, size=6); fig_tracks
 
 
 # 2 - Growth: W ~ Time
