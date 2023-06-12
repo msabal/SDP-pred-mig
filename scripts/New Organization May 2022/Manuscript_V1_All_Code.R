@@ -346,7 +346,7 @@ OVER.STATES <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh
 # # to A26 in by tmax. Therefore, Beh.best and S.day all NAs.
 
 
-# Get summary info from salmon tracks function - TRYING TO ADD MOVEMENT CHOICE PROPORTIONS, GETTING ERRORS.
+# Get summary info from salmon tracks function.
 TRACK.SUM.FUN <- function(A, h, Beh, Time, Fit, S.day, S.cum, W){ # start function.
   df <- data.frame (A, h, Beh, Time, Fit, S.day, S.cum, W)
   df$Beh <- as.factor(df$Beh)
@@ -757,6 +757,8 @@ DF.SUM$seeds <- DF.SUM$iter_index
 write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario1.csv")
 DF.SUM <- read.csv("C://Users//sabalm//Desktop//scenario1.csv")
 
+DF.SUM <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//Manuscript V1//scenario1.csv")
+
 
 
 ## Figure 2 ----
@@ -1122,6 +1124,7 @@ DF.SUM <- DF.SUM %>% bind_rows(DF.SUM2)
 write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario2.csv") # UPDATE SAVE LOCATION!
 #DF.SUM <- read.csv("C://Users//sabalm//Desktop//scenario2.csv")
 
+DF.SUM <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//Manuscript V1//scenario2.csv")
 
 
 ## Figure 3 ----
@@ -1289,6 +1292,7 @@ nat_preds_cat_N <- DF.SUM %>% dplyr::select(iter_index, Bn, ka, dn0, more_nat_pr
 write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario3.csv") # UPDATE SAVE LOCATION!
 #DF.SUM <- read.csv("C://Users//sabalm//Desktop//scenario3.csv")
 
+DF.SUM <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//Manuscript V1//scenario3.csv")
 
 
 ## Figure 4 ----
@@ -1492,6 +1496,8 @@ DF.SUM <- DF.SUM %>% as_tibble() %>% mutate(iter_var = "N")
 write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario4.csv") # UPDATE SAVE LOCATION!
 DF4 <- read.csv("C://Users//sabalm//Desktop//scenario4.csv")
 
+DF4 <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//Manuscript V1//scenario4.csv")
+
 
 
 ## Run again but get the tracks
@@ -1528,6 +1534,7 @@ DF.SUM <- DF.SUM %>% as_tibble() %>% mutate(iter_var = "N")
 write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario4_tracks.csv") # UPDATE SAVE LOCATION!
 DF4_tracks <- read.csv("C://Users//sabalm//Desktop//scenario4_tracks.csv")
 
+DF4_tracks <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//Manuscript V1//scenario4_tracks.csv")
 
 
 
