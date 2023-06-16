@@ -14,8 +14,7 @@
 
 #..................................................................................................
 # 1. Load libraries and set settings ----
-library(abind); library(ggplot2); library(plyr); library(reshape2);library(colorRamps)
-library(ggpubr)
+library(abind); library(ggplot2); library(plyr); library(reshape2);library(colorRamps); library(ggpubr)
 
 #remove scientific notation
 options(scipen=999)
@@ -33,13 +32,13 @@ row.names(param_dat) <- param_dat$baseline
 
 # seeds for h.vec
 seeds <- param_dat['habitat_hypoth','seeds']
-N <- param_dat['habitat_hypoth','N'] 
+N     <- param_dat['habitat_hypoth','N'] 
 
 # W: salmon weight (g)
-Wmin <- param_dat['habitat_hypoth','Wmin']
-Wmax <- param_dat['habitat_hypoth','Wmax'] 
-Wstep <- param_dat['habitat_hypoth','Wstep']
-Wstep.n <- ((Wmax-Wmin)/Wstep)
+Wmin         <- param_dat['habitat_hypoth','Wmin']
+Wmax         <- param_dat['habitat_hypoth','Wmax'] 
+Wstep        <- param_dat['habitat_hypoth','Wstep']
+Wstep.n      <- ((Wmax-Wmin)/Wstep)
 Wstart_setup <- seq(7, 10, length.out = 6); Wstart_setup[1] <- 7.1 # needs to be start at 7.1
 
 # A: salmon area
@@ -49,6 +48,7 @@ Amax <- param_dat['habitat_hypoth','Amax']
 # t: time
 tmin <- param_dat['habitat_hypoth','tmin']
 tmax <- param_dat['habitat_hypoth','tmax']
+
 # Behavioral choice
 U <- c(0, 1, 2)
 
@@ -94,32 +94,24 @@ P     <- param_dat['habitat_hypoth','P']
 #..................................................................................................
 # 3. Load all functions ----
 
-## Outline of this R script
+## Outline of functions
+# 3.1.  WtoWc and WctoW (convert between salmon weight in grams and computer index)
+# 3.2.  TERM.FUN (terminal fitness function: relate salmon area and weight to probability of survival to age 3 adult)
+# 3.3.  GROWTH.FUN
+# 3.4.  OCEAN.Q
+# 3.5.  RIVER.Q
+# 3.6.  SURV.FUN
+# 3.7.  FITNESS
+# 3.8.  OVER.BEH
+# 3.9.  OVER.STATES
+# 3.10. TRACK.SUM.FUN
+# 3.11. MAIN_FUN (returns summary data from tracks)
+# 3.12. MAIN_FUN_TRACKS (returns tracks instead of summary data)
 
-# 1. WtoWc and WctoW (convert between salmon weight in grams and computer index)
 
-# 2. TERM.FUN (terminal fitness function: relate salmon area and weight to probability of survival to age 3 adult)
+#### 3.1. WtoWc and WctoW (convert between salmon weight in grams and computer index)
 
-# 3. GROWTH.FUN
-
-# 4. OCEAN.Q
-
-# 5. SURV.FUN
-
-# 6. FITNESS
-
-# 7. OVER.BEH
-
-# 8. OVER.STATES
-
-# 9. TRACK.SUM.FUN
-
-# 10. MAIN_FUN (returns summary data from tracks)
-
-# 11. MAIN_FUN_TRACKS (returns tracks instead of summary data)
-
-#### (1) Make functions to convert between W in grams and W in computer discrete indexing
-
+# Make functions to convert between W in grams and W in computer discrete indexing
 # Make a data frame to covert between real W (grams) and computer discrete index (Wc)
 Wconvdf <- data.frame(W = seq(Wmin+Wstep, Wmax, 0.1), Wc = seq(1,Wstep.n,1))
 
@@ -142,19 +134,19 @@ WctoW <- function(Wc){ m.Wc*Wc + y.Wc }
 # WctoW(30); WctoW(31) # Good.
 
 
+#### 3.2. TERM.FUN (terminal fitness function: relate salmon area and weight to probability of survival to age 3 adult)
 
-#### Terminal fitness function - how does salmon weight at tmax and Amax relate to probability of
-#    surviving to a returning adult? Larger salmon more likely to survive to a returning adult.
-#    Sigmoidal function that asymptotes at Smax.
+# Terminal fitness function - how does salmon weight at tmax and Amax relate to probability of
+# surviving to a returning adult? Larger salmon more likely to survive to a returning adult.
+# Sigmoidal function that asymptotes at Smax.
 
-#ONLY applicable for salmon at A 26 at tmax!!!! Otherwise, fitness is 0!
+# ONLY applicable for salmon at A 26 at tmax!!!! Otherwise, fitness is 0!
 TERM.FUN <- function(W, Ws, r, Smax){ Smax/(1+exp(-r*(W-Ws))) }
 
 # plot Terminal Fitness function
 #curve(TERM.FUN(W, Ws=Ws , r=r, Smax=Smax), xname="W", xlim=c(7,80), ylim=c(0,0.31), ylab="adult marine survival (to age 3)")
 
-
-
+#### 3.3. - 3.6.
 # Functions used inside the Fitness function (see Final State Dynamics.R for more details)
 GROWTH.FUN <- function(W, E, q, a, Alpha, d, v, U)    { q*E*W^a - d*Alpha*W*exp(v*U) }
 OCEAN.Q <-    function(t, f, g, c, j)                 { f + g*exp(-(t-c)^2/2*j^2) }
@@ -162,7 +154,7 @@ RIVER.Q <-    function(U, z, kh)                      { z*U + kh }
 SURV.FUN <-   function(W, Bu, Bh, Bw, M, m, y, P)     { (1-M*(Bu + Bh + Bw*W^m))^(y*P) }
 
 
-# Fitness function (described above)
+#### 3.7. Fitness function (described above)
 FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                     E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
                     ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
@@ -173,7 +165,7 @@ FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh cho
   #define h.vec based on variable seeds
   h.vec <- rep(NA, Amax) # create blank vector for habitats for each Area.
   h.vec[Amax] <- "o" # make the last area (Amax) the ocean: "o"
-  set.seed(seeds)  # set.seed to keep altered and natural habitat distribution constant for now.
+  set.seed(seeds)  # set.seed to keep altered and natural habitat distribution constant for reproducibility.
   h.vec[1:Amax-1] <- sample(0:1, Amax-1, replace=T, prob=c(N,1-N))  # randomly sample
   # Amax-1 number of values 0 or 1 with a 50% probability between the two values.
   h.vec[h.vec == "1"] <- "a"  # change 1 from sample function to "a"
@@ -219,7 +211,8 @@ FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh cho
 # 
 
 
-#### OVER.BEH function to apply over BEHAVIORAL CHOICES (move 0, 1, 2).
+#### 3.8. OVER.BEH
+# OVER.BEH function to apply over BEHAVIORAL CHOICES (move 0, 1, 2).
 # Function used to apply FITNESS using for loop over all behavioral choices.
 # Returns the maximum fitness (F.best), best choice (Beh.best), and daily survival (Surv.day).
 # F.best saved in appro first col of F.vec.
@@ -284,7 +277,8 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
 # rm(Test.beh)
 
 
-#### OVER.STATES function to apply over BEHAVIORAL CHOICES (move 0, 1, 2) AND AREA (1 to 26).
+#### 3.9. OVER.STATES 
+# OVER.STATES function to apply over BEHAVIORAL CHOICES (move 0, 1, 2) AND AREA (1 to 26).
 # Function used to iterate OVER.BEH over both states W and A using nested for loops.
 # Run OVER.BEH and get Temp.out. Split Temp.out to F.vec and best.F.beh (only F.best and Beh.best).
 # Put Beh.best in appro Store spot. Combine F.vec and Store in an array,
@@ -346,6 +340,7 @@ OVER.STATES <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh
 # # to A26 in by tmax. Therefore, Beh.best and S.day all NAs.
 
 
+#### 3.10. TRACK.SUM.FUN 
 # Get summary info from salmon tracks function.
 TRACK.SUM.FUN <- function(A, h, Beh, Time, Fit, S.day, S.cum, W){ # start function.
   df <- data.frame (A, h, Beh, Time, Fit, S.day, S.cum, W)
@@ -387,7 +382,7 @@ TRACK.SUM.FUN <- function(A, h, Beh, Time, Fit, S.day, S.cum, W){ # start functi
   
 } #end function.
 
-
+#### 3.11. MAIN_FUN (returns summary data from tracks)
 MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                      E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
                      ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
@@ -582,7 +577,7 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
 # 
 # OUT
 
-
+#### 3.12. MAIN_FUN_TRACKS (returns tracks instead of summary data)
 MAIN_FUN_TRACKS <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                             E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
                             ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
