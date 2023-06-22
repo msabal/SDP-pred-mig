@@ -13,7 +13,7 @@
 # 7. Scenario 4: habitat restoration - how do movement choices, river growth, survival to ocean, and fitness vary over % of natural habitats?
 
 
-#..................................................................................................
+#..........................................................................................................................................
 # 1. Load libraries and set settings ----
 library(abind); library(ggplot2); library(plyr); library(reshape2);library(colorRamps); library(ggpubr)
 
@@ -21,7 +21,7 @@ library(abind); library(ggplot2); library(plyr); library(reshape2);library(color
 options(scipen=999)
 
 
-#..................................................................................................
+#..........................................................................................................................................
 # 2. Set habitat hypotheses parameters ----
 
 # Load parameters
@@ -91,7 +91,7 @@ yo    <- param_dat['habitat_hypoth','yo'] # scaling parameter for predators in t
 P     <- param_dat['habitat_hypoth','P'] # Number of predator encounters (attacks) per day
 
 
-#..................................................................................................
+#..........................................................................................................................................
 # 3. Load all functions ----
 
 ## Outline of functions
@@ -121,7 +121,7 @@ WtoWc <- function(W){
   # summary(lm(Wc ~ W, Wconvdf)) # y-int: -70, slope: 10
   m.W <- 10
   y.W <- -70
- return(round(m.W*W + y.W, digits=Wstep))
+  return(round(m.W*W + y.W, digits=Wstep))
 }
 
 # Convert computer discrete index (Wc) to weight (W)
@@ -142,37 +142,33 @@ WctoW <- function(Wc){
 # Sigmoidal function that asymptotes at Smax.
 
 # ONLY applicable for salmon at A 26 at tmax!!!! Otherwise, fitness is 0!
-TERM.FUN <- function(W, Ws, r, Smax){ Smax/(1+exp(-r*(W-Ws))) }
+TERM.FUN <- function(W, Ws, r, Smax){ Smax/(1+exp(-r*(W-Ws)))}
 
-# plot Terminal Fitness function
-#curve(TERM.FUN(W, Ws=Ws , r=r, Smax=Smax), xname="W", xlim=c(7,80), ylim=c(0,0.31), ylab="adult marine survival (to age 3)")
 
 #### 3.3. - 3.6.
 # Functions used inside the Fitness function (see Final State Dynamics.R for more details)
-GROWTH.FUN <- function(W, E, q, a, Alpha, d, v, U)    { q*E*W^a - d*Alpha*W*exp(v*U) }
-OCEAN.Q <-    function(t, f, g, c, j)                 { f + g*exp(-(t-c)^2/2*j^2) }
-RIVER.Q <-    function(U, z, kh)                      { z*U + kh }
-SURV.FUN <-   function(W, Bu, Bh, Bw, M, m, y, P)     { (1-M*(Bu + Bh + Bw*W^m))^(y*P) }
+GROWTH.FUN <- function(W, E, q, a, Alpha, d, v, U) { q*E*W^a - d*Alpha*W*exp(v*U) }
+OCEAN.Q    <- function(t, f, g, c, j)              { f + g*exp(-(t-c)^2/2*j^2) }
+RIVER.Q    <- function(U, z, kh)                   { z*U + kh }
+SURV.FUN   <- function(W, Bu, Bh, Bw, M, m, y, P)  { (1-M*(Bu + Bh + Bw*W^m))^(y*P) }
 
 
 #### 3.7. Fitness function (described above)
 FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-                    E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-                    ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+                    E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # parameters in functions
+                    ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # parameters that vary by habitat (h.vec)
                     seeds, F.vec, N) # vectors describing habitats of areas and stored Fitness values
   
 { # start of function
   
-  #define h.vec based on variable seeds
+  # define h.vec based on seeds
   h.vec <- rep(NA, Amax) # create blank vector for habitats for each Area.
   h.vec[Amax] <- "o" # make the last area (Amax) the ocean: "o"
-  set.seed(seeds)  # set.seed to keep altered and natural habitat distribution constant for reproducibility.
-  h.vec[1:Amax-1] <- sample(0:1, Amax-1, replace=T, prob=c(N,1-N))  # randomly sample
+  set.seed(seeds)  # set.seed to keep psuedorandom draws of altered and natural habitat distribution constant for reproducibility.
+  h.vec[1:Amax-1] <- sample(c("n","a"), Amax-1, replace=T, prob=c(N,1-N)) # randomly sample
   # Amax-1 number of values 0 or 1 with a 50% probability between the two values.
-  h.vec[h.vec == "1"] <- "a"  # change 1 from sample function to "a"
-  h.vec[h.vec == "0"] <- "n"  # change 0 from sample function to "n"
   
-  #define or change input parameters that depend on U, habitat, or Area.
+  # define or change input parameters that depend on U, habitat, or Area.
   U  <- ifelse(U == 1, 20, ifelse(U == 2, 40, 0))
   d  <- ifelse(U == 0 & h.vec[A] == "n", dn0, d)
   q  <- ifelse(h.vec[A] == "o", OCEAN.Q(t=t, f=f, g=g, c=c, j=j),
@@ -1617,3 +1613,12 @@ ggarrange(fig_5a, fig_5b, fig_5c, fig_5d, fig_5e,
 dev.off()
 
 
+
+
+
+
+
+# Potential SI figure plots ----
+
+# plot Terminal Fitness function
+curve(TERM.FUN(W, Ws=Ws , r=r, Smax=Smax), xname="W", xlim=c(7,80), ylim=c(0,0.31), ylab="adult marine survival (to age 3)")
