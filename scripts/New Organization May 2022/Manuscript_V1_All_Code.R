@@ -147,10 +147,10 @@ TERM.FUN <- function(W, Ws, r, Smax){ Smax/(1+exp(-r*(W-Ws)))}
 
 #### 3.3. - 3.6.
 # Functions used inside the Fitness function (see Final State Dynamics.R for more details)
-GROWTH.FUN <- function(W, E, q, a, Alpha, d, v, U) { q*E*W^a - d*Alpha*W*exp(v*U) }
-OCEAN.Q    <- function(t, f, g, c, j)              { f + g*exp(-(t-c)^2/2*j^2) }
-RIVER.Q    <- function(U, z, kh)                   { z*U + kh }
-SURV.FUN   <- function(W, Bu, Bh, Bw, M, m, y, P)  { (1-M*(Bu + Bh + Bw*W^m))^(y*P) }
+GROWTH.FUN <- function(W, E, q, a, Alpha, d, v, U) { q*E*W^a - d*Alpha*W*exp(v*U) }   # anabolic gain minus catabolic costs (equation 2)
+OCEAN.Q    <- function(t, f, g, c, j)              { f + g*exp(-(t-c)^2/2*j^2) }      # ocean growth potential (appendix equation 1)
+RIVER.Q    <- function(U, z, kh)                   { z*U + kh }                       # river growth potential (equation 3)
+SURV.FUN   <- function(W, Bu, Bh, Bw, M, m, y, P)  { (1-M*(Bu + Bh + Bw*W^m))^(y*P) } # daily probability of survival (equation 4 and 5)
 
 
 #### 3.7. Fitness function (described above)
@@ -188,8 +188,7 @@ FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh cho
   Fit <- matrix(NA, 1, 3)
   Fit[,1] <- ifelse(Wnew > Wmin, SURV.FUN(W=W, Bu=Bu, Bw=Bw, M=M, m=m,
                                           P=P, Bh=Bh, y=y)*F.vec[Wcnew, 2, Anew], 0)
-  Fit[,2] <- SURV.FUN(W=W, Bu=Bu, Bw=Bw, M=M, m=m,
-                      P=P, Bh=Bh, y=y)
+  Fit[,2] <- SURV.FUN(W=W, Bu=Bu, Bw=Bw, M=M, m=m, P=P, Bh=Bh, y=y)
   Fit[,3] <- GROWTH.FUN(W=W, E=E, a=a, v=v, Alpha= Alpha, U=U, d=d, q=q)
   
   return(Fit)
