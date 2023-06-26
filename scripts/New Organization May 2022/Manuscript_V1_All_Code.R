@@ -144,8 +144,14 @@ WctoW <- function(Wc){
 # ONLY applicable for salmon at A 26 at tmax!!!! Otherwise, fitness is 0!
 TERM.FUN <- function(W, Ws, r, Smax){ Smax/(1+exp(-r*(W-Ws)))}
 
+# Extra code to test terminal fitness function
+# # Test Fitness function
+# F.vec <- array(NA, dim=c(Wstep.n, 2, Amax))  #(rows: weight, cols: F(x,t), F(x, t+1), matrices: area)
+# F.vec[1:Wstep.n, 2, Amax] <- TERM.FUN(W = seq(Wmin+Wstep, Wmax , Wstep), Ws=Ws, r=r, Smax=Smax)
+# F.vec[,2,1:Amax-1] <- 0 #if salmon end in any area besides the last (Amax), then their fitness is 0!
 
-#### 3.3. - 3.6.
+
+#### 3.3. - 3.6. Growth and survival functions
 # Functions used inside the Fitness function (see Final State Dynamics.R for more details)
 GROWTH.FUN <- function(W, E, q, a, Alpha, d, v, U) { q*E*W^a - d*Alpha*W*exp(v*U) }   # anabolic gain minus catabolic costs (equation 2)
 OCEAN.Q    <- function(t, f, g, c, j)              { f + g*exp(-(t-c)^2/2*j^2) }      # ocean growth potential (appendix equation 1)
@@ -161,50 +167,47 @@ FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh cho
   
 { # start of function
   
-  # define h.vec based on seeds
+  # Create vector of areas and habitat (river [n or a] and ocean)
   h.vec <- rep(NA, Amax) # create blank vector for habitats for each Area.
   h.vec[Amax] <- "o" # make the last area (Amax) the ocean: "o"
   set.seed(seeds)  # set.seed to keep psuedorandom draws of altered and natural habitat distribution constant for reproducibility.
   h.vec[1:Amax-1] <- sample(c("n","a"), Amax-1, replace=T, prob=c(N,1-N)) # randomly sample
   # Amax-1 number of values 0 or 1 with a 50% probability between the two values.
   
-  # define or change input parameters that depend on U, habitat, or Area.
-  U  <- ifelse(U == 1, 20, ifelse(U == 2, 40, 0))
-  d  <- ifelse(U == 0 & h.vec[A] == "n", dn0, d)
+  # Set parameters based on behavior (U), area (ocean or river), and habitat ("n" or "a")
+  U  <- ifelse(U == 1, 20, ifelse(U == 2, 40, 0)) # set U based on behavioral choice
+  d  <- ifelse(U == 0 & h.vec[A] == "n", dn0, d) # set metabolic cost based on choice and habitat
   q  <- ifelse(h.vec[A] == "o", OCEAN.Q(t=t, f=f, g=g, c=c, j=j),
-               ifelse(h.vec[A] == "n", RIVER.Q(U=U, z=z, kh=kn), RIVER.Q(U=U, z=z, kh=ka)))
-  Bh <- ifelse(h.vec[A] == "n", Bn, ifelse(h.vec[A] == "a", Ba, Bo))
-  y  <- ifelse(h.vec[A] == "n", yn, ifelse(h.vec[A] == "a", ya, yo))
+               ifelse(h.vec[A] == "n", RIVER.Q(U=U, z=z, kh=kn), RIVER.Q(U=U, z=z, kh=ka))) # set growth potential based on habitat
+  Bh <- ifelse(h.vec[A] == "n", Bn, ifelse(h.vec[A] == "a", Ba, Bo)) # set mortality based on habitat
+  y  <- ifelse(h.vec[A] == "n", yn, ifelse(h.vec[A] == "a", ya, yo)) # set scaling parameter for predators by habitat
   W  <- WctoW(Wc) # convert Wc (discrete 1 to 730 to W in grams)
   
-  Wnew <- W + GROWTH.FUN(W=W, E=E, a=a, v=v, Alpha= Alpha, U=U, d=d, q=q)
-  
+  # Growth
+  Wnew <- W + GROWTH.FUN(W=W, E=E, a=a, v=v, Alpha=Alpha, U=U, d=d, q=q) 
   Wnew <- min(Wnew, Wmax) # if Wnew is greater than max value, keep at max value (this will be unlikely to happen since our Wmax is BIG.)
-  Wcnew <- WtoWc(Wnew)
+  Wcnew <- WtoWc(Wnew) # convert weight to computer index
   
-  Anew <- A + ifelse(U == 20, 1, ifelse(U == 40, 2, 0))           # salmon's new location is its current A plus movement choice U.
+  # Movement
+  Anew <- A + ifelse(U == 20, 1, ifelse(U == 40, 2, 0)) # salmon's new location is its current A plus movement choice U.
   Anew <- min(Anew, Amax) # if salmon are in the ocean (Amax) keep them in the ocean.
   
+  # Fitness [(1) expected fitness, (2) daily survival, (3) growth rate]
   Fit <- matrix(NA, 1, 3)
   Fit[,1] <- ifelse(Wnew > Wmin, SURV.FUN(W=W, Bu=Bu, Bw=Bw, M=M, m=m,
                                           P=P, Bh=Bh, y=y)*F.vec[Wcnew, 2, Anew], 0)
   Fit[,2] <- SURV.FUN(W=W, Bu=Bu, Bw=Bw, M=M, m=m, P=P, Bh=Bh, y=y)
-  Fit[,3] <- GROWTH.FUN(W=W, E=E, a=a, v=v, Alpha= Alpha, U=U, d=d, q=q)
+  Fit[,3] <- GROWTH.FUN(W=W, E=E, a=a, v=v, Alpha=Alpha, U=U, d=d, q=q)
   
   return(Fit)
   
+  # Extra code to test fitness function
+  # FITNESS(Wc=1, A=Amax, t=tmax, U=2, Wmax, Amax,
+  #         E, q, a, Alpha, d, v, f, g, c, j, Bu=Bu[2], Bw, M, m, y, P, z,
+  #         ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
+  #         seeds=1, F.vec, N) # # (Expected Fitness) and # (daily survival) and # growth rate (for that time step)!!!!!
+  
 } # end function.
-
-#Test Fitness function
-# F.vec <- array(NA, dim=c(Wstep.n, 2, Amax))  #(rows: weight, cols: F(x,t), F(x, t+1), matrices: area)
-# F.vec[1:Wstep.n, 2, Amax] <- TERM.FUN(W = seq(Wmin+Wstep, Wmax , Wstep), Ws=Ws, r=r, Smax=Smax)
-# F.vec[,2,1:Amax-1] <- 0    #if salmon end in any area besides the last (Amax), then their fitness is 0!
-# 
-# FITNESS(Wc=1, A=Amax, t=tmax, U=2, Wmax, Amax,
-#         E, q, a, Alpha, d, v, f, g, c, j, Bu=Bu[2], Bw, M, m, y, P, z,
-#         ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
-#         seeds=1, F.vec, N) # # (Expected Fitness) and # (daily survival) and # growth rate (for that time step)!!!!!
-# 
 
 
 #### 3.8. OVER.BEH
