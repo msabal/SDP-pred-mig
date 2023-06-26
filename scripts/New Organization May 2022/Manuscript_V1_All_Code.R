@@ -251,19 +251,21 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
   # F.vec AND F.best, S.day, and Beh.best. Will split up later to use in different ways in the next function OVER.STATES.
   return(Temp.out)
   
+  # Extra code to test OVER.BEH
+  # # Check if OVER.BEH works for a specific W and A state for tmax-1.
+  # Test.beh <- OVER.BEH(Wc=1, A=Amax, t=tmax, U, Wmax, Amax,
+  #                     E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
+  #                     ya, yn, yo, dn0, Ba, Bn, Bo, kn, ka,
+  #                     seeds=1, F.vec, N)
+  # head(Test.beh[,,Amax])
+  # tail(Test.beh[,,Amax])
+  # # Works!!! Look for a value in column one at W<-# and
+  # # in rows 731 and 731 where we stored Fit, Beh.best, S.day, and G.day.
+  # rm(Test.beh)
+  
 } # end function.
 
 
-# # Check if OVER.BEH works for a specific W and A state for tmax-1.
-# Test.beh <- OVER.BEH(Wc=1, A=Amax, t=tmax, U, Wmax, Amax,
-#                     E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
-#                     ya, yn, yo, dn0, Ba, Bn, Bo, kn, ka,
-#                     seeds=1, F.vec, N)
-# head(Test.beh[,,Amax])
-# tail(Test.beh[,,Amax])
-# # Works!!! Look for a value in column one at W<-# and
-# # in rows 731 and 731 where we stored Fit, Beh.best, S.day, and G.day.
-# rm(Test.beh)
 
 
 #### 3.9. OVER.STATES 
