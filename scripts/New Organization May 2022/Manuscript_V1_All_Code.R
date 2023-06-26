@@ -167,6 +167,7 @@ FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh cho
   
 { # start of function
   
+  ## NOTE: I think it would be better to define h.vec outside of this function and just assign it as an input parameter. It's probably fine because of the set.seed() but safer to pass it as an input. ####
   # Create vector of areas and habitat (river [n or a] and ocean)
   h.vec <- rep(NA, Amax) # create blank vector for habitats for each Area.
   h.vec[Amax] <- "o" # make the last area (Amax) the ocean: "o"
@@ -223,20 +224,23 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
                      seeds, F.vec, N)
   
 { # start function
-  F.beh.surv <- matrix(NA, 3, 3)  #matrix to save fitness (Fit) from each (3) behavioral choice.
+  
+  F.beh.surv <- matrix(NA, 3, 3) # matrix to save fitness (Fit) from each (3) behavioral choice.
   
   # run a for loop over all behavioral choices to get FITNESS (Fit) from each one.
-  for(i in 1:length(U)){ F.beh.surv[i,] <- FITNESS(Wc, A, t, U[i], Wmax, Amax,
-                                                   E, q, a, Alpha, d, v, f, g, c, j, Bu[i], Bw, M, m, y, P, z,
-                                                   ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
-                                                   seeds, F.vec, N) }
+  for(i in 1:length(U)){ 
+    F.beh.surv[i,] <- FITNESS(Wc, A, t, U[i], Wmax, Amax,
+                              E, q, a, Alpha, d, v, f, g, c, j, Bu[i], Bw, M, m, y, P, z,
+                              ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
+                              seeds, F.vec, N) 
+  }
   
   F.best <- max(F.beh.surv[,1])  # Get maximum expected fitness from all three behavioral choices.
-  S.day <- ifelse(F.best > 0, F.beh.surv[F.beh.surv[,1] == F.best, 2], NA) # Get the daily survival from the max expected fitness.
-  G.day <- ifelse(F.best > 0, F.beh.surv[F.beh.surv[,1] == F.best, 3], NA) # Get the daily growth from the max expected fitness.
+  S.day  <- ifelse(F.best > 0, F.beh.surv[F.beh.surv[,1] == F.best, 2], NA) # Get the daily survival from the max expected fitness.
+  G.day  <- ifelse(F.best > 0, F.beh.surv[F.beh.surv[,1] == F.best, 3], NA) # Get the daily growth from the max expected fitness.
   
   Temp <- data.frame(Fit = F.beh.surv[,1], beh = seq(0,2,1), Surv = F.beh.surv[,2], Growth = F.beh.surv[,3])  # make temp dataframe with each fitness (Fit) for each behavior (0,1,2), and daily survival (Surv).
-  Beh.best <- ifelse(F.best > 0, Temp[Temp$Fit == max(Temp$Fit),2], NA)  #get single value of best behavior choice (0,1,2). If F.best is 0 for all behavioral types, than no beh is best, return NA.
+  Beh.best <- ifelse(F.best > 0, Temp[Temp$Fit == max(Temp$Fit),2], NA) # get single value of best behavior choice (0,1,2). If F.best is 0 for all behavioral types, than no beh is best, return NA.
   
   F.vec[Wc,1,A] <- F.best  # save best fitness in the appropriate F.vec column 1 for that specific state W and A.
   
@@ -248,20 +252,6 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
   return(Temp.out)
   
 } # end function.
-
-# # Check if loop inside OVER.BEH works
-# F.vec <- array(NA, dim=c(Wstep.n, 2, Amax))  #(rows: weight, cols: F(x,t), F(x, t+1), matrices: area)
-# F.vec[1:Wstep.n, 2, Amax] <- TERM.FUN(W = seq(Wmin+Wstep, Wmax , Wstep), Ws=Ws, r=r, Smax=Smax)
-# F.vec[,2,1:Amax-1] <- 0    #if salmon end in any area besides the last (Amax), then their fitness is 0!
-# 
-# F.beh.surv <- matrix(NA, 3, 3)
-# for(i in 1:length(U)){ F.beh.surv[i,] <- FITNESS(Wc=1, A=Amax, t=tmax, U[i], Wmax, Amax,
-#                                                  E, q, a, Alpha, d, v, f, g, c, j, Bu[i], Bw, M, m, y, P, z,
-#                                                  ya, yn, yo, dn0, Ba, Bn, Bo, kn, ka,
-#                                                  seeds=1, F.vec, N) }
-# F.beh.surv # Works!!!
-# 
-# rm(F.beh.surv) #remove after done checking.
 
 
 # # Check if OVER.BEH works for a specific W and A state for tmax-1.
