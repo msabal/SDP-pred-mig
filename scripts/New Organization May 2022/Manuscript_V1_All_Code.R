@@ -369,23 +369,24 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
                      Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N)
 { # start function
   
-  #make objects to store loop outputs.
-  F.all <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
+  # make empty arrays to store outputs
+  F.all    <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
   Best.beh <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
   Surv.day <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
-  G.day <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
+  G.day    <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
   
   # Set up F.vec - does this need to be outside the loops/functions to store properly?
   F.vec <- array(NA, dim=c(Wstep.n, 2, Amax))  #(rows: weight, cols: F(x,t), F(x, t+1), matrices: area)
   F.vec[1:Wstep.n, 2, Amax] <- TERM.FUN(W = seq(Wmin+Wstep, Wmax , Wstep), Ws=Ws, r=r, Smax=Smax)
-  F.vec[,2,1:Amax-1] <- 0    #if salmon end in any area besides the last (Amax), then their fitness is 0!
+  F.vec[,2,1:Amax-1] <- 0 # if salmon end in any area besides the last (Amax), then their fitness is 0!
   
-  t <- tmax # Start iterations over time, time starts with tmax.
+  t <- tmax # Start iterations over time, time starts at tmax for optimization.
   
   # Use while loop starting at Time = tmax, decrement with each loop, until time is 1 and then exit the loop.
   while(t > 1)
   { # start while loop
-    
+  
+    # NOTE: Because this decrements "t" at the beginning of the loop, tmax is really 59, not 60 ####  
     t <- t - 1 # This takes the Time from the prior loop and decrements it by one for the next loop.
     
     Temp.out2 <- OVER.STATES(Wc, A, t, U, Wmax, Amax,
@@ -398,12 +399,14 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
     
     for (J in 1:Wstep.n){    # for each state W and A, update F.vec with the new F.vec (TempF.vec) from the OVER.STATES function (column 1),
       for(K in 1:Amax){   # and put those values back into F.vec in the second column to be ready for the next time iteration.
-        F.vec[J,2,K] <- TempF.vec[J,1,K] }} # end of while loop.
+        F.vec[J,2,K] <- TempF.vec[J,1,K] 
+      }
+    } # end of while loop.
     
     Best.beh[t,,] <- Temp.out2[,4,]  # save best behavior in Best.beh (decision matrix!)
-    F.all[t,,] <- Temp.out2[,3,]     # save best fitness in F.all
+    F.all[t,,]    <- Temp.out2[,3,]  # save best fitness in F.all
     Surv.day[t,,] <- Temp.out2[,5,]  # save daily Survival in Surv.day
-    G.day[t,,] <- Temp.out2[,6,]     # save daily growth in G.day
+    G.day[t,,]    <- Temp.out2[,6,]  # save daily growth in G.day
     
     
   } # end while loop.
@@ -414,41 +417,41 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
   Wstart <- WtoWc(Wstart) # convert from W in grams to Wc
   
   # create output objects to store outcomes from for loop
-  output.A <- matrix(NA, tmax, length(Wstart))  # roWstart: time, columns: weight (W). Output to track best behaviors over time for each state.
+  output.A     <- matrix(NA, tmax, length(Wstart))  # roWstart: time, columns: weight (W). Output to track best behaviors over time for each state.
   output.A[1,] <- 1 # salmon start in area 1
   
-  output.S <- matrix(NA, tmax, length(Wstart)) # output to store daily Surv
+  output.S    <- matrix(NA, tmax, length(Wstart)) # output to store daily Surv
   output.Scum <- matrix(NA, tmax, length(Wstart)) # output to store cumulative survival over time.
   
   output.Fit <- matrix(NA, tmax, length(Wstart)) # output to store expected Fitness
   output.beh <- matrix(NA, tmax, length(Wstart)) # output to store best behavior
   
-  output.Wc <- matrix(NA, tmax, length(Wstart)) # output to store changing W over time.
+  output.Wc     <- matrix(NA, tmax, length(Wstart)) # output to store changing W over time.
   output.Wc[1,] <- Wstart
   
   # for loop tracking new areas for individuals starting at A = 1, and my chosen salmon weights (W in sim.sam).
-  
-  for(X in 1:length(Wstart)){            # iterate over chosen starting salmon weights
-    for(t in 1:(tmax-1)){                    # iterate over time
+  for(X in 1:length(Wstart)){ # iterate over chosen starting salmon weights
+    for(t in 1:(tmax-1)){     # iterate over time
       
-      Wc <-output.Wc[t,X]                    # current Wc (computer weight) is from the appro spot in output.Wc
-      A <- output.A[t,X]                     # current area is the value in the current row of time (t)
+      Wc <-output.Wc[t,X] # current Wc (computer weight) is from the appro spot in output.Wc
+      A  <- output.A[t,X] # current area is the value in the current row of time (t)
       
-      W <- WctoW(Wc)                         # convert to W (salmon weight in g)
-      W.new <- W + G.day[t,Wc,A]              # new salmon weight is current W (g) plus growth increment from certain choice stored in G.day
-      W.new <- ifelse(W.new > Wmax, Wmax, W.new)  #W.new must be less than Wmax to look up a value in G.day - but really if this is happening, should increase Wmax.
-      Wc.new <- WtoWc(W.new)                 # convert new W to new Wc
-      output.Wc[t+1,X] <- Wc.new             # store new Wc in output.Wc
+      W      <- WctoW(Wc) # convert to W (salmon weight in g)
+      W.new  <- W + G.day[t,Wc,A] # new salmon weight is current W (g) plus growth increment from certain choice stored in G.day
+      W.new  <- ifelse(W.new > Wmax, Wmax, W.new) # W.new must be less than Wmax to look up a value in G.day - but really if this is happening, should increase Wmax.
+      Wc.new <- WtoWc(W.new) # convert new W to new Wc
+      output.Wc[t+1,X] <- Wc.new # store new Wc in output.Wc
       
-      Anew <- A + Best.beh[t,Wc,A]            # area in next time step is the current location plus how much they move (Best.beh)
-      Anew <- min(Anew, Amax)                # area cannot be greater than Amax 
-      output.A[t+1,X] <- Anew                # store new area in the next row (t+1)
+      Anew <- A + Best.beh[t,Wc,A] # area in next time step is the current location plus how much they move (Best.beh)
+      Anew <- min(Anew, Amax) # area cannot be greater than Amax 
+      output.A[t+1,X] <- Anew # store new area in the next row (t+1)
       
-      output.S[t,X] <- Surv.day[t,Wc,A]       #  get appro daily survival from Surv.day and save it in output.S
-      output.Fit[t,X] <- F.all[t,Wc,A]        #  get appro expected fitness from F.all and save it in output.Fit
-      output.beh[t,X] <- Best.beh[t,Wc,A]     #  get appro best beh from Best.beh and save it in output.beh
+      output.S[t,X]   <- Surv.day[t,Wc,A] #  get appro daily survival from Surv.day and save it in output.S
+      output.Fit[t,X] <- F.all[t,Wc,A] #  get appro expected fitness from F.all and save it in output.Fit
+      output.beh[t,X] <- Best.beh[t,Wc,A] #  get appro best beh from Best.beh and save it in output.beh
       
-    }} # end for loops.
+    }
+  } # end for loops.
   
   output.W <- WctoW(output.Wc) # convert output.W from Wc to W (grams)
   
@@ -456,9 +459,8 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
   for(X in 1:length(Wstart)){
     for(t in 1:(tmax)){
       output.Scum[t,X] <- prod(output.S[1:t,X])
-    }} # end of loop.
-  
-  
+    }
+  } # end of loop.
   
   ## Make Data Tracks.
   
@@ -497,7 +499,6 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
   
   data.tracks$Wstart <- as.factor(data.tracks$Wstart) # convert Wstart to salmon weigh units and as a factor.
   levels(data.tracks$Wstart) <- c(WctoW(Wstart))
-  
   
   #Apply TRACK.SUM.FUN on data.tracks
   data.tracks.L <- droplevels(data.tracks)
