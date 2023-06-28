@@ -301,7 +301,8 @@ OVER.STATES <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh
       
       Store[Wc,,A] <- best.F.beh.S # put F.best, Beh.best, S.day, G.day in Store for appro loop state combo.
       
-    }} #end nested for loops.
+    }
+  } #end nested for loops.
   
   # Combine Store values with F.vec in Temp.out2 as the vessel leaving this function to bring important info to next for loop!
   Temp.out2 <- abind(F.vec, Store, along = 2) # add Store columns to F.vec. This should be an array (rows: Wstep.n, matrices: Amax)
@@ -310,25 +311,6 @@ OVER.STATES <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh
   return(Temp.out2)
   
 } # end function.
-
-
-# # check to see if OVER.STATES works and returns Temp.out2
-# F.vec <- array(NA, dim=c(Wstep.n, 2, Amax))  #(rows: weight, cols: F(x,t), F(x, t+1), matrices: area)
-# F.vec[1:Wstep.n, 2, Amax] <- TERM.FUN(W = seq(Wmin+Wstep, Wmax , Wstep), Ws=Ws, r=r, Smax=Smax)
-# F.vec[,2,1:Amax-1] <- 0    #if salmon end in any area besides the last (Amax), then their fitness is 0!
-# 
-# Test.States <- OVER.STATES(Wc, A, t=tmax-1, U, Wmax, Amax,
-#                            E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
-#                            ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
-#                            seeds=1, F.vec, N)
-# 
-# View(Test.States[,,Amax-1]) # works!!
-# rm(Test.States)
-# # View(Test.States[,,Amax]) Col 2 (F(W,t+1)) has values from terminal fitness, optimal choice has to be move 0
-# # View(Test.States[,,Amax-1]) Col 2 (F(W,t+1)) has 0s from terminal fitness, optimal choice can be move 1 or 2
-# # View(Test.States[,,Amax-2]) Col 2 (F(W,t+1)) has 0s from terminal fitness, optimal choice has to be move 2
-# # View(Test.States[,,Amax-3]) Col 2 (F(W,t+1)) has 0s from terminal fitness, F.best all 0s because can't make it
-# # to A26 in by tmax. Therefore, Beh.best and S.day all NAs.
 
 
 #### 3.10. TRACK.SUM.FUN 
