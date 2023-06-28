@@ -315,26 +315,30 @@ OVER.STATES <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh
 
 #### 3.10. TRACK.SUM.FUN 
 # Get summary info from salmon tracks function.
-TRACK.SUM.FUN <- function(A, h, Beh, Time, Fit, S.day, S.cum, W){ # start function.
-  df <- data.frame (A, h, Beh, Time, Fit, S.day, S.cum, W)
+TRACK.SUM.FUN <- function(A, h, Beh, Time, Fit, S.day, S.cum, W){ # start function
+  # Create dataframe with inputs
+  # NOTE: could just pass in a dataframe instead of separate values and having to type all of them out multiple times ####
+  df     <- data.frame (A, h, Beh, Time, Fit, S.day, S.cum, W)
   df$Beh <- as.factor(df$Beh)
-  df$h <- as.factor(df$h)
+  df$h   <- as.factor(df$h)
   
   S.cum.riv <- min(df[df$h == "n" | df$h == "a", 7], na.rm=T)
-  G.riv <- max(df[df$h == "n" | df$h == "a", 8], na.rm=T) - min(df[df$h == "n" | df$h == "a", 8], na.rm=T) # in river
-  G.ocean <- max(df[df$h == "o", 8], na.rm=T) - min(df[df$h == "o", 8], na.rm=T) # in ocean
-  Fit <- max(df$Fit, na.rm=T)
+  G.riv     <- max(df[df$h == "n" | df$h == "a", 8], na.rm=T) - min(df[df$h == "n" | df$h == "a", 8], na.rm=T) # in river
+  G.ocean   <- max(df[df$h == "o", 8], na.rm=T) - min(df[df$h == "o", 8], na.rm=T) # in ocean
+  Fit       <- max(df$Fit, na.rm=T)
   
-  df2 <- subset(df, df$h != "o")          # ignore data once in the ocean
+  # Remove data once in the ocean
+  df2 <- subset(df, df$h != "o") # ignore data once in the ocean
   dur <- length(df2$Beh)  
   
-  ag.h <- aggregate(A ~ Beh + h, df2, length)   # aggregate number of different choices (Beh: 0, 1, 2) BY habitat
+  ag.h  <- aggregate(A ~ Beh + h, df2, length) # aggregate number of different choices (Beh: 0, 1, 2) BY habitat
   dur.h <- aggregate(A ~ h, df2, length)
   colnames(dur.h)[2] <- "dur.h"
-  ag.h <- join(ag.h, dur.h)
-  ag.h$p <- ag.h$A / ag.h$dur.h # calculate proportion of moves by habitat out of the total moves PER HABITAT.
-  ag.h$p.tot <- ag.h$A / dur       # calculate proportion of moves by habitat out of the total moves OVERALL.
+  ag.h       <- join(ag.h, dur.h)
+  ag.h$p     <- ag.h$A / ag.h$dur.h # calculate proportion of moves by habitat out of the total moves PER HABITAT.
+  ag.h$p.tot <- ag.h$A / dur # calculate proportion of moves by habitat out of the total moves OVERALL.
   
+  # Save proportion of moves by habitat per habitat
   p0.n <- ifelse(length(ag.h[ag.h$Beh == 0 & ag.h$h == "n",5]) > 0, ag.h[ag.h$Beh == 0 & ag.h$h == "n",5], 0)
   p1.n <- ifelse(length(ag.h[ag.h$Beh == 1 & ag.h$h == "n",5]) > 0, ag.h[ag.h$Beh == 1 & ag.h$h == "n",5], 0)
   p2.n <- ifelse(length(ag.h[ag.h$Beh == 2 & ag.h$h == "n",5]) > 0, ag.h[ag.h$Beh == 2 & ag.h$h == "n",5], 0)
@@ -342,18 +346,20 @@ TRACK.SUM.FUN <- function(A, h, Beh, Time, Fit, S.day, S.cum, W){ # start functi
   p1.a <- ifelse(length(ag.h[ag.h$Beh == 1 & ag.h$h == "a",5]) > 0, ag.h[ag.h$Beh == 1 & ag.h$h == "a",5], 0)
   p2.a <- ifelse(length(ag.h[ag.h$Beh == 2 & ag.h$h == "a",5]) > 0, ag.h[ag.h$Beh == 2 & ag.h$h == "a",5], 0)
   
+  # Save proportion of moves by habitat
   p0.n.tot <- ifelse(length(ag.h[ag.h$Beh == 0 & ag.h$h == "n",6]) > 0, ag.h[ag.h$Beh == 0 & ag.h$h == "n",6], 0)
   p1.n.tot <- ifelse(length(ag.h[ag.h$Beh == 1 & ag.h$h == "n",6]) > 0, ag.h[ag.h$Beh == 1 & ag.h$h == "n",6], 0)
   p2.n.tot <- ifelse(length(ag.h[ag.h$Beh == 2 & ag.h$h == "n",6]) > 0, ag.h[ag.h$Beh == 2 & ag.h$h == "n",6], 0)
   p0.a.tot <- ifelse(length(ag.h[ag.h$Beh == 0 & ag.h$h == "a",6]) > 0, ag.h[ag.h$Beh == 0 & ag.h$h == "a",6], 0)
   p1.a.tot <- ifelse(length(ag.h[ag.h$Beh == 1 & ag.h$h == "a",6]) > 0, ag.h[ag.h$Beh == 1 & ag.h$h == "a",6], 0)
   p2.a.tot <- ifelse(length(ag.h[ag.h$Beh == 2 & ag.h$h == "a",6]) > 0, ag.h[ag.h$Beh == 2 & ag.h$h == "a",6], 0)
-  
+    
   out.final <- cbind(S.cum.riv, G.riv, G.ocean, dur, p0.n, p1.n, p2.n, p0.a, p1.a, p2.a, p0.n.tot, p1.n.tot, p2.n.tot, p0.a.tot, p1.a.tot, p2.a.tot, Fit)
   
   out.final # return out.final: vector of summary variables.
   
 } #end function.
+
 
 #### 3.11. MAIN_FUN (returns summary data from tracks)
 MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
