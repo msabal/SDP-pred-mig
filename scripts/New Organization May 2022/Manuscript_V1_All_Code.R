@@ -266,11 +266,9 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
 } # end function.
 
 
-
-
 #### 3.9. OVER.STATES 
 # OVER.STATES function to apply over BEHAVIORAL CHOICES (move 0, 1, 2) AND AREA (1 to 26).
-# Function used to iterate OVER.BEH over both states W and A using nested for loops.
+# Function used to iterate OVER.BEH over both states W (weight) and A (area) using nested for loops.
 # Run OVER.BEH and get Temp.out. Split Temp.out to F.vec and best.F.beh (only F.best and Beh.best).
 # Put Beh.best in appro Store spot. Combine F.vec and Store in an array,
 # Temp.out2 with 4 cols (F(x,t), F(x,t+1), F.best, Beh.best, S.day).
@@ -285,6 +283,8 @@ OVER.STATES <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh
   # from OVER.BEH for each state W (rows) and A (matrices).
   
   for(Wc in 1:Wstep.n){
+    # NOTE: "A" is being assigned here through the for loop, which is likely overwriting "A" that's passed as an input to OVER.STATES function ####
+    # If "A" is not necessary in the input for OVER.STATES, then remove from inputs to reduce chance of errors.
     for(A in 1:Amax){
       Temp.out <- OVER.BEH(Wc, A, t, U, Wmax, Amax,
                            E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
