@@ -500,13 +500,13 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
   data.tracks$Wstart <- as.factor(data.tracks$Wstart) # convert Wstart to salmon weigh units and as a factor.
   levels(data.tracks$Wstart) <- c(WctoW(Wstart))
   
-  #Apply TRACK.SUM.FUN on data.tracks
+  # Apply TRACK.SUM.FUN on data.tracks
   data.tracks.L <- droplevels(data.tracks)
   data.tracks.L <- split(data.tracks.L, data.tracks.L$Wstart)
   
-  out.L<-lapply(data.tracks.L, function(x) TRACK.SUM.FUN(x$A, x$h, x$Beh, x$Time, x$Fit, x$S.day, x$S.cum, x$W))
+  out.L <- lapply(data.tracks.L, function(x) TRACK.SUM.FUN(x$A, x$h, x$Beh, x$Time, x$Fit, x$S.day, x$S.cum, x$W))
   
-  out.df<-ldply(out.L, as.vector)
+  out.df <- ldply(out.L, as.vector)
   colnames(out.df)[1]<-"Wstart"
   
   # Melt dataframe to get into long format: proportion of moves by habitat PER HABITAT
@@ -545,18 +545,6 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
 } # end function.
 
 
-# Test MAIN_FUN
-
-# OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-#                 E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-#                 ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
-#                 Ws, r, Smax, W, # vars for Terminal fitness function
-#                 Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N)
-# 
-# colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
-# 
-# OUT
-
 #### 3.12. MAIN_FUN_TRACKS (returns tracks instead of summary data)
 MAIN_FUN_TRACKS <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                             E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
@@ -566,10 +554,10 @@ MAIN_FUN_TRACKS <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constra
 { # start function
   
   #make objects to store loop outputs.
-  F.all <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
+  F.all    <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
   Best.beh <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
   Surv.day <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
-  G.day <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
+  G.day    <- array(NA, dim=c(tmax, Wstep.n, Amax))  #(rows: time, cols: weight, matrices: area)
   
   # Set up F.vec - does this need to be outside the loops/functions to store properly?
   F.vec <- array(NA, dim=c(Wstep.n, 2, Amax))  #(rows: weight, cols: F(x,t), F(x, t+1), matrices: area)
@@ -698,7 +686,7 @@ MAIN_FUN_TRACKS <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constra
 
 
 
-#..................................................................................................
+#..........................................................................................................................................
 # 4. Scenario 1: habitat-hypotheses - do movement choices vary between shoreline habitats? ----
 
 # Iterate data tracks over seeds
@@ -877,7 +865,7 @@ dev.off()
 
 
 
-#..................................................................................................
+#..........................................................................................................................................
 # 5. Scenario 2: null habitat-hypotheses - which mechanism most affects the frequency of pauses? ----
 
 
@@ -1144,7 +1132,7 @@ dev.off()
 
 
 
-#..................................................................................................
+#..........................................................................................................................................
 # 6. Scenario 3: greater predator abundances in natural - can it ever be optimal to pause in natural despite more predators? ----
 
 # Set baseline null habitat-hypotheses parameters
@@ -1361,7 +1349,7 @@ dev.off()
 
 
 
-#..................................................................................................
+#..........................................................................................................................................
 # 7. Scenario 4: habitat restoration - how do movement choices, river growth, survival to ocean, and fitness vary over % of natural habitats? ----
 
 # Set habitat hypotheses parameters
@@ -1601,7 +1589,7 @@ dev.off()
 
 
 
-# Potential SI figure plots ----
+# Potential SI figure plots ...............................................................................................................
 
 # plot Terminal Fitness function
 curve(TERM.FUN(W, Ws=Ws , r=r, Smax=Smax), xname="W", xlim=c(7,80), ylim=c(0,0.31), ylab="adult marine survival (to age 3)")
