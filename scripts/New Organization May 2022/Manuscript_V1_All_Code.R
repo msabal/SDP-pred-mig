@@ -464,7 +464,8 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
   
   ## Make Data Tracks.
   
-  # Re-make h.vec
+  # Re-make h.vec 
+  # NOTE: Code can be cleaned up by doing this once and passing it in as a vector to all functions instead of having to redo this code ####
   h.vec <- rep(NA, Amax) # create blank vector for habitats for each Area.
   h.vec[Amax] <- "o" # make the last area (Amax) the ocean: "o"
   set.seed(seeds)  # set.seed to keep altered and natural habitat distribution constant for now.
@@ -540,11 +541,12 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
   DF.LONG <- join(DF.LONG.h, DF.LONG.tot)
   DF.LONG <- join(DF.LONG, out.df[c(1:5,18)])
   
+  # return(list(data.tracks, DF.LONG)) # return DF.LONG dataframe by Wstart.
   return(DF.LONG) # return DF.LONG dataframe by Wstart.
   
 } # end function.
 
-
+# NOTE: This function is excatly the same as the function above and takes a long time to run, we can have multiple outputs as a list instead of having to run all of this code again ####
 #### 3.12. MAIN_FUN_TRACKS (returns tracks instead of summary data)
 MAIN_FUN_TRACKS <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                             E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
@@ -685,27 +687,32 @@ MAIN_FUN_TRACKS <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constra
 } # end function.
 
 
-
 #..........................................................................................................................................
 # 4. Scenario 1: habitat-hypotheses - do movement choices vary between shoreline habitats? ----
 
 # Iterate data tracks over seeds
 
 # Set iterations
-df_iters <- data.frame(seeds = seq(1, 6, by=1)) # Loop over 6 different random orientations of river habitat (natural vs. shoreline)
+df_iters <- data.frame(seeds = seq(1, 6, by=1)) # Loop over 6 different pseudorandom orientations of river habitat (natural vs. shoreline)
 Wstart_setup                                    # Loop over 6 different starting salmon weights
 
 # Start simulation
 OUT.SUM <- list() # make object to save function output
 
 # Start looping MAIN_FUN over different qa values
-for(i in 1:length(df_iters[,1])) {
+for(i in 1:length(df_iters$seeds)) {
   
   OUT <- MAIN_FUN_TRACKS(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                          E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
                          ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
                          Ws, r, Smax, W, # vars for Terminal fitness function
-                         Wstep.n, Wstep, Wstart_setup, tmax, seeds=df_iters[i,1], F.vec, N)
+                         Wstep.n, Wstep, Wstart_setup, tmax, seeds=df_iters$seeds[i], F.vec, N)
+  # OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+  #                 E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+  #                 ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+  #                 Ws, r, Smax, W, # vars for Terminal fitness function
+  #                 Wstep.n, Wstep, Wstart_setup, tmax, seeds=df_iters$seeds[i], F.vec, N)
+  
   
   OUT$iter_index <- rep(df_iters[i,(length(colnames(df_iters)))], length(OUT$Wstart)) # add column with seeds value for that iteration.
   
@@ -716,17 +723,15 @@ for(i in 1:length(df_iters[,1])) {
 DF.SUM<-ldply(OUT.SUM, as.vector)
 DF.SUM$seeds <- DF.SUM$iter_index
 
-
+# Save summary of simulation output 
 write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario1.csv")
 DF.SUM <- read.csv("C://Users//sabalm//Desktop//scenario1.csv")
-
 DF.SUM <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//Manuscript V1//scenario1.csv")
-
 
 
 ## Figure 2 ----
 
-seeds <- 5 # choose one seeds for Fig 2a
+seeds <- 5 # choose one seed for Fig 2a
 
 # Re-make h.vec
 h.vec <- rep(NA, Amax) # create blank vector for habitats for each Area.
