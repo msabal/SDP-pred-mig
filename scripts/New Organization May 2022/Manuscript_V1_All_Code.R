@@ -273,7 +273,7 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
 # Put Beh.best in appro Store spot. Combine F.vec and Store in an array,
 # Temp.out2 with 4 cols (F(x,t), F(x,t+1), F.best, Beh.best, S.day).
 
-OVER.STATES <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+OVER.STATES <- function(A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                         E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
                         ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
                         seeds, F.vec, N)
@@ -362,7 +362,7 @@ TRACK.SUM.FUN <- function(A, h, Beh, Time, Fit, S.day, S.cum, W){ # start functi
 
 
 #### 3.11. MAIN_FUN (returns summary data from tracks)
-MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+MAIN_FUN <- function(A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                      E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
                      ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
                      Ws, r, Smax, W, # vars for Terminal fitness function
@@ -389,7 +389,7 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
     # NOTE: Because this decrements "t" at the beginning of the loop, tmax is really 59, not 60 ####  
     t <- t - 1 # This takes the Time from the prior loop and decrements it by one for the next loop.
     
-    Temp.out2 <- OVER.STATES(Wc, A, t, U, Wmax, Amax,
+    Temp.out2 <- OVER.STATES(A, t, U, Wmax, Amax,
                              E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
                              ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
                              seeds, F.vec, N)  # Get all F.best, Beh.best, and S.day for all W and A for the current Time.
@@ -541,12 +541,12 @@ MAIN_FUN <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & 
   DF.LONG <- join(DF.LONG.h, DF.LONG.tot)
   DF.LONG <- join(DF.LONG, out.df[c(1:5,18)])
   
-  # return(list(data.tracks, DF.LONG)) # return DF.LONG dataframe by Wstart.
-  return(DF.LONG) # return DF.LONG dataframe by Wstart.
+  return(list(DF.LONG, data.tracks)) # return DF.LONG dataframe by Wstart.
+  # return(DF.LONG) # return DF.LONG dataframe by Wstart.
   
 } # end function.
 
-# NOTE: This function is excatly the same as the function above and takes a long time to run, we can have multiple outputs as a list instead of having to run all of this code again ####
+# NOTE: This function is exactly the same as the function above and takes a long time to run, we can have multiple outputs as a list instead of having to run all of this code again ####
 #### 3.12. MAIN_FUN_TRACKS (returns tracks instead of summary data)
 MAIN_FUN_TRACKS <- function(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                             E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
@@ -702,16 +702,16 @@ OUT.SUM <- list() # make object to save function output
 # Start looping MAIN_FUN over different qa values
 for(i in 1:length(df_iters$seeds)) {
   
-  OUT <- MAIN_FUN_TRACKS(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-                         E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-                         ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
-                         Ws, r, Smax, W, # vars for Terminal fitness function
-                         Wstep.n, Wstep, Wstart_setup, tmax, seeds=df_iters$seeds[i], F.vec, N)
-  # OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-  #                 E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-  #                 ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
-  #                 Ws, r, Smax, W, # vars for Terminal fitness function
-  #                 Wstep.n, Wstep, Wstart_setup, tmax, seeds=df_iters$seeds[i], F.vec, N)
+  # OUT <- MAIN_FUN_TRACKS(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+  #                        E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+  #                        ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+  #                        Ws, r, Smax, W, # vars for Terminal fitness function
+  #                        Wstep.n, Wstep, Wstart_setup, tmax, seeds=df_iters$seeds[i], F.vec, N)
+  OUT <- MAIN_FUN(A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
+                  ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+                  Ws, r, Smax, W, # vars for Terminal fitness function
+                  Wstep.n, Wstep, Wstart_setup, tmax, seeds=df_iters$seeds[i], F.vec, N)
   
   
   OUT$iter_index <- rep(df_iters[i,(length(colnames(df_iters)))], length(OUT$Wstart)) # add column with seeds value for that iteration.
