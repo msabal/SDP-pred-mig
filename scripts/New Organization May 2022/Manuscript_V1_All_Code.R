@@ -25,7 +25,7 @@ options(scipen=999)
 # 2. Set habitat hypotheses parameters ----
 
 # Load parameters
-param_dat <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//raw-data//Parameter_Iterations_Tracking.csv")
+param_dat <- read.csv("P://REDD//Personal//Sabal//GIT Repositories//SDP-pred-mig//raw-data//Parameter_Iterations_Tracking.csv")
 #param_dat <- read.csv("raw-data//Parameter_Iterations_Tracking.csv")
 row.names(param_dat) <- param_dat$baseline
 
@@ -726,7 +726,7 @@ DF.SUM$seeds <- DF.SUM$iter_index
 # Save summary of simulation output 
 write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario1.csv")
 DF.SUM <- read.csv("C://Users//sabalm//Desktop//scenario1.csv")
-DF.SUM <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//Manuscript V1//scenario1.csv")
+DF.SUM <- read.csv("P://REDD//Personal//Sabal//GIT Repositories//SDP-pred-mig//results//Manuscript V1//scenario1.csv")
 
 
 ## Figure 2 ----
@@ -1360,7 +1360,7 @@ dev.off()
 # Set habitat hypotheses parameters
 
 # Load parameters
-param_dat <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//raw-data//Parameter_Iterations_Tracking.csv")
+param_dat <- read.csv("P://REDD//Personal//Sabal//GIT Repositories//SDP-pred-mig//raw-data//Parameter_Iterations_Tracking.csv")
 #param_dat <- read.csv("Parameter_Iterations_Tracking.csv")
 row.names(param_dat) <- param_dat$baseline
 
@@ -1464,7 +1464,7 @@ DF.SUM <- DF.SUM %>% as_tibble() %>% mutate(iter_var = "N")
 write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario4.csv") # UPDATE SAVE LOCATION!
 DF4 <- read.csv("C://Users//sabalm//Desktop//scenario4.csv")
 
-DF4 <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//Manuscript V1//scenario4.csv")
+DF4 <- read.csv("P://REDD//Personal//Sabal//GIT Repositories//SDP-pred-mig//results//Manuscript V1//scenario4.csv")
 
 
 

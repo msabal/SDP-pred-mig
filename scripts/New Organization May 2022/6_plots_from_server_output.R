@@ -10,16 +10,16 @@ options(scipen=999)
 
 
 # load files
-param_dat <- read_csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//raw-data//Parameter_Iterations_Tracking.csv")
+param_dat <- read_csv("P://REDD//Personal//Sabal//GIT Repositories//SDP-pred-mig//raw-data//Parameter_Iterations_Tracking.csv")
 
 # OSU server ran on 6/1/2022: null and habitat hypotheses with original parameters.
-base_dat <- read_csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//OSU_server_output//iterate_sum_null_and_hab.csv")
+base_dat <- read_csv("P://REDD//Personal//Sabal//GIT Repositories//SDP-pred-mig//results//OSU_server_output//iterate_sum_null_and_hab.csv")
 
 # OSU server ran on 7/5/2022: when yn > ya - vary Bn, kn, dn0 SEPARATELY.
-yn_greater_dat <- read_csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//OSU_server_output//iterate_when_yn_greater_ya_alone.csv")
+yn_greater_dat <- read_csv("P://REDD//Personal//Sabal//GIT Repositories//SDP-pred-mig//results//OSU_server_output//iterate_when_yn_greater_ya_alone.csv")
 
 # OSU server ran on 7/5/2022: when yn > ya - vary Bn, kn, dn0 SEPARATELY.
-yn_greater_dat_tog <- read_csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//OSU_server_output//iterate_when_yn_greater_ya_all_together.csv")
+yn_greater_dat_tog <- read_csv("P://REDD//Personal//Sabal//GIT Repositories//SDP-pred-mig//results//OSU_server_output//iterate_when_yn_greater_ya_all_together.csv")
 
 
 
