@@ -1500,10 +1500,9 @@ DF.SUM <- DF.SUM %>% as_tibble() %>% mutate(iter_var = "N")
 # Save all data from scenario 4
 
 write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario4_tracks.csv") # UPDATE SAVE LOCATION!
-DF4_tracks <- read.csv("C://Users//sabalm//Desktop//scenario4_tracks.csv")
-
-DF4_tracks <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//Manuscript V1//scenario4_tracks.csv")
-
+#DF4_tracks <- read.csv("C://Users//sabalm//Desktop//scenario4_tracks.csv")
+#DF4_tracks <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//Manuscript V1//scenario4_tracks.csv")
+DF4_tracks <- read.csv("P://REDD//Personal//Sabal//GIT Repositories//SDP-pred-mig//results//Manuscript V1//scenario4_tracks.csv")
 
 
 ## Figure 5 ----
@@ -1534,7 +1533,9 @@ fig_5a <- ggplot(data=moves_dat, aes(x=as.factor(iter_val), y=p_moves, fill=as.f
 sub_dat <- DF4 %>% group_by(iter_val) %>% summarise(mean_dur = mean(dur),
                                                     mean_G_riv = mean(G.riv),
                                                     mean_S_cum = mean(S.cum.riv),
-                                                    mean_Fit = mean(Fit)) %>% 
+                                                    mean_Fit = mean(Fit),
+                                                    mean_G_riv_d = mean(G.riv/dur),
+                                                    mean_G_ocean_d = mean(G.ocean/(60-dur))) %>% 
   mutate(iter_val = iter_val*100)
   
 # Fig 5b - Migration duration by percent of natural habitat.
@@ -1571,6 +1572,29 @@ fig_5e <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_Fit)) +
   ylab("Probability of returning\nas an adult (Fitness)") +
   xlab("Percent of natural habitat") +
   ggtitle(label="(e)") + theme(plot.title = element_text(size=12)); fig_5e
+
+
+# More options
+# Fig 5f - Daily growth in river by percent of natural habitat.
+fig_5f <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_G_riv_d)) +
+  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
+  theme_classic() +
+  ylab("Mean daily growth\nin river (g)") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(c)") + theme(plot.title = element_text(size=12)); fig_5f
+
+# compare growth plots
+ggarrange(fig_5c, fig_5f) # looks the same
+
+
+# Fig 5g - Daily growth in ocean by percent of natural habitat.
+fig_5g <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_G_ocean_d)) +
+  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
+  theme_classic() +
+  ylab("Mean daily growth\nin ocean (g)") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(c)") + theme(plot.title = element_text(size=12)); fig_5g
+
 
 
 # All of Figure 5
