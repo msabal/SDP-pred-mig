@@ -1535,9 +1535,23 @@ sub_dat <- DF4 %>% group_by(iter_val) %>% summarise(mean_dur = mean(dur),
                                                     mean_S_cum = mean(S.cum.riv),
                                                     mean_Fit = mean(Fit),
                                                     mean_G_riv_d = mean(G.riv/dur),
-                                                    mean_G_ocean_d = mean(G.ocean/(60-dur))) %>% 
+                                                    mean_G_ocean_d = mean(G.ocean/(60-dur)),
+                                                    size_ocean_entry = mean(Wstart + G.riv),
+                                                    size_t60 = mean(Wstart + G.riv + G.ocean)) %>% 
   mutate(iter_val = iter_val*100)
   
+
+s_day_dat <- DF4_tracks %>% mutate(riv_cat = ifelse(h != "o", "river", "ocean")) %>% 
+  group_by(iter_val, riv_cat, Wstart) %>% 
+  summarize(mean_S_d = mean(S.day, na.rm=T)) %>% 
+  summarize(mean_S_d = mean(mean_S_d, na.rm=T)) %>% 
+  pivot_wider(names_from = riv_cat, values_from = mean_S_d) %>% 
+  rename(mean_S_riv_d = river, mean_S_ocean_d = ocean) %>% 
+  mutate(iter_val = iter_val*100)
+
+sub_dat <- sub_dat %>% left_join(s_day_dat)
+
+
 # Fig 5b - Migration duration by percent of natural habitat.
 fig_5b <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_dur)) +
   geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
@@ -1596,9 +1610,60 @@ fig_5g <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_G_ocean_d)) +
   ggtitle(label="(c)") + theme(plot.title = element_text(size=12)); fig_5g
 
 
+# Fig 5h - Daily survival in ocean by percent of natural habitat.
+fig_5h <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_S_ocean_d)) +
+  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
+  theme_classic() +
+  ylab("Mean daily survival\nin ocean") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(c)") + theme(plot.title = element_text(size=12)); fig_5h
+
+
+# Fig 5i - Daily survival in river by percent of natural habitat.
+fig_5i <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_S_riv_d)) +
+  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
+  theme_classic() +
+  ylab("Mean daily survival\nin river") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(c)") + theme(plot.title = element_text(size=12)); fig_5i
+
+
+# Fig 5j - Size at ocean entry by percent of natural habitat.
+fig_5j <- ggplot(data=sub_dat, aes(x=iter_val, y=size_ocean_entry)) +
+  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
+  theme_classic() +
+  ylab("Size at ocean entry (g)") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(c)") + theme(plot.title = element_text(size=12)); fig_5j
+
+
+# Fig 5k - Size at ocean entry by percent of natural habitat.
+fig_5k <- ggplot(data=sub_dat, aes(x=iter_val, y=size_t60)) +
+  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
+  theme_classic() +
+  ylab("Size at T = 60 (g)") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(c)") + theme(plot.title = element_text(size=12)); fig_5k
+
+
 
 # All of Figure 5
 
+ggarrange(fig_5a, fig_5b, fig_5c, fig_5d, fig_5e, fig_5f, 
+          fig_5g, fig_5h, fig_5i, fig_5j, fig_5k)
+
+
+# medium
+ggarrange(fig_5a, fig_5b, fig_5f, fig_5g, fig_5i, fig_5h, fig_5e, 
+          ncol = 2, nrow = 4)
+
+
+# THIS ONE!!!!!!!!!!!!!!
+ggarrange(fig_5a, fig_5b, fig_5f, fig_5i, fig_5e, ncol = 1)
+
+
+
+##
 ggarrange(fig_5a, fig_5b, fig_5c, fig_5d, fig_5e,
           ncol = 1)
 
@@ -1614,7 +1679,57 @@ dev.off()
 
 
 
+#### Alt options:
 
+sub_dat2 <- sub_dat %>% 
+  pivot_longer(cols = c(mean_G_riv_d, mean_G_ocean_d),
+                                     names_to = "riv_ocean", values_to = "mean_G_d") %>% 
+  select(iter_val, riv_ocean, mean_G_d) %>% 
+  mutate(riv_ocean = fct_recode(riv_ocean, "river" = "mean_G_riv_d",
+                                "ocean" = "mean_G_ocean_d"))
+
+sub_dat2 <- sub_dat %>% 
+  pivot_longer(cols = c(mean_S_riv_d, mean_S_ocean_d),
+               names_to = "riv_ocean", values_to = "mean_S_d") %>% 
+  select(iter_val, riv_ocean, mean_S_d) %>% 
+  mutate(riv_ocean = fct_recode(riv_ocean, "river" = "mean_S_riv_d",
+                                "ocean" = "mean_S_ocean_d")) %>% 
+  left_join(sub_dat2)
+
+
+# Fig 5s - Daily survival by percent of natural habitat.
+fig_5s <- ggplot(data=sub_dat2, aes(x=iter_val, y=mean_S_d, color = riv_ocean, fill = riv_ocean)) +
+  geom_line(size=1, alpha=0.7) + 
+  geom_point(size=2, alpha=1) + 
+  scale_fill_manual(values = c("royalblue", "limegreen")) +
+  scale_color_manual(values = c("royalblue", "limegreen")) +
+  theme_classic() +
+  ylab("Mean daily survival") +
+  xlab("Percent of natural habitat") +
+  theme(legend.title = element_blank(), legend.position = c(0.75, 0.4)) +
+  ggtitle(label="(c)") + theme(plot.title = element_text(size=12)); fig_5s
+
+# Fig 5gr - Daily growth by percent of natural habitat.
+fig_5gr <- ggplot(data=sub_dat2, aes(x=iter_val, y=mean_G_d, color = riv_ocean, fill = riv_ocean)) +
+  geom_line(size=1, alpha=0.7) + 
+  geom_point(size=2, alpha=1) + 
+  scale_fill_manual(values = c("royalblue", "limegreen")) +
+  scale_color_manual(values = c("royalblue", "limegreen")) +
+  theme_classic() +
+  ylab("Mean daily growth (g/d)") +
+  xlab("Percent of natural habitat") +
+  theme(legend.title = element_blank(), legend.position = c(0.75, 0.4)) +
+  ggtitle(label="(c)") + theme(plot.title = element_text(size=12)); fig_5gr
+
+
+
+
+ggarrange(fig_5a, fig_5b, fig_5s, fig_5gr, fig_5e, ncol = 1)
+# prop moves (fig_5a)
+# duration (fig_5b)
+# mean g/day by riv/ocean
+# mean S/day by riv/ocean
+# fitness (fig_5e)
 
 
 
