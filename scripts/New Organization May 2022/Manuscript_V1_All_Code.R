@@ -1606,18 +1606,18 @@ ggarrange(fig_5c, fig_5f) # looks the same
 fig_5g <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_G_ocean_d)) +
   geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
   theme_classic() +
-  ylab("Mean daily growth\nin ocean (g)") +
+  ylab("Ocean growth rate (g/d)") +
   xlab("Percent of natural habitat") +
-  ggtitle(label="(c)") + theme(plot.title = element_text(size=12)); fig_5g
+  ggtitle(label="(a)") + theme(plot.title = element_text(size=14, face = "bold")); fig_5g
 
 
 # Fig 5h - Daily survival in ocean by percent of natural habitat.
 fig_5h <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_S_ocean_d)) +
   geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
   theme_classic() +
-  ylab("Mean daily survival\nin ocean") +
+  ylab("Ocean survival rate") +
   xlab("Percent of natural habitat") +
-  ggtitle(label="(c)") + theme(plot.title = element_text(size=12)); fig_5h
+  ggtitle(label="(b)") + theme(plot.title = element_text(size=14, face = "bold")); fig_5h
 
 
 # Fig 5i - Daily survival in river by percent of natural habitat.
@@ -1740,6 +1740,22 @@ fig_5cum60 <- ggplot(data=sub_dat3, aes(x=iter_val, y=S.cum.T60)) +
 
 
 
+sub_dat4 <- DF4_tracks %>% as_tibble() %>% group_by(Wstart, iter_val) %>%
+  filter(Time == 60) %>% select(Wstart, iter_val, W) %>% 
+  group_by(iter_val) %>% summarize(W.t60 = mean(W))
+
+
+# Fig 5k2 - Size at T=60 by percent of natural habitat.
+fig_5k2 <- ggplot(data=sub_dat4, aes(x=iter_val, y=W.t60)) +
+  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
+  theme_classic() +
+  ylab("Size at T=60 (g)") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(h)") + theme(plot.title = element_text(size=14, face = "bold")); fig_5k2
+
+
+
+
 ggarrange(fig_5a, fig_5b, fig_5s, fig_5gr, fig_5e, ncol = 1)
 # prop moves (fig_5a)
 # duration (fig_5b)
@@ -1796,7 +1812,7 @@ fig_fit <- fig_5e + theme(
   panel.grid.major = element_blank(),
   plot.background = element_rect(fill = "transparent",colour = NA))
 
-fig_size_t60 <- fig_5k + theme(
+fig_size_t60 <- fig_5k2 + theme(
   panel.background = element_rect(fill = "transparent",colour = NA),
   panel.grid.minor = element_blank(), 
   panel.grid.major = element_blank(),
@@ -1825,6 +1841,19 @@ ggsave(
   width = 8, height = 7, units = "in",
   dpi = 500
 )
+
+
+# Figure S4
+# ocean growth and survial for SI!
+setwd("C:/Users/sabalm/Desktop/")
+pdf("Figure_S4.pdf", width=6, height=2.5)
+
+ggarrange(fig_5g, fig_5h, ncol=2)
+
+dev.off()
+
+
+
 
 
 
