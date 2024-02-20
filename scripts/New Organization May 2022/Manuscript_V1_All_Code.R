@@ -1508,7 +1508,22 @@ DF4_tracks <- read.csv("P://REDD//Personal//Sabal//GIT Repositories//SDP-pred-mi
 
 ## Figure 5 ----
 
-# Fig 5a - proportion of river moves NOT by habitat
+# a - proportion of moves
+# b - river growth rate
+# c - river survival rate
+# d - duration
+# e - size at ocean entry
+# f - cumulative survial to the ocean
+# g - fitness
+# h - size at t=60
+# i - cumulative survival to t = 60
+
+# SI figure
+# a - ocean growth rate
+# b - ocean survival rate
+
+#..................................
+# a - proportion of moves ----
 
 moves_dat <- DF4_tracks %>% as_tibble() %>% group_by(iter_val, Beh) %>% filter(h != "o") %>% 
   summarise(count_moves = n()) %>%   # number of movements in teh river between 0, 1, 2.
@@ -1517,7 +1532,7 @@ moves_dat <- DF4_tracks %>% as_tibble() %>% group_by(iter_val, Beh) %>% filter(h
   mutate(p_moves = count_moves/tot_moves,
          iter_val = iter_val*100)
 
-fig_5a <- ggplot(data=moves_dat, aes(x=as.factor(iter_val), y=p_moves, fill=as.factor(Beh))) + 
+fig_pmoves <- ggplot(data=moves_dat, aes(x=as.factor(iter_val), y=p_moves, fill=as.factor(Beh))) + 
   geom_bar(stat="identity", color="black") + 
   theme_classic() +
   scale_fill_brewer(palette = "Blues", labels = c("0", "1", "2")) + 
@@ -1525,331 +1540,179 @@ fig_5a <- ggplot(data=moves_dat, aes(x=as.factor(iter_val), y=p_moves, fill=as.f
   ylab("Proportion of moves") + xlab("Percent of natural habitat") +
   theme(legend.title = element_blank()) +
   theme(legend.position = "top") +
-  ggtitle(label = "(a)") + theme(plot.title = element_text(size=14, face = "bold")); fig_5a
+  ggtitle(label = "(a)") + theme(plot.title = element_text(size=14, face = "bold")); fig_pmoves
 
 
-
-# Fig 5b-e - summarize metrics over starting salmon weights.
+# Summarize metrics over starting salmon weights.
 
 sub_dat <- DF4 %>% group_by(iter_val) %>% summarise(mean_dur = mean(dur),
                                                     mean_G_riv = mean(G.riv),
                                                     mean_S_cum = mean(S.cum.riv),
                                                     mean_Fit = mean(Fit),
                                                     mean_G_riv_d = mean(G.riv/dur),
-                                                    mean_G_ocean_d = mean(G.ocean/(60-dur)),
-                                                    size_ocean_entry = mean(Wstart + G.riv),
-                                                    size_t60 = mean(Wstart + G.riv + G.ocean)) %>% 
+                                                    mean_G_ocean_d = mean(G.ocean/(60-dur))) %>% 
   mutate(iter_val = iter_val*100)
-  
 
-s_day_dat <- DF4_tracks %>% mutate(riv_cat = ifelse(h != "o", "river", "ocean")) %>% 
+
+sub_dat <- DF4_tracks %>% as_tibble() %>% group_by(iter_val, Wstart) %>% 
+  filter(h == "o") %>% slice(1) %>% 
+  mutate(SOE = W) %>% 
+  mutate(G.d.river = ((SOE - Wstart) / Time)) %>% 
+  ungroup() %>% group_by(iter_val) %>% 
+  summarise(size_oe = mean(SOE)) %>% 
+  select(size_oe) %>% 
+  bind_cols(sub_dat) %>% relocate(iter_val, .before = size_oe)
+
+
+sub_dat <- DF4_tracks %>% as_tibble() %>% group_by(Wstart, iter_val) %>%
+  filter(Time == 59) %>% select(Wstart, iter_val, S.cum) %>% 
+  group_by(iter_val) %>% summarize(S.cum.T60 = mean(S.cum)) %>% 
+  select(S.cum.T60) %>% 
+  bind_cols(sub_dat) %>% relocate(iter_val, .before = S.cum.T60)
+
+
+sub_dat <- DF4_tracks %>% as_tibble() %>% group_by(Wstart, iter_val) %>%
+  filter(Time == 60) %>% select(Wstart, iter_val, W) %>% 
+  group_by(iter_val) %>% summarize(W.t60 = mean(W)) %>% 
+  select(W.t60) %>% 
+  bind_cols(sub_dat) %>% relocate(iter_val, .before = W.t60)
+
+sub_dat <- DF4_tracks %>% mutate(riv_cat = ifelse(h != "o", "river", "ocean")) %>% 
   group_by(iter_val, riv_cat, Wstart) %>% 
   summarize(mean_S_d = mean(S.day, na.rm=T)) %>% 
   summarize(mean_S_d = mean(mean_S_d, na.rm=T)) %>% 
   pivot_wider(names_from = riv_cat, values_from = mean_S_d) %>% 
   rename(mean_S_riv_d = river, mean_S_ocean_d = ocean) %>% 
-  mutate(iter_val = iter_val*100)
-
-sub_dat <- sub_dat %>% left_join(s_day_dat)
-
-
-# Fig 5b - Migration duration by percent of natural habitat.
-fig_5b <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_dur)) +
-  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
-  theme_classic() +
-  ylab("Duration (d)") +
-  xlab("Percent of natural habitat") +
-  ggtitle(label="(d)") + theme(plot.title = element_text(size=14, face = "bold")); fig_5b
+  mutate(iter_val = iter_val*100) %>% 
+  ungroup() %>% select(-iter_val) %>% 
+  bind_cols(sub_dat) %>% relocate(iter_val, .before = mean_S_ocean_d)
 
 
-# Fig 5c - Growth in river by percent of natural habitat.
-fig_5c <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_G_riv)) +
-  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
-  theme_classic() +
-  ylab("Mean growth\nin river (g)") +
-  xlab("Percent of natural habitat") +
-  ggtitle(label="(c)") + theme(plot.title = element_text(size=12)); fig_5c
+sub_dat # look at all summary values by percent natural habitat.
 
 
-# Fig 5d - Cumulative survival to ocean by percent of natural habitat.
-fig_5d <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_S_cum)) +
-  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
-  theme_classic() +
-  ylab("Cumulative survival to ocean") +
-  xlab("Percent of natural habitat") +
-  ggtitle(label="(f)") + theme(plot.title = element_text(size=14, face = "bold")); fig_5d
-
-
-# Fig 5e - Fitness by percent of natural habitat.
-fig_5e <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_Fit)) +
-  geom_line(size=1, alpha=0.7, color="mediumpurple") + geom_point(size=2, alpha=1, color="mediumpurple") + 
-  theme_classic() +
-  ylab("Fitness") +
-  xlab("Percent of natural habitat") +
-  ggtitle(label="(g)") + theme(plot.title = element_text(size=14, face = "bold")); fig_5e
-
-
-# More options
-# Fig 5f - Daily growth in river by percent of natural habitat.
-fig_5f <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_G_riv_d)) +
+# b - river growth rate ----
+fig_rg <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_G_riv_d)) +
   geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
   theme_classic() +
   ylab("River growth rate (g/d)") +
   xlab("Percent of natural habitat") +
-  ggtitle(label="(b)") + theme(plot.title = element_text(size=14, face = "bold")); fig_5f
-
-# compare growth plots
-ggarrange(fig_5c, fig_5f) # looks the same
+  ggtitle(label="(b)") + theme(plot.title = element_text(size=14, face = "bold")); fig_rg
 
 
-# Fig 5g - Daily growth in ocean by percent of natural habitat.
-fig_5g <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_G_ocean_d)) +
-  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
-  theme_classic() +
-  ylab("Ocean growth rate (g/d)") +
-  xlab("Percent of natural habitat") +
-  ggtitle(label="(a)") + theme(plot.title = element_text(size=14, face = "bold")); fig_5g
-
-
-# Fig 5h - Daily survival in ocean by percent of natural habitat.
-fig_5h <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_S_ocean_d)) +
-  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
-  theme_classic() +
-  ylab("Ocean survival rate") +
-  xlab("Percent of natural habitat") +
-  ggtitle(label="(b)") + theme(plot.title = element_text(size=14, face = "bold")); fig_5h
-
-
-# Fig 5i - Daily survival in river by percent of natural habitat.
-fig_5i <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_S_riv_d)) +
+# c - river survival rate ----
+fig_rs <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_S_riv_d)) +
   geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
   theme_classic() +
   ylab("River survival rate") +
   xlab("Percent of natural habitat") +
-  ggtitle(label="(c)") + theme(plot.title = element_text(size=14, face = "bold")); fig_5i
+  ggtitle(label="(c)") + theme(plot.title = element_text(size=14, face = "bold")); fig_rs
 
 
-# Fig 5j - Size at ocean entry by percent of natural habitat.
-fig_5j <- ggplot(data=sub_dat, aes(x=iter_val, y=size_ocean_entry)) +
+# d - duration ----
+fig_dur <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_dur)) +
+  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
+  theme_classic() +
+  ylab("Duration (d)") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(d)") + theme(plot.title = element_text(size=14, face = "bold")); fig_dur
+
+
+# e - size at ocean entry ----
+fig_Woe <- ggplot(data=sub_dat, aes(x=iter_val, y=size_oe)) +
   geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
   theme_classic() +
   ylab("Size at ocean entry (g)") +
   xlab("Percent of natural habitat") +
-  ggtitle(label="(e)") + theme(plot.title = element_text(size=14, face = "bold")); fig_5j
+  ggtitle(label="(e)") + theme(plot.title = element_text(size=14, face = "bold")); fig_Woe
 
 
-# Fig 5k - Size at ocean entry by percent of natural habitat.
-fig_5k <- ggplot(data=sub_dat, aes(x=iter_val, y=size_t60)) +
+# f - cumulative survival to the ocean ----
+fig_cumS_o <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_S_cum)) +
+  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
+  theme_classic() +
+  ylab("Cumulative survival to ocean") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(f)") + theme(plot.title = element_text(size=14, face = "bold")); fig_cumS_o
+
+
+# g - fitness ----
+fig_fit <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_Fit)) +
+  geom_line(size=2, alpha=0.7, color="gray24") + geom_point(size=4, alpha=1, color="gray24") + 
+  theme_classic() +
+  ylab("Fitness") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(g)") + theme(plot.title = element_text(size=14, face = "bold")); fig_fit
+
+
+# h - size at t=60 ----
+fig_W60 <- ggplot(data=sub_dat, aes(x=iter_val, y=W.t60)) +
   geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
   theme_classic() +
   ylab("Size at T=60 (g)") +
   xlab("Percent of natural habitat") +
-  ggtitle(label="(h)") + theme(plot.title = element_text(size=14, face = "bold")); fig_5k
+  ggtitle(label="(h)") + theme(plot.title = element_text(size=14, face = "bold")); fig_W60
 
 
-
-# All of Figure 5
-
-ggarrange(fig_5a, fig_5b, fig_5c, fig_5d, fig_5e, fig_5f, 
-          fig_5g, fig_5h, fig_5i, fig_5j, fig_5k)
-
-
-# medium
-ggarrange(fig_5a, fig_5b, fig_5f, fig_5g, fig_5i, fig_5h, fig_5e, 
-          ncol = 2, nrow = 4)
-
-
-# THIS ONE!!!!!!!!!!!!!!
-ggarrange(fig_5a, fig_5b, fig_5f, fig_5i, fig_5e, ncol = 1)
-
-
-
-##
-ggarrange(fig_5a, fig_5b, fig_5c, fig_5d, fig_5e,
-          ncol = 1)
-
-# Save Figure 5
-pdf.options(reset = TRUE, onefile = FALSE)
-setwd("C:/Users/sabalm/Desktop/")
-pdf("Figure5.pdf", width=3.5, height=12)
-
-ggarrange(fig_5a, fig_5b, fig_5c, fig_5d, fig_5e,
-          ncol = 1)
-
-dev.off()
-
-
-
-#### Alt options:
-
-sub_dat2 <- sub_dat %>% 
-  pivot_longer(cols = c(mean_G_riv_d, mean_G_ocean_d),
-                                     names_to = "riv_ocean", values_to = "mean_G_d") %>% 
-  select(iter_val, riv_ocean, mean_G_d) %>% 
-  mutate(riv_ocean = fct_recode(riv_ocean, "river" = "mean_G_riv_d",
-                                "ocean" = "mean_G_ocean_d"))
-
-sub_dat2 <- sub_dat %>% 
-  pivot_longer(cols = c(mean_S_riv_d, mean_S_ocean_d),
-               names_to = "riv_ocean", values_to = "mean_S_d") %>% 
-  select(iter_val, riv_ocean, mean_S_d) %>% 
-  mutate(riv_ocean = fct_recode(riv_ocean, "river" = "mean_S_riv_d",
-                                "ocean" = "mean_S_ocean_d")) %>% 
-  left_join(sub_dat2)
-
-
-# Fig 5s - Daily survival by percent of natural habitat.
-fig_5s <- ggplot(data=sub_dat2, aes(x=iter_val, y=mean_S_d, color = riv_ocean, fill = riv_ocean)) +
-  geom_line(size=1, alpha=0.7) + 
-  geom_point(size=2, alpha=1) + 
-  scale_fill_manual(values = c("royalblue", "limegreen")) +
-  scale_color_manual(values = c("royalblue", "limegreen")) +
-  theme_classic() +
-  ylab("Mean daily survival") +
-  xlab("Percent of natural habitat") +
-  theme(legend.title = element_blank(), legend.position = c(0.75, 0.4)) +
-  ggtitle(label="(c)") + theme(plot.title = element_text(size=12)); fig_5s
-
-# Fig 5gr - Daily growth by percent of natural habitat.
-fig_5gr <- ggplot(data=sub_dat2, aes(x=iter_val, y=mean_G_d, color = riv_ocean, fill = riv_ocean)) +
-  geom_line(size=1, alpha=0.7) + 
-  geom_point(size=2, alpha=1) + 
-  scale_fill_manual(values = c("royalblue", "limegreen")) +
-  scale_color_manual(values = c("royalblue", "limegreen")) +
-  theme_classic() +
-  ylab("Mean daily growth (g/d)") +
-  xlab("Percent of natural habitat") +
-  theme(legend.title = element_blank(), legend.position = c(0.75, 0.4)) +
-  ggtitle(label="(c)") + theme(plot.title = element_text(size=12)); fig_5gr
-
-
-
-sub_dat3 <- DF4_tracks %>% as_tibble() %>% group_by(Wstart, iter_val) %>%
-  filter(Time == 59) %>% select(Wstart, iter_val, S.cum) %>% 
-  group_by(iter_val) %>% summarize(S.cum.T60 = mean(S.cum))
-
-
-# Fig 5cum60 - Cumulative survival to T = 60 by percent of natural habitat.
-fig_5cum60 <- ggplot(data=sub_dat3, aes(x=iter_val, y=S.cum.T60)) +
+# i - cumulative survival to t = 60 ----
+fig_cumS_60 <- ggplot(data=sub_dat, aes(x=iter_val, y=S.cum.T60)) +
   geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
   theme_classic() +
   ylab("Cumulative survival to T=60") +
   xlab("Percent of natural habitat") +
-  ggtitle(label="(i)") + theme(plot.title = element_text(size=14, face = "bold")); fig_5cum60
+  ggtitle(label="(i)") + theme(plot.title = element_text(size=14, face = "bold")); fig_cumS_60
 
 
-
-
-sub_dat4 <- DF4_tracks %>% as_tibble() %>% group_by(Wstart, iter_val) %>%
-  filter(Time == 60) %>% select(Wstart, iter_val, W) %>% 
-  group_by(iter_val) %>% summarize(W.t60 = mean(W))
-
-
-# Fig 5k2 - Size at T=60 by percent of natural habitat.
-fig_5k2 <- ggplot(data=sub_dat4, aes(x=iter_val, y=W.t60)) +
-  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
-  theme_classic() +
-  ylab("Size at T=60 (g)") +
-  xlab("Percent of natural habitat") +
-  ggtitle(label="(h)") + theme(plot.title = element_text(size=14, face = "bold")); fig_5k2
-
-
-
-
-ggarrange(fig_5a, fig_5b, fig_5s, fig_5gr, fig_5e, ncol = 1)
-# prop moves (fig_5a)
-# duration (fig_5b)
-# mean g/day by riv/ocean
-# mean S/day by riv/ocean
-# fitness (fig_5e)
-
-
-
-
-
-### final 3x3 Figure 5 arrangement with transparent backgrounds.
-
-fig_pmoves <- fig_5a + theme(
+# Save Figure 5
+theme_transparent <- theme(
   panel.background = element_rect(fill = "transparent",colour = NA),
   panel.grid.minor = element_blank(), 
   panel.grid.major = element_blank(),
   plot.background = element_rect(fill = "transparent",colour = NA),
   legend.background = element_rect(fill = "transparent", color = NA))
-  
-fig_dur <- fig_5b + theme(
-  panel.background = element_rect(fill = "transparent",colour = NA),
-  panel.grid.minor = element_blank(), 
-  panel.grid.major = element_blank(),
-  plot.background = element_rect(fill = "transparent",colour = NA))
-
-fig_rgrowth <- fig_5f + theme(
-  panel.background = element_rect(fill = "transparent",colour = NA),
-  panel.grid.minor = element_blank(), 
-  panel.grid.major = element_blank(),
-  plot.background = element_rect(fill = "transparent",colour = NA))
-
-fig_rsurv <- fig_5i + theme(
-  panel.background = element_rect(fill = "transparent",colour = NA),
-  panel.grid.minor = element_blank(), 
-  panel.grid.major = element_blank(),
-  plot.background = element_rect(fill = "transparent",colour = NA))
-
-fig_size_oe <- fig_5j + theme(
-  panel.background = element_rect(fill = "transparent",colour = NA),
-  panel.grid.minor = element_blank(), 
-  panel.grid.major = element_blank(),
-  plot.background = element_rect(fill = "transparent",colour = NA))
-
-fig_cumS_oe <- fig_5d + theme(
-  panel.background = element_rect(fill = "transparent",colour = NA),
-  panel.grid.minor = element_blank(), 
-  panel.grid.major = element_blank(),
-  plot.background = element_rect(fill = "transparent",colour = NA))
-
-fig_fit <- fig_5e + theme(
-  panel.background = element_rect(fill = "transparent",colour = NA),
-  panel.grid.minor = element_blank(), 
-  panel.grid.major = element_blank(),
-  plot.background = element_rect(fill = "transparent",colour = NA))
-
-fig_size_t60 <- fig_5k2 + theme(
-  panel.background = element_rect(fill = "transparent",colour = NA),
-  panel.grid.minor = element_blank(), 
-  panel.grid.major = element_blank(),
-  plot.background = element_rect(fill = "transparent",colour = NA))
-
-fig_cumS_t60 <- fig_5cum60  + theme(
-  panel.background = element_rect(fill = "transparent",colour = NA),
-  panel.grid.minor = element_blank(), 
-  panel.grid.major = element_blank(),
-  plot.background = element_rect(fill = "transparent",colour = NA))
-
-
-
-# Save!
-setwd("C:/Users/sabalm/Desktop/")
 
 
 # With transparent backgrounds!
 ggsave(
-  plot = ggarrange(fig_pmoves, fig_rgrowth, fig_rsurv,
-                   fig_dur, fig_size_oe, fig_cumS_oe,
-                   fig_fit, fig_size_t60, fig_cumS_t60,
+  plot = ggarrange(fig_pmoves + theme_transparent, 
+                   fig_rg + theme_transparent, 
+                   fig_rs + theme_transparent,
+                   fig_dur + theme_transparent, 
+                   fig_Woe + theme_transparent, 
+                   fig_cumS_o + theme_transparent,
+                   fig_fit + theme_transparent, 
+                   fig_W60 + theme_transparent, 
+                   fig_cumS_60 + theme_transparent,
                    ncol = 3, nrow = 3),
-  filename = "tr_tst2.png",
+  filename = "Figure5.png",
   bg = "transparent",
   width = 8, height = 7, units = "in",
   dpi = 500
 )
 
 
-# Figure S4
-# ocean growth and survial for SI!
-setwd("C:/Users/sabalm/Desktop/")
+
+
+# SI figure 4 ----
+# a - ocean growth rate
+fig_g.d.ocean <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_G_ocean_d)) +
+  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
+  theme_classic() +
+  ylab("Ocean growth rate (g/d)") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(a)") + theme(plot.title = element_text(size=14, face = "bold")); fig_g.d.ocean 
+
+# b - ocean survival rate
+fig_s.d.ocean <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_S_ocean_d)) +
+  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
+  theme_classic() +
+  ylab("Ocean survival rate") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(b)") + theme(plot.title = element_text(size=14, face = "bold")); fig_s.d.ocean
+
+# Save SI Figure 4
 pdf("Figure_S4.pdf", width=6, height=2.5)
-
-ggarrange(fig_5g, fig_5h, ncol=2)
-
+ggarrange(fig_g.d.ocean, fig_s.d.ocean, ncol=2)
 dev.off()
 
 
@@ -1860,4 +1723,6 @@ dev.off()
 # Potential SI figure plots ...............................................................................................................
 
 # plot Terminal Fitness function
+
+
 curve(TERM.FUN(W, Ws=Ws , r=r, Smax=Smax), xname="W", xlim=c(7,80), ylim=c(0,0.31), ylab="adult marine survival (to age 3)")
