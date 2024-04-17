@@ -1093,7 +1093,7 @@ DF.SUM <- DF.SUM %>% bind_rows(DF.SUM2)
 write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario2.csv") # UPDATE SAVE LOCATION!
 #DF.SUM <- read.csv("C://Users//sabalm//Desktop//scenario2.csv")
 
-DF.SUM <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//Manuscript V1//scenario2.csv")
+DF.SUM <- read.csv("P:/REDD/Personal/Sabal/GIT Repositories/SDP-pred-mig/results/Manuscript V1/scenario2.csv")
 
 
 ## Figure 3 ----
@@ -1106,7 +1106,7 @@ fig3_dat <- DF.SUM %>%
 
 fig3_dat$iter_var <- factor(fig3_dat$iter_var, levels = c("yn", "Bn", "ka", "dn0"))
 levels(fig3_dat$iter_var) <- c("(a) Predator abundance", "(b) Salmon escape ability", 
-                               "(c) Foraging gain", "(d) Energy savings")
+                               "(c) Foraging gain", "(d) Energy refugia")
 
 fig3_dat$h <- factor(fig3_dat$h)
 levels(fig3_dat$h) <- c("Altered", "Natural")
@@ -1261,7 +1261,7 @@ nat_preds_cat_N <- DF.SUM %>% dplyr::select(iter_index, Bn, ka, dn0, more_nat_pr
 write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario3.csv") # UPDATE SAVE LOCATION!
 #DF.SUM <- read.csv("C://Users//sabalm//Desktop//scenario3.csv")
 
-DF.SUM <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//Manuscript V1//scenario3.csv")
+DF.SUM <- read.csv("P:/REDD/Personal/Sabal/GIT Repositories/SDP-pred-mig/results/Manuscript V1/scenario3.csv")
 
 
 ## Figure 4 ----
@@ -1301,7 +1301,8 @@ fig4a <- ggplot(data=eg1, aes(x=Bn, y=ka, fill=(more_n))) + geom_tile(width=1, h
   theme_classic() +
   scale_fill_gradient2(high = "#208B20", low = "#936EDB", name = "Difference in mean proportion\nof pauses (natural - altered)") +
   theme(legend.position = "bottom") + 
-  ylab(expression(k[a])) + xlab(expression(B[n])) +
+  ylab("Foraging gain in altered habitats (k)") + xlab("Salmon vulnerability to predation (B)") +
+  #ylab(expression(k[a])) + xlab(expression(B[n])) +
   ggtitle(label = "(a)") + theme(plot.title = element_text(size=20)); fig4a
   
 #coord_equal() 
