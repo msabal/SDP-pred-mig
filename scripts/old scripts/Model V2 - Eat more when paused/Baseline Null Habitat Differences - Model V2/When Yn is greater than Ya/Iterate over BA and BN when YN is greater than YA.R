@@ -11,65 +11,67 @@ yn <- 1     # twice as many predators in natural.
 ya <- 0.5
 
 #### Iterate Main Function over varying parameters
-kn <- 1.3
+Bn <- 1
 
-ka <- seq(0.9, 1.3, by=0.1)
+Ba <- seq(0.1, 1, by=0.2)
 
-OUT.KA <- list()
+OUT.BA <- list()
 
 start.time <- Sys.time() # time how long the while loop takes
 
+
+
 # Start looping MAIN_FUN over different qa values
-for(i in 1:length(ka)) {
+for(i in 1:length(Ba)) {
   
   OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                   E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-                  ya, yn, yo, dn0, Ba, Bn, Bo, ka[i], kn, # vars that vary by habitat (h.vec)
+                  ya, yn, yo, dn0, Ba[i], Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
                   Ws, r, Smax, W, # vars for Terminal fitness function
                   Wstep.n, Wstep, tmax, seeds, F.vec, N)
   
   colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
   
-  OUT$ka <- rep(ka[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
+  OUT$Ba <- rep(Ba[i], length(OUT$Wstart)) # add column with var value for that iteration.
   
-  OUT.KA[[i]] <- OUT
+  OUT.BA[[i]] <- OUT
   
 } # end loop.
 
 end.time <- Sys.time() # time how long the while loop takes
 program.duration <- end.time - start.time
-program.duration # 16 mins
+program.duration # 53 mins
 
-DF.KA<-ldply(OUT.KA, as.vector)
+DF.BA<-ldply(OUT.BA, as.vector)
 
 ## Export DF.QA
-#write.csv(DF.KA, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.KA.csv")
+#write.csv(DF.BA, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BA.V2.Baseline-Null.csv")
 
 
 
 #### Iterate Main Function over varying parameters
-ka <- 1.3
+Ba <- 1
 
-kn <- seq(0.9, 1.3, by=0.1)
+Bn <- seq(0.1, 0.9, by=0.2)
 
-OUT.KN <- list()
+OUT.BN <- list()
 
 start.time <- Sys.time() # time how long the while loop takes
 
 # Start looping MAIN_FUN over different qa values
-for(i in 1:length(kn)) {
+for(i in 1:length(Bn)) {
   
   OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                   E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-                  ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn[i], # vars that vary by habitat (h.vec)
+                  ya, yn, yo, dn0, Ba, Bn[i], Bo, ka, kn, # vars that vary by habitat (h.vec)
                   Ws, r, Smax, W, # vars for Terminal fitness function
                   Wstep.n, Wstep, tmax, seeds, F.vec, N)
   
   colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
   
-  OUT$kn <- rep(kn[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
+  OUT$Bn <- rep(Bn[i], length(OUT$Wstart)) # add column with seeds value for that iteration.
   
-  OUT.KN[[i]] <- OUT
+  OUT.BN[[i]] <- OUT
   
 } # end loop.
 
@@ -77,31 +79,30 @@ end.time <- Sys.time() # time how long the while loop takes
 program.duration <- end.time - start.time
 program.duration # 1.83 hours for seeds length = 10!
 
-DF.KN<-ldply(OUT.KN, as.vector)
+DF.BN<-ldply(OUT.BN, as.vector)
 
-## Export DF.QN
-#write.csv(DF.KN, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.KN.V2.csv")
+## Export DF.QA
+#write.csv(DF.BN, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.BN.V2.Baseline-Null.csv")
 
-# Join DF.QA and DF.QN 
+# Join DF.BA and DF.BN
 
-DF.KA$kn <- rep(1.3, length(DF.KA$Wstart)) # make kn column and set all values to 1
-DF.KN$ka <- rep(1.3, length(DF.KN$Wstart)) # make ka column and set all values to 1
+DF.BA$Bn <- rep(1, length(DF.BA$Wstart)) # make Bn column and set all values to 1
+DF.BN$Ba <- rep(1, length(DF.BN$Wstart)) # make Ba column and set all values to 1
 
-DF.K <- rbind(DF.KA, DF.KN)
+DF.B <- rbind(DF.BA, DF.BN)
 
-# Calculate Qn/Qa ratios!
-DF.K$kn_ka <- DF.K$kn / DF.K$ka
+# Calculate Dn0/d ratios!
+DF.B$Bn_Ba <- DF.B$Bn / DF.B$Ba   # have ratios up to 10 -  log transform in plots!
 
-
-## Export DF.K
-write.csv(DF.K, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.K.V2.YnGreaterYa.csv")
-DF.K <- read.csv("H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.K.V2.YnGreaterYa.csv", sep=",")
+## Export DF.Y
+write.csv(DF.B, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.B.V2.YnGreaterYa.csv")
+DF.B <- read.csv("G:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.B.V2.YnGreaterYa.csv", sep=",")
 
 # Aggregate  by Wstart (salmon size)
 # summarize data for barplot
-bar.cp<-aggregate(p.tot ~ h + kn_ka, data=subset(DF.K, Beh == 0), mean)
-a<-aggregate(p.tot ~ h + kn_ka, data=subset(DF.K, Beh == 0), sd); colnames(a)[3]<-"sd"
-b<-aggregate(p.tot ~ h + kn_ka, data=subset(DF.K, Beh == 0), length); colnames(b)[3]<-"n"
+bar.cp<-aggregate(p.tot ~ h + Bn_Ba, data=subset(DF.B, Beh == 0), mean)
+a<-aggregate(p.tot ~ h + Bn_Ba, data=subset(DF.B, Beh == 0), sd); colnames(a)[3]<-"sd"
+b<-aggregate(p.tot ~ h + Bn_Ba, data=subset(DF.B, Beh == 0), length); colnames(b)[3]<-"n"
 bar.cp<-join(bar.cp, a); bar.cp<-join(bar.cp, b)
 bar.cp$se<-bar.cp$sd / sqrt(bar.cp$n)
 
@@ -110,41 +111,29 @@ levels(bar.cp$h) <- c("Altered", "Natural")
 
 
 # Plots!
-
-plot_kn_ka <- ggplot(data=bar.cp, aes(x=log(kn_ka), y=p.tot, fill=h, color=h)) + 
+plot_Bn_Ba <- ggplot(data=bar.cp, aes(x=log(Bn_Ba), y=p.tot, fill=h, color=h)) + 
   geom_vline(xintercept = 0, linetype="dashed",  color = "gray24", size=0.5) +
-  geom_vline(xintercept = log(1.3/1.3), linetype="dashed",  color = "skyblue", size=0.5) +
+  geom_vline(xintercept = log(1/1), linetype="dashed",  color = "skyblue", size=0.5) +
   geom_line(size=0.5, aes(color=h)) +
   geom_errorbar(aes(ymax=p.tot + se, ymin=p.tot - se, color=h), width=0, size=0.5) +
   geom_point(size=2, shape=21, color="black") + 
   theme_classic() + ylim(c(0,1)) +
   scale_color_manual(values=c("mediumpurple", "forestgreen")) +
   scale_fill_manual(values=c("mediumpurple", "forestgreen")) +
-  ylab("Frequency of move 0") + xlab(expression(paste(ln(k[n]:k[a])))) +
+  ylab("Frequency of move 0") + xlab(expression(paste(ln(B[n]:B[a])))) +
   theme(axis.text.y = element_text(size=11), axis.text.x = element_text(size=11),
         axis.title.y = element_text(size=11), axis.title.x = element_text(size=11),
         legend.title = element_blank(), legend.text = element_text(size=11)) +
   theme(legend.position = c(0.8, 0.8), legend.background = element_rect(fill="transparent")) +
-  annotate(geom="text", x=-0.2, y=1, label="more food\nin altered", color="mediumpurple", fontface="bold") +
-  annotate(geom="text", x=0.2, y=1, label="more food\nin natural", color="forestgreen", fontface="bold") +
-  annotate(geom="text", x=log(1.3/1.3), y=0.5, label="baseline", color="skyblue", fontface="bold")
+  annotate(geom="text", x=-1.3, y=1, label="greater escape\nability in natural", color="forestgreen", fontface="bold") +
+  annotate(geom="text", x=1.3, y=1, label="greater escape\nability in altered", color="mediumpurple", fontface="bold") +
+  annotate(geom="text", x=log(1/1), y=0.8, label="baseline", color="skyblue", fontface="bold")
 
-
-plot_kn_ka
+plot_Bn_Ba
 
 setwd("C:/Users/Megan/Desktop/")
-pdf("Fig_Ka_Kn.pdf", width=4.5, height=4)
+pdf("Fig_Bn_Ba.pdf", width=4.5, height=4)
 
-plot_kn_ka
+plot_Bn_Ba
 
 dev.off()
-
-## Other plots!
-ggplot(data=DF.K, aes(x=kn_ka, y=p0.a, color=Wstart)) + geom_point(size=3) + theme_classic() + ylim(c(0,1))
-ggplot(data=DF.K, aes(x=kn_ka, y=p0.n, color=Wstart)) + geom_point(size=3) + theme_classic() + ylim(c(0,1))
-
-ggplot(data=subset(DF.K.LONG, Beh == 0 & Wstart == 10), aes(x=kn_ka, y=p, color=h)) + geom_point(size=3) + theme_classic() + ylim(c(0,1))
-ggplot(data=subset(DF.K.LONG, Beh == 1 & Wstart == 10), aes(x=kn_ka, y=p, color=h)) + geom_point(size=3) + theme_classic() + ylim(c(0,1))
-ggplot(data=subset(DF.K.LONG, Beh == 2 & Wstart == 10), aes(x=kn_ka, y=p, color=h)) + geom_point(size=3) + theme_classic() + ylim(c(0,1))
-
-
