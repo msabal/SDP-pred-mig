@@ -1,4 +1,4 @@
-#### Iterate baseline parameters when Yn > Ya (when there are more predators in natural, can it still be beneficial to pause there?)
+#### Iterate baseline parameters over Ba and Bn
 
 # load libraries
 library(abind); library(ggplot2); library(plyr); library(reshape2)
@@ -6,14 +6,10 @@ library(abind); library(ggplot2); library(plyr); library(reshape2)
 #remove scientific notation
 options(scipen=999)
 
-#### Reset baseline: there are more predators in natural then altered.
-yn <- 1     # twice as many predators in natural.
-ya <- 0.5
-
 #### Iterate Main Function over varying parameters
 Bn <- 1
 
-Ba <- seq(0.1, 1, by=0.2)
+Ba <- seq(0.1,1, by=0.2)
 
 OUT.BA <- list()
 
@@ -52,7 +48,7 @@ DF.BA<-ldply(OUT.BA, as.vector)
 #### Iterate Main Function over varying parameters
 Ba <- 1
 
-Bn <- seq(0.1, 0.9, by=0.2)
+Bn <- seq(0.1,0.9, by=0.2)
 
 OUT.BN <- list()
 
@@ -95,8 +91,8 @@ DF.B <- rbind(DF.BA, DF.BN)
 DF.B$Bn_Ba <- DF.B$Bn / DF.B$Ba   # have ratios up to 10 -  log transform in plots!
 
 ## Export DF.Y
-write.csv(DF.B, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.B.V2.YnGreaterYa.csv")
-DF.B <- read.csv("G:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.B.V2.YnGreaterYa.csv", sep=",")
+write.csv(DF.B, "H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.B.V2.Baseline-Null.csv")
+DF.B <- read.csv("H:\\My Drive\\Professional\\GIT Repositories\\SDP-pred-mig\\results\\DF.B.V2.Baseline-Null.csv", sep=",")
 
 # Aggregate  by Wstart (salmon size)
 # summarize data for barplot

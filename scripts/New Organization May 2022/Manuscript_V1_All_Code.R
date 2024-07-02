@@ -146,10 +146,10 @@ WctoW <- function(Wc){
 TERM.FUN <- function(W, Ws, r, Smax){ Smax/(1+exp(-r*(W-Ws)))}
 
 # Extra code to test terminal fitness function
-# # Test Fitness function
-# F.vec <- array(NA, dim=c(Wstep.n, 2, Amax))  #(rows: weight, cols: F(x,t), F(x, t+1), matrices: area)
-# F.vec[1:Wstep.n, 2, Amax] <- TERM.FUN(W = seq(Wmin+Wstep, Wmax , Wstep), Ws=Ws, r=r, Smax=Smax)
-# F.vec[,2,1:Amax-1] <- 0 #if salmon end in any area besides the last (Amax), then their fitness is 0!
+# Test Fitness function
+F.vec <- array(NA, dim=c(Wstep.n, 2, Amax))  #(rows: weight, cols: F(x,t), F(x, t+1), matrices: area)
+F.vec[1:Wstep.n, 2, Amax] <- TERM.FUN(W = seq(Wmin+Wstep, Wmax , Wstep), Ws=Ws, r=r, Smax=Smax)
+F.vec[,2,1:Amax-1] <- 0 #if salmon end in any area besides the last (Amax), then their fitness is 0!
 
 
 #### 3.3. - 3.6. Growth and survival functions
@@ -252,19 +252,20 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
   # F.vec AND F.best, S.day, and Beh.best. Will split up later to use in different ways in the next function OVER.STATES.
   return(Temp.out)
   
-  # Extra code to test OVER.BEH
-  # # Check if OVER.BEH works for a specific W and A state for tmax-1.
-  # Test.beh <- OVER.BEH(Wc=1, A=Amax, t=tmax, U, Wmax, Amax,
-  #                     E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
-  #                     ya, yn, yo, dn0, Ba, Bn, Bo, kn, ka,
-  #                     seeds=1, F.vec, N)
-  # head(Test.beh[,,Amax])
-  # tail(Test.beh[,,Amax])
-  # # Works!!! Look for a value in column one at W<-# and
-  # # in rows 731 and 731 where we stored Fit, Beh.best, S.day, and G.day.
-  # rm(Test.beh)
-  
 } # end function.
+
+
+# Extra code to test OVER.BEH
+# # Check if OVER.BEH works for a specific W and A state for tmax-1.
+Test.beh <- OVER.BEH(Wc=1, A=Amax, t=tmax, U, Wmax, Amax,
+                    E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
+                    ya, yn, yo, dn0, Ba, Bn, Bo, kn, ka,
+                    seeds=1, F.vec, N)
+head(Test.beh[,,Amax])
+tail(Test.beh[,,Amax])
+# Works!!! Look for a value in column one at W<-# and
+# in rows 731 and 731 where we stored Fit, Beh.best, S.day, and G.day.
+rm(Test.beh)
 
 
 #### 3.9. OVER.STATES 
