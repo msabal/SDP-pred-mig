@@ -22,12 +22,46 @@
 #..........................................................................................................................................
 # Load libraries and set settings ----
 library(abind); library(ggplot2); library(plyr); library(reshape2);library(colorRamps); library(ggpubr)
-library(tidyverse)
+library(tidyverse); library(purrr)
 
 #remove scientific notation
 options(scipen=999)
 
-#### 3.1. WtoWc and WctoW (convert between salmon weight in grams and computer index)
+
+# Load parameters ----
+#param_dat <- read.csv("P://REDD//Personal//Sabal//GIT Repositories//SDP-pred-mig//raw-data//Parameter_Iterations_Tracking.csv")
+param_dat <- read.csv("raw-data//Parameter_Iterations_Tracking.csv")
+
+# Parameters: Assign null parameter values
+
+# Choose which "scenario" parameter values you need here: baseline.
+scenario_data <- param_dat %>% filter(scenario == "baseline")
+
+# Convert the filtered row to a list
+scenario_list <- as.list(scenario_data)
+
+# Function to convert comma-separated strings to numeric vectors
+convert_to_numeric_vector <- function(x) {
+  if (is.character(x) && grepl(",", x)) {
+    as.numeric(unlist(strsplit(x, ",")))
+  } else {
+    x
+  }
+}
+
+# Apply the conversion function to each element in the list
+scenario_list <- lapply(scenario_list, convert_to_numeric_vector)
+
+# Assign R objects with the names of the columns in the filtered dataframe
+purrr::walk2(names(scenario_list), scenario_list, ~assign(.x, .y, envir = .GlobalEnv))
+
+# Assign a few extras:
+Wstep.n         <- ((Wmax-Wmin)/Wstep) # number of increments
+Wstart_setup    <- seq(7, 10, length.out = 6) # starting sizes to simulate
+Wstart_setup[1] <- 7.1 # needs to be start at 7.1
+
+
+#### 1. WtoWc and WctoW (convert between salmon weight in grams and computer index)
 
 # Make functions to convert between W in grams and W in computer discrete indexing
 # Make a data frame to covert between real W (grams) and computer discrete index (Wc)
@@ -53,7 +87,7 @@ WctoW <- function(Wc){
 }
 
 
-#### 3.2. TERM.FUN (terminal fitness function: relate salmon area and weight to probability of survival to age 3 adult)
+#### 2. TERM.FUN (terminal fitness function: relate salmon area and weight to probability of survival to age 3 adult)
 
 # Terminal fitness function - how does salmon weight at tmax and Amax relate to probability of
 # surviving to a returning adult? Larger salmon more likely to survive to a returning adult.
@@ -64,12 +98,12 @@ TERM.FUN <- function(W, Ws, r, Smax){ Smax/(1+exp(-r*(W-Ws)))}
 
 # Extra code to test terminal fitness function
 # Test Fitness function
-F.vec <- array(NA, dim=c(Wstep.n, 2, Amax))  #(rows: weight, cols: F(x,t), F(x, t+1), matrices: area)
-F.vec[1:Wstep.n, 2, Amax] <- TERM.FUN(W = seq(Wmin+Wstep, Wmax , Wstep), Ws=Ws, r=r, Smax=Smax)
-F.vec[,2,1:Amax-1] <- 0 #if salmon end in any area besides the last (Amax), then their fitness is 0!
+# F.vec <- array(NA, dim=c(Wstep.n, 2, Amax))  #(rows: weight, cols: F(x,t), F(x, t+1), matrices: area)
+# F.vec[1:Wstep.n, 2, Amax] <- TERM.FUN(W = seq(Wmin+Wstep, Wmax , Wstep), Ws=Ws, r=r, Smax=Smax)
+# F.vec[,2,1:Amax-1] <- 0 #if salmon end in any area besides the last (Amax), then their fitness is 0!
 
 
-#### 3.3. - 3.6. Growth and survival functions
+#### 3. - 6. Growth and survival functions
 # Functions used inside the Fitness function (see Final State Dynamics.R for more details)
 GROWTH.FUN <- function(W, E, q, a, Alpha, d, v, U) { q*E*W^a - d*Alpha*W*exp(v*U) }   # anabolic gain minus catabolic costs (equation 2)
 OCEAN.Q    <- function(t, f, g, c, j)              { f + g*exp(-(t-c)^2/2*j^2) }      # ocean growth potential (appendix equation 1)
@@ -77,7 +111,7 @@ RIVER.Q    <- function(U, z, kh)                   { z*U + kh }                 
 SURV.FUN   <- function(W, Bu, Bh, Bw, M, m, y, P)  { (1-M*(Bu + Bh + Bw*W^m))^(y*P) } # daily probability of survival (equation 4 and 5)
 
 
-#### 3.7. Fitness function (described above)
+#### 7. Fitness function (described above)
 FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                     E, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, P, z, # parameters in functions
                     ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # parameters that vary by habitat (h.vec)
@@ -120,16 +154,17 @@ FITNESS <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh cho
   
   return(Fit)
   
-  # Extra code to test fitness function
-  # FITNESS(Wc=1, A=Amax, t=tmax, U=2, Wmax, Amax,
-  #         E, a, Alpha, d, v, f, g, c, j, Bu=Bu[2], Bw, M, m, P, z,
-  #         ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
-  #         seeds=1, F.vec, N) # # (Expected Fitness) and # (daily survival) and # growth rate (for that time step)!!!!!
-  
 } # end function.
 
+# Extra code to test fitness function
+# Need to provide single values for Wc, A, t, U, and Bu.
+# FITNESS(Wc=1, A=Amax, t=tmax, U=U[3], Wmax=Wmax, Amax=Amax, # state vars, constraints & beh choice (vars we will for loop over)
+#                     E=E, a=a, Alpha=Alpha, d=d, v=v, f=f, g=g, c=c, j=j, Bu=Bu[2], Bw=Bw, M=M, m=m, P=P, z=z, # parameters in functions
+#                     ya=ya, yn=yn, yo=yo, dn0=dn0, Ba=Ba, Bn=Bn, Bo=Bo, ka=ka, kn=kn, # parameters that vary by habitat (h.vec)
+#                     seeds=seeds, F.vec=F.vec, N=N) # (Expected Fitness) and # (daily survival) and # growth rate (for that time step)!!!!!
 
-#### 3.8. OVER.BEH
+
+#### 8. OVER.BEH
 # OVER.BEH function to apply over BEHAVIORAL CHOICES (move 0, 1, 2).
 # Function used to apply FITNESS using for loop over all behavioral choices.
 # Returns the maximum fitness (F.best), best choice (Beh.best), and daily survival (Surv.day).
@@ -147,10 +182,16 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
   
   # run a for loop over all behavioral choices to get FITNESS (Fit) from each one.
   for(i in 1:length(U)){ 
-    F.beh.surv[i,] <- FITNESS(Wc, A, t, U[i], Wmax, Amax,
-                              E, a, Alpha, d, v, f, g, c, j, Bu[i], Bw, M, m, P, z,
-                              ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
-                              seeds, F.vec, N) 
+    # F.beh.surv[i,] <- FITNESS(Wc, A, t, U[i], Wmax, Amax,
+    #                           E, a, Alpha, d, v, f, g, c, j, Bu[i], Bw, M, m, P, z,
+    #                           ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
+    #                           seeds, F.vec, N) 
+    
+    F.beh.surv[i,] <- FITNESS(Wc=Wc, A=A, t=t, U=U[i], Wmax=Wmax, Amax=Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                              E=E, a=a, Alpha=Alpha, d=d, v=v, f=f, g=g, c=c, j=j, Bu=Bu[i], Bw=Bw, M=M, m=m, P=P, z=z, # parameters in functions
+                              ya=ya, yn=yn, yo=yo, dn0=dn0, Ba=Ba, Bn=Bn, Bo=Bo, ka=ka, kn=kn, # parameters that vary by habitat (h.vec)
+                              seeds=seeds, F.vec=F.vec, N=N)
+    
   }
   
   F.best <- max(F.beh.surv[,1])  # Get maximum expected fitness from all three behavioral choices.
@@ -174,28 +215,36 @@ OVER.BEH <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh ch
 
 # Extra code to test OVER.BEH
 # # Check if OVER.BEH works for a specific W and A state for tmax-1.
-Test.beh <- OVER.BEH(Wc=1, A=Amax, t=tmax, U, Wmax, Amax,
-                     E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z,
-                     ya, yn, yo, dn0, Ba, Bn, Bo, kn, ka,
-                     seeds=1, F.vec, N)
-head(Test.beh[,,Amax])
-tail(Test.beh[,,Amax])
-# Works!!! Look for a value in column one at W<-# and
-# in rows 731 and 731 where we stored Fit, Beh.best, S.day, and G.day.
-rm(Test.beh)
+# Need to provide Wc (starting weight), A, and t because we aren't looping over those states yet.
+# Test.beh <- OVER.BEH(Wc=1, A=Amax, t=tmax, U=U, Wmax=Wmax, Amax=Amax,
+#                      E=E, a=a, Alpha=Alpha, d=d, v=v, f=f, g=g, c=c, j=j, Bu=Bu, Bw=Bw, M=M, m=m, P=P, z=z,
+#                      ya=ya, yn=yn, yo=yo, dn0=dn0, Ba=Ba, Bn=Bn, Bo=Bo, ka=ka, kn=kn,
+#                      seeds=1, F.vec=F.vec, N=N)
+# head(Test.beh[,,Amax])
+# tail(Test.beh[,,Amax])
+# # Works!!! Look for a value in column one at W<-# and
+# # in rows 731 and 731 where we stored Fit, Beh.best, S.day, and G.day.
+# rm(Test.beh)
 
 
-#### 3.9. OVER.STATES 
+#### 9. OVER.STATES 
 # OVER.STATES function to apply over BEHAVIORAL CHOICES (move 0, 1, 2) AND AREA (1 to 26).
 # Function used to iterate OVER.BEH over both states W (weight) and A (area) using nested for loops.
 # Run OVER.BEH and get Temp.out. Split Temp.out to F.vec and best.F.beh (only F.best and Beh.best).
 # Put Beh.best in appro Store spot. Combine F.vec and Store in an array,
 # Temp.out2 with 4 cols (F(x,t), F(x,t+1), F.best, Beh.best, S.day).
 
-OVER.STATES <- function(t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+# OVER.STATES <- function(t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+#                         E, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, P, z, # vars in functions
+#                         ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+#                         seeds, F.vec, N)
+  
+  
+OVER.STATES <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
                         E, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, P, z, # vars in functions
                         ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
                         seeds, F.vec, N)
+  
 { # start function
   
   Store <- array(NA, dim=c(Wstep.n, 4, Amax)) # Array to store all F.best (col 1), Beh.best (col 2), and S.day (col 3), G.day (col 4)
@@ -205,10 +254,10 @@ OVER.STATES <- function(t, U, Wmax, Amax, # state vars, constraints & beh choice
     # NOTE: "A" is being assigned here through the for loop, which is likely overwriting "A" that's passed as an input to OVER.STATES function ####
     # If "A" is not necessary in the input for OVER.STATES, then remove from inputs to reduce chance of errors.
     for(A in 1:Amax){
-      Temp.out <- OVER.BEH(Wc, A, t, U, Wmax, Amax,
-                           E, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, P, z,
-                           ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
-                           seeds, F.vec, N) # this returns Temp.out from OVER.BEH, which looks like...
+      Temp.out <- OVER.BEH(Wc=Wc, A=A, t=t, U=U, Wmax=Wmax, Amax=Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                           E=E, a=a, Alpha=Alpha, d=d, v=v, f=f, g=g, c=c, j=j, Bu=Bu, Bw=Bw, M=M, m=m, P=P, z=z, # vars in functions
+                           ya=ya, yn=yn, yo=yo, dn0=dn0, Ba=Ba, Bn=Bn, Bo=Bo, ka=ka, kn=kn, # vars that vary by habitat (h.vec)
+                           seeds=seeds, F.vec=F.vec, N=N) # this returns Temp.out from OVER.BEH, which looks like...
       # an array: (rows: salmon weight (length: Wstep.n+2),
       # 2 cols: F(x,t), F(x, t+1), matrices: area (length: Amax)).
       # Same size as F.vec, but add 2 rows to Wstep.n to save
@@ -232,7 +281,7 @@ OVER.STATES <- function(t, U, Wmax, Amax, # state vars, constraints & beh choice
 } # end function.
 
 
-#### 3.10. TRACK.SUM.FUN 
+#### 10. TRACK.SUM.FUN 
 # Get summary info from salmon tracks function.
 TRACK.SUM.FUN <- function(A, h, Beh, Time, Fit, S.day, S.cum, W){ # start function
   # Create dataframe with inputs
@@ -281,11 +330,13 @@ TRACK.SUM.FUN <- function(A, h, Beh, Time, Fit, S.day, S.cum, W){ # start functi
 
 
 #### 3.11. MAIN_FUN (returns summary data from tracks)
-MAIN_FUN <- function(U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-                     E, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, P, z, # vars in functions
-                     ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
-                     Ws, r, Smax, # vars for Terminal fitness function
-                     Wstep.n, Wstep, Wstart_setup, tmax, seeds, N)
+MAIN_FUN <- function(Wc, A, t, U, Wmax, Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                       E, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, P, z, # vars in functions
+                       ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
+                       seeds, F.vec, N,
+                       Wstep.n, Wstep, Wstart_setup, tmax,
+                       Ws, r, Smax) # vars for Terminal fitness function
+  
 { # start function
   
   # make empty arrays to store outputs
@@ -308,10 +359,10 @@ MAIN_FUN <- function(U, Wmax, Wmin, Amax, # state vars, constraints & beh choice
     # NOTE: Because this decrements "t" at the beginning of the loop, tmax is really 59, not 60 ####  
     t <- t - 1 # This takes the Time from the prior loop and decrements it by one for the next loop.
     
-    Temp.out2 <- OVER.STATES(A, t, U, Wmax, Amax,
-                             E, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, P, z,
-                             ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn,
-                             seeds, F.vec, N)  # Get all F.best, Beh.best, and S.day for all W and A for the current Time.
+    Temp.out2 <- OVER.STATES(Wc=Wc, A=A, t=t, U=U, Wmax=Wmax, Amax=Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                             E=E, a=a, Alpha=Alpha, d=d, v=v, f=f, g=g, c=c, j=j, Bu=Bu, Bw=Bw, M=M, m=m, P=P, z=z, # vars in functions
+                             ya=ya, yn=yn, yo=yo, dn0=dn0, Ba=Ba, Bn=Bn, Bo=Bo, ka=ka, kn=kn, # vars that vary by habitat (h.vec)
+                             seeds=seeds, F.vec=F.vec, N=N)  # Get all F.best, Beh.best, and S.day for all W and A for the current Time.
     # Temp.out2 also has the updated F.vec!
     
     TempF.vec <- Temp.out2[,1:2,] # Get F.vec out of Temp.out2 (first two columns).
@@ -464,3 +515,16 @@ MAIN_FUN <- function(U, Wmax, Wmin, Amax, # state vars, constraints & beh choice
   # return(DF.LONG) # return DF.LONG dataframe by Wstart.
   
 } # end function.
+
+# Test MAIN_FUN
+# MAIN_FUN(Wc=Wc, A=A, t=t, U=U, Wmax=Wmax, Amax=Amax, # state vars, constraints & beh choice (vars we will for loop over)
+#          E=E, a=a, Alpha=Alpha, d=d, v=v, f=f, g=g, c=c, j=j, Bu=Bu, Bw=Bw, M=M, m=m, P=P, z=z, # vars in functions
+#          ya=ya, yn=yn, yo=yo, dn0=dn0, Ba=Ba, Bn=Bn, Bo=Bo, ka=ka, kn=kn, # vars that vary by habitat (h.vec)
+#          seeds=seeds, F.vec=F.vec, N=N,
+#                      Wstep.n=Wstep.n, Wstep=Wstep, Wstart_setup=Wstart_setup, tmax=tmax,
+#                      Ws=Ws, r=r, Smax=Smax)
+# MAIN_FUN returns two objects in a list
+# [[1]] is the summary of each iteration by Wstart: one row each per Wstart.
+# [[2]] are the individual tracks (raw data) for each Wstart: 60 rows (time steps) per Wstart.
+
+
