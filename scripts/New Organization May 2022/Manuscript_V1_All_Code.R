@@ -101,10 +101,6 @@ for(i in 1:length(df_iters[,1])) {
 } # end loop.
 
 
-
-#DF.SUM<-ldply(OUT.SUM, as.vector)
-#DF.SUM <- DF.SUM %>% as_tibble() %>% left_join(df_iters)
-
 # Collapse outputs in list format to long dataframes
 DF.SUM.1 <- bind_rows(OUT.SUM)
 DF.TRACKS.1 <- bind_rows(OUT.TRACKS)
@@ -118,185 +114,33 @@ DF.SUM.1 <- read.csv("results//Manuscript V4/scenario1_summary.csv")
 DF.TRACKS.1 <- read.csv("results//Manuscript V4/scenario1_tracks.csv")
 
 
+## Figure: Scenario 1 ----
 
+fig_sc1_df <- DF.SUM.1 %>%  group_by(yn, Bn, ka, dn0) %>%
+  mutate(iter_id = cur_group_id()) %>% ungroup() %>%    # make an index for each parameter combination
+  # next calcuate the relative natural benefit to the baseline param value; logged so 0 would indicate baseline values.
+  mutate(nat_benefit = ifelse(yn == 1 & Bn == 1 & ka == 1.3, abs(log(1/dn0)),     
+                              ifelse(yn ==1 & Bn == 1 & dn0 == 1, abs(log(1.3/ka)),
+                                     ifelse(yn == 1 & dn0 == 1 & ka == 1.3, abs(log(1/Bn)),
+                                            abs(log(1/yn)))))) %>% 
+  # next make a category for which variable is changing
+  mutate(iter_var = ifelse(yn == 1 & Bn == 1 & ka == 1.3, "dn0",     
+                              ifelse(yn ==1 & Bn == 1 & dn0 == 1, "ka",
+                                     ifelse(yn == 1 & dn0 == 1 & ka == 1.3, "Bn",
+                                            "yn")))) %>% 
+  group_by(Beh, h, iter_var, nat_benefit) %>% 
+  summarise(mean.p.tot = mean(p.tot))  # calculate average total proportion of behaviors by groups
 
-#################################################################### old stuff below
-## Predator abundance ##
-
-# Double check
-ya # should be 1
-yn # we will reduce to simulate fewer predators in natural habitats
-
-
-# Set iterations
-df_iters <- data.frame(yn = c(1, 0.9, 0.7, 0.5, 0.3, 0.1))
-
-
-# Start simulation
-OUT.SUM <- list() # make object to save function output
-
-# Start looping MAIN_FUN over different qa values
-for(i in 1:length(df_iters[,1])) {
-  
-  OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-                  ya, yn=df_iters[i,1], yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
-                  Ws, r, Smax, W, # vars for Terminal fitness function
-                  Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N)
-  
-  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
-  
-  OUT$iter_val <- rep(df_iters[i,(length(colnames(df_iters)))], length(OUT$Wstart)) # add column with seeds value for that iteration.
-  
-  OUT.SUM[[i]] <- OUT
-  
-} # end loop.
-
-DF.SUM<-ldply(OUT.SUM, as.vector)
-
-DF.SUM <- DF.SUM %>% as_tibble() %>% mutate(iter_var = "yn")
-
-
-## Simulate over Bn
-
-# Double check
-Ba # should be 1
-Bn # we will reduce to simulate lower mortality (increased survival aka escape ability) in natural habitats
-
-
-# Set iterations
-df_iters <- data.frame(Bn = c(1, 0.9, 0.7, 0.5, 0.3, 0.1))
-
-
-# Start simulation
-OUT.SUM <- list() # make object to save function output
-
-# Start looping MAIN_FUN over different qa values
-for(i in 1:length(df_iters[,1])) {
-  
-  OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-                  ya, yn, yo, dn0, Ba, Bn=df_iters[i,1], Bo, ka, kn, # vars that vary by habitat (h.vec)
-                  Ws, r, Smax, W, # vars for Terminal fitness function
-                  Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N)
-  
-  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
-  
-  OUT$iter_val <- rep(df_iters[i,(length(colnames(df_iters)))], length(OUT$Wstart)) # add column with seeds value for that iteration.
-  
-  OUT.SUM[[i]] <- OUT
-  
-} # end loop.
-
-DF.SUM2<-ldply(OUT.SUM, as.vector)
-
-DF.SUM2 <- DF.SUM2 %>% as_tibble() %>% mutate(iter_var = "Bn")
-
-DF.SUM <- DF.SUM %>% bind_rows(DF.SUM2)
-
-
-
-## Simulate over dn0
-
-# Double check
-d # should be 1
-dn0 # we will reduce to simulate lower energy costs (more savings) in natural habitats
-
-
-# Set iterations
-df_iters <- data.frame(dn0 = c(1, 0.9, 0.7, 0.5, 0.3, 0.1))
-
-
-# Start simulation
-OUT.SUM <- list() # make object to save function output
-
-# Start looping MAIN_FUN over different qa values
-for(i in 1:length(df_iters[,1])) {
-  
-  OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-                  ya, yn, yo, dn0=df_iters[i,1], Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
-                  Ws, r, Smax, W, # vars for Terminal fitness function
-                  Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N)
-  
-  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
-  
-  OUT$iter_val <- rep(df_iters[i,(length(colnames(df_iters)))], length(OUT$Wstart)) # add column with seeds value for that iteration.
-  
-  OUT.SUM[[i]] <- OUT
-  
-} # end loop.
-
-DF.SUM2<-ldply(OUT.SUM, as.vector)
-
-DF.SUM2 <- DF.SUM2 %>% as_tibble() %>% mutate(iter_var = "dn0")
-
-DF.SUM <- DF.SUM %>% bind_rows(DF.SUM2)
-
-
-## Simulate over ka
-
-# Double check
-kn # should be 1
-ka # we will reduce food in altered to simulate more food in natural habitats
-
-
-# Set iterations
-df_iters <- data.frame(ka = c(1.3, 1.2, 1.1, 1.0, 0.9))
-
-
-# Start simulation
-OUT.SUM <- list() # make object to save function output
-
-# Start looping MAIN_FUN over different qa values
-for(i in 1:length(df_iters[,1])) {
-  
-  OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-                  ya, yn, yo, dn0, Ba, Bn, Bo, ka=df_iters[i,1], kn, # vars that vary by habitat (h.vec)
-                  Ws, r, Smax, W, # vars for Terminal fitness function
-                  Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N)
-  
-  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
-  
-  OUT$iter_val <- rep(df_iters[i,(length(colnames(df_iters)))], length(OUT$Wstart)) # add column with seeds value for that iteration.
-  
-  OUT.SUM[[i]] <- OUT
-  
-} # end loop.
-
-DF.SUM2<-ldply(OUT.SUM, as.vector)
-
-DF.SUM2 <- DF.SUM2 %>% as_tibble() %>% mutate(iter_var = "ka")
-
-DF.SUM <- DF.SUM %>% bind_rows(DF.SUM2)
-
-
-# Save all data from scenario 2
-
-write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario2.csv") # UPDATE SAVE LOCATION!
-#DF.SUM <- read.csv("C://Users//sabalm//Desktop//scenario2.csv")
-
-DF.SUM <- read.csv("P:/REDD/Personal/Sabal/GIT Repositories/SDP-pred-mig/results/Manuscript V1/scenario2.csv")
-
-
-## Figure 3 ----
-
-fig3_dat <- DF.SUM %>%
-  mutate(rel_nat_index = ifelse(iter_var == "ka", abs(log(1.3/iter_val)),
-                                abs(log(1/iter_val)))) %>% 
-  group_by(Beh, h, iter_var, rel_nat_index) %>% 
-  summarise(mean.p.tot = mean(p.tot))
-
-fig3_dat$iter_var <- factor(fig3_dat$iter_var, levels = c("yn", "Bn", "ka", "dn0"))
-levels(fig3_dat$iter_var) <- c("(a) Predator abundance", "(b) Salmon escape ability", 
+# re-order and re-name factor levels
+fig_sc1_df$iter_var <- factor(fig_sc1_df$iter_var, levels = c("yn", "Bn", "ka", "dn0"))
+levels(fig_sc1_df$iter_var) <- c("(a) Predator abundance", "(b) Salmon escape ability", 
                                "(c) Foraging gain", "(d) Energy refugia")
 
-fig3_dat$h <- factor(fig3_dat$h)
-levels(fig3_dat$h) <- c("Altered", "Natural")
+fig_sc1_df$h <- factor(fig_sc1_df$h)
+levels(fig_sc1_df$h) <- c("Altered", "Natural")
 
-
-fig3 <- ggplot(filter(fig3_dat, Beh == 0), aes(x=rel_nat_index, y=mean.p.tot, color=h)) +
+# Make the figure
+fig_sc1 <- ggplot(filter(fig_sc1_df, Beh == 0), aes(x=nat_benefit, y=mean.p.tot, color=h)) +
   geom_line(size=1, alpha=0.7) + geom_point(size=2, alpha=1) + theme_classic() +
   facet_wrap(~iter_var, scales = "free_x") +
   scale_color_manual(values = c("mediumpurple", "forestgreen")) +
@@ -304,27 +148,53 @@ fig3 <- ggplot(filter(fig3_dat, Beh == 0), aes(x=rel_nat_index, y=mean.p.tot, co
   xlab("Relative benefit in \nnatural habitats index") +
   theme(strip.text.x = element_text(size=11),
         legend.title = element_blank()) +
-  ylim(c(0,1)); fig3
+  ylim(c(0,1)); fig_sc1
 
-
-# theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-#                    strip.background = element_blank()) +
-
-
-# Save Figure 3
+# Save Figure for scenario 1
 pdf.options(reset = TRUE, onefile = FALSE)
-setwd("C:/Users/sabalm/Desktop/")
-pdf("Figure3.pdf", width=6, height=4)
-
-fig3
-
+pdf("results//Manuscript V4/figures/Figure_sc1.pdf", width=6, height=4)
+fig_sc1
 dev.off()
 
 
 
 #..........................................................................................................................................
-# 6. Scenario 3: greater predator abundances in natural - can it ever be optimal to pause in natural despite more predators? ----
+# Scenario 2: What if 30% more predators? ----
 
+# Choose which "scenario" parameter values you need here: scenario 2
+scenario_data <- param_dat %>% filter(scenario == "2")
+
+# Convert the filtered row to a list
+scenario_list <- as.list(scenario_data)
+
+# Function to convert comma-separated strings to numeric vectors
+convert_to_numeric_vector <- function(x) {
+  if (is.character(x) && grepl(",", x)) {
+    as.numeric(unlist(strsplit(x, ",")))
+  } else {
+    x
+  }
+}
+
+# Apply the conversion function to each element in the list
+scenario_list <- lapply(scenario_list, convert_to_numeric_vector)
+
+# Assign R objects with the names of the columns in the filtered dataframe
+purrr::walk2(names(scenario_list), scenario_list, ~assign(.x, .y, envir = .GlobalEnv))
+
+# Assign a few extras:
+Wstep.n         <- ((Wmax-Wmin)/Wstep) # number of increments
+Wstart_setup    <- seq(7, 10, length.out = 6) # starting sizes to simulate
+Wstart_setup[1] <- 7.1 # needs to be start at 7.1
+
+
+
+
+
+
+
+
+############## old stuff
 # Set baseline null habitat-hypotheses parameters
 # Parameters: Habitat-hypothesized Differences
 
