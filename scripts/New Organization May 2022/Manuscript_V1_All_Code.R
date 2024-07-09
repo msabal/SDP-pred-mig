@@ -61,9 +61,66 @@ Wstart_setup    <- seq(7, 10, length.out = 6) # starting sizes to simulate
 Wstart_setup[1] <- 7.1 # needs to be start at 7.1
 
 
-## FIGURE OUT HOW TO RUN ALL THESE TOGETHER???!!!!
+# Make data frame of parameters to iterate over
+df <- data.frame(yn = seq(0.1, 1, length.out = 6),
+                 Bn = seq(0.1, 1, length.out = 6),
+                 ka = seq(0.9, 1.3, length.out = 6),
+                 dn0 = seq(0.1, 1, length.out = 6))
+
+df_iters <- expand.grid(df) %>% as_tibble() %>%# expand grid to all combinations.
+  filter(!(yn < 1 & Bn < 1 | yn < 1 & ka < 1.3 | yn < 1 & dn0 < 1 |
+           Bn < 1 & ka < 1.3 | Bn < 1 & dn0 < 1 | ka < 1.3 & dn0 < 1)) %>%  # only keep rows where one factor is varied at a time
+  filter(!(yn == 1 & Bn == 1 & ka == 1.3 & dn0 == 1))  # drop one row where all are at baseline values
+# 6 values per factor (1 is baseline), so 5 combinations per factor with decreasing values (bc throw out when all are at baseline.)
+# 5 * 4 = 20
+length(df_iters$yn) # check if 20
+df_iters <- as.data.frame(df_iters) # needs to be a dataframe for indexing to work properly without using pull()
+
+# Start simulation
+OUT.SUM <- list() # make object to save function output
+OUT.TRACKS <- list()
+
+# Start looping MAIN_FUN over different parameter values
+for(i in 1:length(df_iters[,1])) {
+  
+  OUT <- MAIN_FUN(Wc=Wc, A=A, t=t, U=U, Wmax=Wmax, Amax=Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                  E=E, a=a, Alpha=Alpha, d=d, v=v, f=f, g=g, c=c, j=j, Bu=Bu, Bw=Bw, M=M, m=m, P=P, z=z, # vars in functions
+                  ya=ya, yn=df_iters[i,1], yo=yo, dn0=df_iters[i,4], Ba=Ba, Bn=df_iters[i,2], Bo=Bo, ka=df_iters[i,3], kn=kn, # vars that vary by habitat (h.vec)
+                  seeds=seeds, F.vec=F.vec, N=N,
+                  Wstep.n=Wstep.n, Wstep=Wstep, Wstart_setup=Wstart_setup, tmax=tmax,
+                  Ws=Ws, r=r, Smax=Smax)
+  
+  colnames(OUT[[1]]) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
+  
+  OUT[[1]] <- bind_cols(OUT[[1]], slice(df_iters[i,], rep(1, 6*6)))
+  OUT[[2]] <- bind_cols(OUT[[2]], slice(df_iters[i,], rep(1, 6*60))) # 6 Wstarts * 60 time steps
+  
+  OUT.SUM[[i]] <- OUT[[1]]     # save the summary outputs: 36 rows per parameter combination: by Wstart, h, and Beh.
+  OUT.TRACKS[[i]] <- OUT[[2]]  # save the individual tracks: 60 rows (time steps) per param combo
+  
+} # end loop.
 
 
+
+#DF.SUM<-ldply(OUT.SUM, as.vector)
+#DF.SUM <- DF.SUM %>% as_tibble() %>% left_join(df_iters)
+
+# Collapse outputs in list format to long dataframes
+DF.SUM.1 <- bind_rows(OUT.SUM)
+DF.TRACKS.1 <- bind_rows(OUT.TRACKS)
+
+# Save output files
+write.csv(DF.SUM.1, "results//Manuscript V4/scenario1_summary.csv") # UPDATE SAVE LOCATION!
+write.csv(DF.TRACKS.1, "results//Manuscript V4/scenario1_tracks.csv") # UPDATE SAVE LOCATION!
+
+# Read in saved output files
+DF.SUM.1 <- read.csv("results//Manuscript V4/scenario1_summary.csv")
+DF.TRACKS.1 <- read.csv("results//Manuscript V4/scenario1_tracks.csv")
+
+
+
+
+#################################################################### old stuff below
 ## Predator abundance ##
 
 # Double check
