@@ -73,23 +73,28 @@ Wstep.n         <- ((Wmax-Wmin)/Wstep) # number of increments
 Wstart_setup    <- seq(7, 10, length.out = 6) # starting sizes to simulate
 Wstart_setup[1] <- 7.1 # needs to be start at 7.1
 
+# Seeds
+seeds <- c(1,2,3,4,6,7)
+A1_h <- c("a", "a", "a", "n", "n", "n")
+
 
 # Make data frame of parameters to iterate over
-df <- data.frame(yn = seq(0.7, 1, length.out = 6),  # originally seq(0.1, 1, length.out = 6) but causing unrealistic outmigration behavior.
+df <- data.frame(yn = seq(0.65, 1, length.out = 6),  # originally seq(0.1, 1, length.out = 6) but causing unrealistic outmigration behavior.
                  Bn = seq(0.7, 1, length.out = 6),
                  ka = seq(0.9, 1.3, length.out = 6),
-                 dn0 = seq(0.1, 1, length.out = 6))
+                 dn0 = seq(0.1, 1, length.out = 6),
+                 seeds = seeds)
 
 df_iters <- expand.grid(df) %>% as_tibble() %>%# expand grid to all combinations.
   filter(!(yn < 1 & Bn < 1 | yn < 1 & ka < 1.3 | yn < 1 & dn0 < 1 |
            Bn < 1 & ka < 1.3 | Bn < 1 & dn0 < 1 | ka < 1.3 & dn0 < 1)) %>%  # only keep rows where one factor is varied at a time
   filter(!(yn == 1 & Bn == 1 & ka == 1.3 & dn0 == 1)) %>% # drop one row where all are at baseline values
   # make unique iteration id (doesn't matter the order of the numbers)
-  group_by(yn, Bn, ka, dn0) %>%
+  group_by(yn, Bn, ka, dn0, seeds) %>%
   mutate(iter_id = cur_group_id()) %>% ungroup()
   
 # 6 values per factor (1 is baseline), so 5 combinations per factor with decreasing values (bc throw out when all are at baseline.)
-# 5 * 4 = 20
+# 5 * 4 = 20 * 6 seeds = 120
 length(df_iters$yn) # check if 20
 df_iters <- as.data.frame(df_iters) # needs to be a dataframe for indexing to work properly without using pull()
 
@@ -103,7 +108,7 @@ for(i in 1:length(df_iters[,1])) {
   OUT <- MAIN_FUN(Wc=Wc, A=A, t=t, U=U, Wmax=Wmax, Amax=Amax, # state vars, constraints & beh choice (vars we will for loop over)
                   E=E, a=a, Alpha=Alpha, d=d, v=v, f=f, g=g, c=c, j=j, Bu=Bu, Bw=Bw, M=M, m=m, P=P, z=z, # vars in functions
                   ya=ya, yn=df_iters[i,1], yo=yo, dn0=df_iters[i,4], Ba=Ba, Bn=df_iters[i,2], Bo=Bo, ka=df_iters[i,3], kn=kn, # vars that vary by habitat (h.vec)
-                  seeds=seeds, F.vec=F.vec, N=N,
+                  seeds=df_iters[i,5], F.vec=F.vec, N=N,
                   Wstep.n=Wstep.n, Wstep=Wstep, Wstart_setup=Wstart_setup, tmax=tmax,
                   Ws=Ws, r=r, Smax=Smax)
   
@@ -123,8 +128,8 @@ DF.SUM.1 <- bind_rows(OUT.SUM)
 DF.TRACKS.1 <- bind_rows(OUT.TRACKS)
 
 # Save output files
-write.csv(DF.SUM.1, "results//Manuscript V4/scenario1_summary-trunc.csv") 
-write.csv(DF.TRACKS.1, "results//Manuscript V4/scenario1_tracks-trunc.csv") 
+write.csv(DF.SUM.1, "results//Manuscript V4/scenario1_summary-trunc_wseeds.csv") 
+write.csv(DF.TRACKS.1, "results//Manuscript V4/scenario1_tracks-trunc_wseeds.csv") 
 
 # Read in saved output files
 DF.SUM.1 <- read.csv("results//Manuscript V4/scenario1_summary.csv")
