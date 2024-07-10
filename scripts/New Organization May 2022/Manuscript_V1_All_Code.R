@@ -4,23 +4,36 @@
 
 
 # Outline ----
-# 1. Load libraries and set settings
-# 2. Set habitat hypotheses parameters
-# 3. Load all functions
-# 4. Scenario 1: habitat-hypotheses - do movement choices vary between shoreline habitats?
-# 5. Scenario 2: null habitat-hypotheses - which mechanism most affects the frequency of pauses?
-# 6. Scenario 3: greater predator abundances in natural - can it ever be optimal to pause in natural despite more predators?
-# 7. Scenario 4: habitat restoration - how do movement choices, river growth, survival to ocean, and fitness vary over % of natural habitats?
+## Load libraries, functions, and set settings
+## Scenario 1: Which ecological factor is most influential affecting the frequency of pauses?
+## Scenario 2: What if there were 30% more predators along natural shorelines?
+## Scenario 3: How does natural habitat quantity affect behavior and fitness?
 
+
+## TO TRY AND CHECK
+
+# Scenario 1 with limits on Bn and yn of 0.7; then check summary output to see
+# if any have dur == 59. - DONE. yes pretty good, yn = 0.7 still causes 59 duration in river.
+
+# Scenario 3 try with 30% decreases in other parameters & update how
+# Fitness is portrayed/explained!
+
+# Okay the higher pauses in altered for low levels of
+# are all in A(1) which is altered! 
+
+# Try Scenario 1 on 10 different seed values (then plot grouped by whether they
+# A(1) is a vs. n)...
 
 #..........................................................................................................................................
-# 1. Load libraries and set settings ----
+# Load libraries and set settings ----
 library(abind); library(ggplot2); library(plyr); library(reshape2);library(colorRamps); library(ggpubr)
 library(tidyverse); library(purrr)
 
 #remove scientific notation
 options(scipen=999)
 
+# Set the pillar width option to Inf to display all columns
+options(pillar.width = Inf)
 
 # load needed functions from other R script
 source(file = "scripts/New Organization May 2022/Manuscript_All_Functions.R")
@@ -62,15 +75,19 @@ Wstart_setup[1] <- 7.1 # needs to be start at 7.1
 
 
 # Make data frame of parameters to iterate over
-df <- data.frame(yn = seq(0.1, 1, length.out = 6),
-                 Bn = seq(0.1, 1, length.out = 6),
+df <- data.frame(yn = seq(0.7, 1, length.out = 6),  # originally seq(0.1, 1, length.out = 6) but causing unrealistic outmigration behavior.
+                 Bn = seq(0.7, 1, length.out = 6),
                  ka = seq(0.9, 1.3, length.out = 6),
                  dn0 = seq(0.1, 1, length.out = 6))
 
 df_iters <- expand.grid(df) %>% as_tibble() %>%# expand grid to all combinations.
   filter(!(yn < 1 & Bn < 1 | yn < 1 & ka < 1.3 | yn < 1 & dn0 < 1 |
            Bn < 1 & ka < 1.3 | Bn < 1 & dn0 < 1 | ka < 1.3 & dn0 < 1)) %>%  # only keep rows where one factor is varied at a time
-  filter(!(yn == 1 & Bn == 1 & ka == 1.3 & dn0 == 1))  # drop one row where all are at baseline values
+  filter(!(yn == 1 & Bn == 1 & ka == 1.3 & dn0 == 1)) %>% # drop one row where all are at baseline values
+  # make unique iteration id (doesn't matter the order of the numbers)
+  group_by(yn, Bn, ka, dn0) %>%
+  mutate(iter_id = cur_group_id()) %>% ungroup()
+  
 # 6 values per factor (1 is baseline), so 5 combinations per factor with decreasing values (bc throw out when all are at baseline.)
 # 5 * 4 = 20
 length(df_iters$yn) # check if 20
@@ -106,18 +123,22 @@ DF.SUM.1 <- bind_rows(OUT.SUM)
 DF.TRACKS.1 <- bind_rows(OUT.TRACKS)
 
 # Save output files
-write.csv(DF.SUM.1, "results//Manuscript V4/scenario1_summary.csv") # UPDATE SAVE LOCATION!
-write.csv(DF.TRACKS.1, "results//Manuscript V4/scenario1_tracks.csv") # UPDATE SAVE LOCATION!
+write.csv(DF.SUM.1, "results//Manuscript V4/scenario1_summary-trunc.csv") 
+write.csv(DF.TRACKS.1, "results//Manuscript V4/scenario1_tracks-trunc.csv") 
 
 # Read in saved output files
 DF.SUM.1 <- read.csv("results//Manuscript V4/scenario1_summary.csv")
 DF.TRACKS.1 <- read.csv("results//Manuscript V4/scenario1_tracks.csv")
 
+# Check for realistic outmigration behavior
+ggplot(data=DF.SUM.1, aes(x=dur)) + geom_histogram()
+DF.SUM.1 %>% filter(dur == 59) %>% select(dur, yn:dn0) %>% distinct()
+# remaining problem parameter: yn = 0.7 and 0.76
+
 
 ## Figure: Scenario 1 ----
 
-fig_sc1_df <- DF.SUM.1 %>%  group_by(yn, Bn, ka, dn0) %>%
-  mutate(iter_id = cur_group_id()) %>% ungroup() %>%    # make an index for each parameter combination
+fig_sc1_df <- DF.SUM.1 %>%
   # next calcuate the relative natural benefit to the baseline param value; logged so 0 would indicate baseline values.
   mutate(nat_benefit = ifelse(yn == 1 & Bn == 1 & ka == 1.3, abs(log(1/dn0)),     
                               ifelse(yn ==1 & Bn == 1 & dn0 == 1, abs(log(1.3/ka)),
@@ -161,6 +182,9 @@ dev.off()
 #..........................................................................................................................................
 # Scenario 2: What if 30% more predators? ----
 
+# Set scenario parameters
+param_dat <- read.csv("raw-data//Parameter_Iterations_Tracking.csv")
+
 # Choose which "scenario" parameter values you need here: scenario 2
 scenario_data <- param_dat %>% filter(scenario == "2")
 
@@ -188,147 +212,81 @@ Wstart_setup    <- seq(7, 10, length.out = 6) # starting sizes to simulate
 Wstart_setup[1] <- 7.1 # needs to be start at 7.1
 
 
+# Make data frame of parameters to iterate over
+df <- data.frame(yn = 0.7,
+                 Bn = seq(0.1, 1, length.out = 6),
+                 ka = seq(0.9, 1.3, length.out = 6),
+                 dn0 = seq(0.1, 1, length.out = 6))
 
-
-
-
-
-
-############## old stuff
-# Set baseline null habitat-hypotheses parameters
-# Parameters: Habitat-hypothesized Differences
-
-# seeds for h.vec
-seeds <- param_dat['null','seeds']
-N <- param_dat['null','N'] 
-
-# W: salmon weight (g)
-Wmin <- param_dat['null','Wmin']
-Wmax <- param_dat['null','Wmax'] 
-Wstep <- param_dat['null','Wstep']
-Wstep.n <- ((Wmax-Wmin)/Wstep)
-Wstart_setup <- seq(7, 10, length.out = 6); Wstart_setup[1] <- 7.1 # needs to be start at 7.1
-
-# A: salmon area
-Amin <- param_dat['null','Amin']
-Amax <- param_dat['null','Amax']
-
-# t: time
-tmin <- param_dat['null','tmin']
-tmax <- param_dat['null','tmax']
-# Behavioral choice
-U <- c(0, 1, 2)
-
-# Terminal fitness
-Ws    <- param_dat['null','Ws']
-r     <- param_dat['null','r']
-Smax  <- param_dat['null','Smax']
-
-# Growth
-E     <- param_dat['null','E']
-a     <- param_dat['null','a']
-Alpha <- param_dat['null','Alpha']
-d     <- param_dat['null','d']
-dn0   <- param_dat['null','dn0']
-v     <- param_dat['null','v']
-
-#river growth by speed
-z     <- param_dat['null','z']
-ka    <- param_dat['null','ka']
-kn    <- param_dat['null','kn']
-
-# ocean growth
-f     <- param_dat['null','f']
-g     <- param_dat['null','g']
-c     <- param_dat['null','c']
-j     <- param_dat['null','j']
-
-# Risk
-Bu    <- c(0.7, 1, 0.7) # B0, B1, B2 (can concatenate because we will loop over behavior choices?)
-Ba    <- param_dat['null','Ba']
-Bn    <- param_dat['null','Bn']
-Bo    <- param_dat['null','Bo']
-Bw    <- param_dat['null','Bw']
-M     <- param_dat['null','M']
-m     <- param_dat['null','m']
-ya    <- param_dat['null','ya']
-yn    <- param_dat['null','yn']
-yo    <- param_dat['null','yo']
-P     <- param_dat['null','P']
-
-
-
-# Set iterations
-
-ya <- 0.7 # set lower to simulate more predators in natural habitats.
-yn        # should be 1
-
-df <- data.frame(Bn = c(1, 0.9, 0.7, 0.5, 0.3, 0.1),
-                 ka = c(1.3, 1.2, 1.125, 1.05, 0.975, 0.9),
-                 dn0 = c(1, 0.9, 0.7, 0.5, 0.3, 0.1))
-
-df_iters <- expand.grid(df) %>% as_tibble() %>% slice(-1) # expand grid to all combinations but drop top row of all baseline values.
-df_iters$iter_index <- seq(1, length(df_iters$Bn), by=1)
-
+df_iters <- expand.grid(df) %>% as_tibble() %>% distinct() %>%  # expand grid to all combinations.
+  filter(!(yn == 0.7 & Bn == 1 & ka == 1.3 & dn0 == 1)) %>%          # drop one row where Bn, ka, and dn0 are all at baseline values
+  # make unique iteration id (doesn't matter the order of the numbers)
+  group_by(yn, Bn, ka, dn0) %>%
+  mutate(iter_id = cur_group_id()) %>% ungroup()
+  
+  # 215 total parameter combinations
+length(df_iters$yn) # check if 215
 df_iters <- as.data.frame(df_iters) # needs to be a dataframe for indexing to work properly without using pull()
-
-
 
 # Start simulation
 OUT.SUM <- list() # make object to save function output
+OUT.TRACKS <- list()
 
-# Start looping MAIN_FUN over different qa values
+# Start looping MAIN_FUN over different parameter values
 for(i in 1:length(df_iters[,1])) {
   
-  OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-                  ya, yn, yo, dn0=df_iters[i,3], Ba, Bn=df_iters[i,1], Bo, ka=df_iters[i,2], kn, # vars that vary by habitat (h.vec)
-                  Ws, r, Smax, W, # vars for Terminal fitness function
-                  Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N)
+  OUT <- MAIN_FUN(Wc=Wc, A=A, t=t, U=U, Wmax=Wmax, Amax=Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                  E=E, a=a, Alpha=Alpha, d=d, v=v, f=f, g=g, c=c, j=j, Bu=Bu, Bw=Bw, M=M, m=m, P=P, z=z, # vars in functions
+                  ya=ya, yn=df_iters[i,1], yo=yo, dn0=df_iters[i,4], Ba=Ba, Bn=df_iters[i,2], Bo=Bo, ka=df_iters[i,3], kn=kn, # vars that vary by habitat (h.vec)
+                  seeds=seeds, F.vec=F.vec, N=N,
+                  Wstep.n=Wstep.n, Wstep=Wstep, Wstart_setup=Wstart_setup, tmax=tmax,
+                  Ws=Ws, r=r, Smax=Smax)
   
-  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
+  colnames(OUT[[1]]) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
   
-  OUT$iter_index <- rep(df_iters[i,4], length(OUT$Wstart)) # add column with iter value
+  OUT[[1]] <- bind_cols(OUT[[1]], slice(df_iters[i,], rep(1, 6*6)))
+  OUT[[2]] <- bind_cols(OUT[[2]], slice(df_iters[i,], rep(1, 6*60))) # 6 Wstarts * 60 time steps
   
-  OUT.SUM[[i]] <- OUT
+  OUT.SUM[[i]] <- OUT[[1]]     # save the summary outputs
+  OUT.TRACKS[[i]] <- OUT[[2]]  # save the individual tracks
   
 } # end loop.
 
-DF.SUM<-ldply(OUT.SUM, as.vector)
 
-DF.SUM <- DF.SUM %>% as_tibble() %>% left_join(df_iters)
+# Collapse outputs in list format to long dataframes
+DF.SUM.2 <- bind_rows(OUT.SUM)
+DF.TRACKS.2 <- bind_rows(OUT.TRACKS)
 
+# Save output files
+write.csv(DF.SUM.2, "results//Manuscript V4/scenario2_summary.csv")
+write.csv(DF.TRACKS.2, "results//Manuscript V4/scenario2_tracks.csv")
 
-# Make category column of how many mechanisms benefiting natural.
-DF.SUM <- DF.SUM %>% mutate(more_nat_preds_cat = ifelse(ka == 1.3 & Bn == 1 |
+# Read in saved output files
+DF.SUM.2 <- read.csv("results//Manuscript V4/scenario2_summary.csv")
+DF.TRACKS.2 <- read.csv("results//Manuscript V4/scenario2_tracks.csv")
+
+## Figure: Scenario 2 ----
+
+# Make category column of how many mechanisms benefit natural.
+fig_sc2_df <- DF.SUM.2 %>%  mutate(more_nat_preds_cat = ifelse(ka == 1.3 & Bn == 1 |
                                         ka == 1.3 & dn0 == 1 |
                                         Bn == 1 & dn0 == 1, 1, 
                                         ifelse(ka != 1.3 & Bn != 1 & dn0 != 1,
                                           3, 2)))
 
-nat_preds_cat_N <- DF.SUM %>% dplyr::select(iter_index, Bn, ka, dn0, more_nat_preds_cat) %>% distinct() %>% 
+nat_preds_cat_N <- fig_sc2_df %>% dplyr::select(Bn, ka, dn0, more_nat_preds_cat) %>% distinct() %>% 
   group_by(more_nat_preds_cat) %>% count()  # this returns the number of iterations in categories: 1, 2, or 3 mechanisms varied at a time.
 
 
-# Save all data from scenario 3
+# Contour plots for every parameter combination
 
-write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario3.csv") # UPDATE SAVE LOCATION!
-#DF.SUM <- read.csv("C://Users//sabalm//Desktop//scenario3.csv")
-
-DF.SUM <- read.csv("P:/REDD/Personal/Sabal/GIT Repositories/SDP-pred-mig/results/Manuscript V1/scenario3.csv")
-
-
-## Figure 4 ----
-
-# Contour plots
-
-cont_dat <- DF.SUM %>% filter(h != "o" & Beh == "0") %>%              # get rid of ocean time steps and focus only on pauses.
-  group_by(h, iter_index) %>% summarise(mean = mean(p.tot)) %>%       # get average proportion of pauses by habitat for each iteration.
-  pivot_wider(id_cols = iter_index, names_from = h, values_from = mean) %>%
-  left_join(df_iters) %>% 
+cont_dat <- fig_sc2_df %>% filter(h != "o" & Beh == "0") %>%    # get rid of ocean time steps and focus only on pauses.
+  group_by(h, iter_id) %>% summarise(mean = mean(p.tot)) %>%    # get average proportion of pauses by habitat for each iteration.
+  pivot_wider(id_cols = iter_id, names_from = h, values_from = mean) %>%
+  left_join(df_iters) %>% # maybe don't need?
   mutate(more_n = n - a) %>% 
   mutate(more_n_cat = ifelse(more_n > 0, "more_n", "more_a")) %>% # 1 indicates more natural, 2 indicates more altered
-  left_join(DF.SUM %>% dplyr::select(iter_index, more_nat_preds_cat) %>% distinct())#
+  left_join(fig_sc2_df %>% dplyr::select(iter_id, more_nat_preds_cat) %>% distinct()) #
 
 
 cont_dat$dn0 <- as.factor(cont_dat$dn0)
@@ -336,82 +294,320 @@ cont_dat$Bn <- as.factor(cont_dat$Bn)
 cont_dat$ka <- as.factor(cont_dat$ka)
 
 
-eg1 <- cont_dat %>% filter(iter_index %in% c(1:35)) # example data where Bn and ka vary but dn0 is at baseline value
+eg1 <- cont_dat %>% filter(iter_id %in% c(1:35)) # example data where Bn and ka vary but dn0 is at baseline value
 
 
-# ggplot(data=eg1, aes(x=Bn, y=ka, fill=as.factor(more_n_cat))) + geom_tile(width=1, height = 1, color="black") + 
-#   theme_classic() + coord_equal() + 
-#   scale_fill_manual(values=c("forestgreen", "mediumpurple"), labels = c("more pauses in natural", "more pauses in altered")) +
-#   theme(legend.position = "bottom", legend.title = element_blank()) 
-# 
-
-# ggplot(data=eg1, aes(x=Bn, y=ka, fill=as.factor(more_n_cat))) + geom_tile(width=1, height = 1, color="black") + 
-#   theme_classic() + coord_equal() + 
-#   scale_fill_manual(values=c("gray88", "gray24"), labels = c("more pauses in natural", "more pauses in altered")) +
-#   theme(legend.position = "bottom", legend.title = element_blank()) 
-
-
-fig4a <- ggplot(data=eg1, aes(x=Bn, y=ka, fill=(more_n))) + geom_tile(width=1, height = 1, color="black") + 
+# This figure shows one example panel of dn0 values while Bn and ka vary.
+fig_sc2_ex <- ggplot(data=eg1, aes(x=Bn, y=ka, fill=(more_n))) + geom_tile(width=1, height = 1, color="black") + 
   theme_classic() +
   scale_fill_gradient2(high = "#208B20", low = "#936EDB", name = "Difference in mean proportion\nof pauses (natural - altered)") +
   theme(legend.position = "bottom") + 
-  ylab("Foraging gain in altered habitats (k)") + xlab("Salmon vulnerability to predation (B)") +
-  #ylab(expression(k[a])) + xlab(expression(B[n])) +
-  ggtitle(label = "(a)") + theme(plot.title = element_text(size=20)); fig4a
-  
-#coord_equal() 
+  ylab(expression("Foraging gain in altered habitats (k "[a]*")")) + 
+  xlab(expression("Salmon escape ability ("* beta[n] *")")) +
+  ggtitle(label = "(a)") + theme(plot.title = element_text(size=20)); fig_sc2_ex
 
+# This figure shows the proportion of simulations where pauses are greater in
+# altered vs. natural by the number of mechanisms (1, 2, or 3) that have natural benefits.
  
 tally_dat <- cont_dat %>% group_by(more_nat_preds_cat, more_n_cat) %>% count() %>% 
   rename(n_by_h = n) %>% 
   left_join(nat_preds_cat_N) %>% mutate(p_by_h = n_by_h / n)
   
+# Get summary data for results for text:...
 cont_dat %>% group_by(more_n_cat) %>% count() %>% mutate(p = n / 215)
 # 51.6 % of all simulations more pauses in altered
 # 48.4 % of all simulations more pauses in natural!!!!
 
-fig_4b <- ggplot(data=tally_dat, aes(x=more_nat_preds_cat, y=p_by_h, fill=more_n_cat)) + 
+fig_sc2_bar <- ggplot(data=tally_dat, aes(x=more_nat_preds_cat, y=p_by_h, fill=more_n_cat)) + 
   geom_bar(stat = "identity", color="black") + theme_classic() +
   scale_y_continuous(expand = c(0,0)) + theme(legend.position = "bottom") +
   scale_fill_manual(values = c("mediumpurple", "forestgreen"), labels = c("Altered", "Natural"), name = "More pauses in:") +
   ylab("Proportion of simulations") + xlab("Number of mechanisms benefiting natural\nhabitats, despite 30% more predators") +
-  ggtitle(label = "(b)") + theme(plot.title = element_text(size=20)); fig_4b
+  ggtitle(label = "(b)") + theme(plot.title = element_text(size=20)); fig_sc2_bar
 
+# Arrange these first two plots together
+ggarrange(fig_sc2_ex, fig_sc2_bar, align = "hv")
 
-ggarrange(fig4a, fig_4b, align = "hv")
-
-
-# Save Figure 4
+# Save Figure for scenario 2
 pdf.options(reset = TRUE, onefile = FALSE)
-setwd("C:/Users/sabalm/Desktop/")
-pdf("Figure4.pdf", width=7, height=4.5)
-
-ggarrange(fig4a, fig_4b, align = "hv")
-
+pdf("results//Manuscript V4/figures/Figure_sc2.pdf", width=7, height=4.5)
+ggarrange(fig_sc2_ex, fig_sc2_bar, align = "hv")
 dev.off()
 
 
-## Figure S3
-
-fig_s3 <- ggplot(data=cont_dat, aes(x=Bn, y=ka, fill=(more_n))) + geom_tile(width=1, height = 1, color="black") + 
+# Make Supplemental Figure with contour plot for all possible parameter combinations
+fig_sc2_supp <- ggplot(data=cont_dat, aes(x=Bn, y=ka, fill=(more_n))) + geom_tile(width=1, height = 1, color="black") + 
   theme_classic() + facet_wrap(~dn0) +
   scale_fill_gradient2(high = "#208B20", low = "#936EDB", name = "Difference in mean proportion\nof pauses (natural - altered)") +
   theme(legend.position = "bottom") + 
-  ylab(expression(k[a])) + xlab(expression(B[n])); fig_s3
+  ylab(expression("Foraging gain in altered habitats (k "[a]*")")) + 
+  xlab(expression("Salmon escape ability ("* beta[n] *")")); fig_sc2_supp
 
-# Save Figure S3
+# Save Figure
 pdf.options(reset = TRUE, onefile = FALSE)
-setwd("C:/Users/sabalm/Desktop/")
-pdf("Figure_S3.pdf", width=7, height=6)
-
-fig_s3
-
+pdf("results//Manuscript V4/figures/Figure_sc2_supp.pdf", width=7, height=6)
+fig_sc2_supp
 dev.off()
 
 
 
 #..........................................................................................................................................
-# 7. Scenario 4: habitat restoration - how do movement choices, river growth, survival to ocean, and fitness vary over % of natural habitats? ----
+# Scenario 3: How does natural habitat quantity affect behavior and fitness? ----
+
+# Set scenario parameters
+param_dat <- read.csv("raw-data//Parameter_Iterations_Tracking.csv")
+
+# Choose which "scenario" parameter values you need here: scenario 2
+scenario_data <- param_dat %>% filter(scenario == "3")
+
+# Convert the filtered row to a list
+scenario_list <- as.list(scenario_data)
+
+# Function to convert comma-separated strings to numeric vectors
+convert_to_numeric_vector <- function(x) {
+  if (is.character(x) && grepl(",", x)) {
+    as.numeric(unlist(strsplit(x, ",")))
+  } else {
+    x
+  }
+}
+
+# Apply the conversion function to each element in the list
+scenario_list <- lapply(scenario_list, convert_to_numeric_vector)
+
+# Assign R objects with the names of the columns in the filtered dataframe
+purrr::walk2(names(scenario_list), scenario_list, ~assign(.x, .y, envir = .GlobalEnv))
+
+# Assign a few extras:
+Wstep.n         <- ((Wmax-Wmin)/Wstep) # number of increments
+Wstart_setup    <- seq(7, 10, length.out = 6) # starting sizes to simulate
+Wstart_setup[1] <- 7.1 # needs to be start at 7.1
+
+
+# Make data frame of parameters to iterate over
+df <- data.frame(N = c(0, 0.25, 0.5, 0.75, 1),
+                 yn = c(1, 0.7, NA, NA, NA),
+                 ya = c(1, 0.7, NA, NA, NA))
+
+df_iters <- expand.grid(df) %>% as_tibble() %>% distinct() %>%       # expand grid to all combinations.
+  filter(yn == 1 & ya == 1 |
+           yn == 0.7 & ya == 1 |
+           yn == 1 & ya == 0.7) %>% 
+  group_by(N, ya, yn) %>%
+  mutate(iter_id = cur_group_id()) %>% ungroup()
+
+# 5 total parameter combinations
+length(df_iters$N)  # 5 habitat levels * 3 predator abundance levels
+df_iters <- as.data.frame(df_iters) # needs to be a dataframe for indexing to work properly without using pull()
+
+# Start simulation
+OUT.SUM <- list() # make object to save function output
+OUT.TRACKS <- list()
+
+# Start looping MAIN_FUN over different parameter values
+for(i in 1:length(df_iters[,1])) {
+  
+  OUT <- MAIN_FUN(Wc=Wc, A=A, t=t, U=U, Wmax=Wmax, Amax=Amax, # state vars, constraints & beh choice (vars we will for loop over)
+                  E=E, a=a, Alpha=Alpha, d=d, v=v, f=f, g=g, c=c, j=j, Bu=Bu, Bw=Bw, M=M, m=m, P=P, z=z, # vars in functions
+                  ya=df_iters[i,3], yn=df_iters[i,2], yo=yo, dn0=dn0, Ba=Ba, Bn=Bn, Bo=Bo, ka=ka, kn=kn, # vars that vary by habitat (h.vec)
+                  seeds=seeds, F.vec=F.vec, N=df_iters[i,1],
+                  Wstep.n=Wstep.n, Wstep=Wstep, Wstart_setup=Wstart_setup, tmax=tmax,
+                  Ws=Ws, r=r, Smax=Smax)
+  
+  colnames(OUT[[1]]) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
+  
+  OUT[[1]] <- bind_cols(OUT[[1]], slice(df_iters[i,], rep(1, 6*6)))
+  OUT[[2]] <- bind_cols(OUT[[2]], slice(df_iters[i,], rep(1, 6*60))) # 6 Wstarts * 60 time steps
+  
+  OUT.SUM[[i]] <- OUT[[1]]     # save the summary outputs
+  OUT.TRACKS[[i]] <- OUT[[2]]  # save the individual tracks
+  
+} # end loop.
+
+
+# Collapse outputs in list format to long dataframes
+DF.SUM.3 <- bind_rows(OUT.SUM)
+DF.TRACKS.3 <- bind_rows(OUT.TRACKS)
+
+# Save output files
+write.csv(DF.SUM.3, "results//Manuscript V4/scenario3_summary.csv")
+write.csv(DF.TRACKS.3, "results//Manuscript V4/scenario3_tracks.csv")
+
+# Read in saved output files
+DF.SUM.3 <- read.csv("results//Manuscript V4/scenario3_summary.csv")
+DF.TRACKS.3 <- read.csv("results//Manuscript V4/scenario3_tracks.csv")
+
+## Figures: Scenario 3 ----
+
+# Gather many summary metrics related to growth and survival, which are 
+# potentially useful for disentangling what the model is doing.
+
+# proportion of moves
+# duration
+# river growth rate
+# river total growth
+# river survival rate
+# river cumulative survival
+# ocean growth rate
+# ocean total growth
+# ocean survival rate
+# cumulative survival to T=60
+# size at ocean entry
+# fitness at T=60 (equivalent to size at T=60)
+
+
+p_moves_dat <- DF.TRACKS.3 %>% as_tibble() %>% 
+  group_by(iter_id, Beh, h) %>% filter(h != "o") %>% 
+  summarise(count_moves = n()) %>%   # number of movements in the river between 0, 1, 2.
+  ungroup() %>% group_by(iter_id) %>% 
+  mutate(tot_moves = sum(count_moves)) %>% 
+  mutate(p_moves = count_moves/tot_moves) %>%   # Behavior metric: proportion of moves
+  left_join(df_iters)
+
+p_moves_dat
+
+# maybe use this instead because mirrors earlier figure?
+p_moves_dat2 <- DF.SUM.3 %>% as_tibble() %>% 
+  group_by(Beh, h, iter_id) %>% 
+  summarise(mean.p.tot = mean(p.tot)) %>% 
+  left_join(df_iters) %>% 
+  mutate(yn_ya_cat = str_c(yn, ya, sep = "-"))
+
+# Summarize a lot of data
+
+sum_dat <- DF.SUM.3 %>% group_by(iter_id) %>% summarise(mean_dur = mean(dur),
+                                                    mean_G_riv = mean(G.riv),
+                                                    mean_S_cum = mean(S.cum.riv),
+                                                    mean_Fit = mean(Fit),
+                                                    mean_G_riv_d = mean(G.riv/dur),
+                                                    mean_G_ocean_d = mean(G.ocean/(60-dur))) %>% 
+  left_join(df_iters)
+
+sum_dat <- DF.TRACKS.3 %>% as_tibble() %>% group_by(iter_id, Wstart) %>% 
+  filter(h == "o") %>% slice(1) %>% 
+  mutate(SOE = W) %>% 
+  mutate(G.d.river = ((SOE - Wstart) / Time)) %>% 
+  ungroup() %>% group_by(iter_id) %>% 
+  summarise(size_oe = mean(SOE)) %>% 
+  select(size_oe) %>% 
+  bind_cols(sum_dat) %>% relocate(iter_id, .before = size_oe)
+
+
+sum_dat <- DF.TRACKS.3 %>% as_tibble() %>% group_by(Wstart, iter_id) %>%
+  filter(Time == 59) %>% select(Wstart, iter_id, S.cum) %>% 
+  group_by(iter_id) %>% summarize(S.cum.T60 = mean(S.cum)) %>% 
+  select(S.cum.T60) %>% 
+  bind_cols(sum_dat) %>% relocate(iter_id, .before = S.cum.T60)
+
+
+sum_dat <- DF.TRACKS.3 %>% as_tibble() %>% group_by(Wstart, iter_id) %>%
+  filter(Time == 60) %>% select(Wstart, iter_id, W) %>% 
+  group_by(iter_id) %>% summarize(W.t60 = mean(W)) %>% 
+  select(W.t60) %>% 
+  bind_cols(sum_dat) %>% relocate(iter_id, .before = W.t60)
+
+sum_dat <- DF.TRACKS.3 %>% mutate(riv_cat = ifelse(h != "o", "river", "ocean")) %>% 
+  group_by(iter_id, riv_cat, Wstart) %>% 
+  summarize(mean_S_d = mean(S.day, na.rm=T)) %>% 
+  summarize(mean_S_d = mean(mean_S_d, na.rm=T)) %>% 
+  pivot_wider(names_from = riv_cat, values_from = mean_S_d) %>% 
+  rename(mean_S_riv_d = river, mean_S_ocean_d = ocean) %>% 
+  mutate(iter_id = iter_id*100) %>% 
+  ungroup() %>% select(-iter_id) %>% 
+  bind_cols(sum_dat) %>% relocate(iter_id, .before = mean_S_ocean_d)
+
+
+sum_dat
+
+sum_dat <- sum_dat %>% mutate(S.cum_times_Fit = S.cum.T60*mean_Fit)
+
+ggplot(data=sum_dat, aes(x = N, y = S.cum_times_Fit)) +
+  geom_line() + facet_wrap(~yn+ya, scales = "free")
+
+
+
+
+# Make another style of pmoves figure
+ggplot(filter(p_moves_dat2, Beh == 0), aes(x=N, y=mean.p.tot, color=h)) +
+  geom_line(size=1, alpha=0.7) + geom_point(size=2, alpha=1) + theme_classic() +
+  facet_wrap(~yn_ya_cat, scales = "free_x") +
+  scale_color_manual(values = c("mediumpurple", "forestgreen")) +
+  ylab("Proportion of pauses\n(move 0)") + 
+  xlab("Proportion of natural habitat") +
+  theme(strip.text.x = element_text(size=11),
+        legend.title = element_blank()) +
+  ylim(c(0,1))
+
+# Troubleshooting notes: why higher fitness with 0% natural habitat? this should be
+# wrong because if optimal to go fast they should just do the SAME thing and get
+# the SAME fitness...why different? Something must be off in the model?
+
+# Pattern is the same across all Wstart values
+# Pattern is the same across different summary stats of Fit
+
+# Okay, for some reason once N > 0, then the salmon are pausing basically the whole time
+# and are going to the ocean the very last time step (is this because we )
+
+# Ah-ha! Fit is simply the fitness as defined exactly by size, but
+# The model is drive by both size at T=60 AND cumulative survival to the end
+# of the simulation. So If I plot...
+
+ggplot(data=sum_dat, aes(x = N, y = S.cum_times_Fit)) + theme_classic() +
+  geom_line() + facet_wrap(~yn+ya, scales = "free")
+
+#... then they all go UP!!! Except for when there are more predators in natural (which makes sense).
+
+# SO, they must be not going to the ocean becuase I made the river too "safe" relative
+# to the ocean.
+
+
+### Figure: behavior and fitness ----
+
+fig_sc3_beh <- ggplot(data=sc3_moves_dat, aes(x=as.factor(N*100), y=p_moves, fill=as.factor(Beh))) + 
+  geom_bar(stat="identity", color="black") + 
+  facet_wrap(~yn + ya) +
+  theme_classic() +
+  scale_fill_brewer(palette = "Blues", labels = c("0", "1", "2")) + 
+  scale_y_continuous(expand = c(0,0), limits=c(0,1), breaks = seq(0,1,by=0.2)) +
+  ylab("Proportion of moves") + xlab("Percent of natural habitat") +
+  theme(legend.title = element_blank()) +
+  theme(legend.position = "top") +
+  ggtitle(label = "(a)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_beh
+
+group_by(Beh, h, iter_var, nat_benefit) %>% 
+  summarise(mean.p.tot = mean(p.tot))
+
+
+
+
+sc3_sum_dat <- DF.SUM.3 %>%
+  mutate(iter_cat = str_c(yn, ya, sep = "-")) %>% 
+  group_by(iter_cat, N) %>% 
+  summarise(mean_Fit = mean(Fit))
+
+
+fig_sc3_fit <- ggplot(data=sc3_sum_dat, aes(x=N, y=mean_Fit, color = iter_cat)) +
+  geom_line(size=1, alpha=0.7) + geom_point(size=2, alpha=1) + 
+  theme_classic() +
+  ylab("Fitness") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(g)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_fit
+
+  
+ggplot(data=DF.SUM.3, aes(x= N, y = Fit, color = Wstart)) +
+  geom_line() + facet_wrap(~yn+ya)
+
+
+### Figure: growth and survival ----
+
+sc3_g_dat <- DF.SUM.3 %>%
+  mutate(iter_cat = str_c(yn, ya, sep = "-")) %>% 
+  group_by(iter_cat, N) %>% 
+  summarise(mean_G_riv = mean(G.riv),
+            mean_G_riv_d = mean(G.riv/dur),
+            mean_G_ocean_d = mean(G.ocean/(60-dur)))
+
+
 
 # Set habitat hypotheses parameters
 
