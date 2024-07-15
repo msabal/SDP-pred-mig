@@ -83,8 +83,8 @@ A1_h <- c("a", "a", "a", "n", "n", "n")
 
 
 # Make data frame of parameters to iterate over
-df <- data.frame(yn = seq(0.65, 1, length.out = 6),  # originally seq(0.1, 1, length.out = 6) but causing unrealistic outmigration behavior.
-                 Bn = seq(0.7, 1, length.out = 6),
+df <- data.frame(yn = seq(0.5, 1, length.out = 6),  # originally seq(0.1, 1, length.out = 6) but causing unrealistic outmigration behavior.
+                 Bn = seq(0.5, 1, length.out = 6),
                  ka = seq(0.9, 1.3, length.out = 6),
                  dn0 = seq(0.5, 1, length.out = 6),
                  seeds = seeds)
@@ -447,8 +447,8 @@ write.csv(DF.SUM.3, "results//Manuscript V4/scenario3_summary_30percent_2seeds.c
 write.csv(DF.TRACKS.3, "results//Manuscript V4/scenario3_tracks_30percent_2seeds.csv")
 
 # Read in saved output files
-DF.SUM.3 <- read.csv("results//Manuscript V4/scenario3_summary.csv")
-DF.TRACKS.3 <- read.csv("results//Manuscript V4/scenario3_tracks.csv")
+DF.SUM.3 <- read.csv("results//Manuscript V4/scenario3_summary_30percent_2seeds.csv")
+DF.TRACKS.3 <- read.csv("results//Manuscript V4/scenario3_tracks_30percent_2seeds.csv")
 
 ## Figures: Scenario 3 ----
 
