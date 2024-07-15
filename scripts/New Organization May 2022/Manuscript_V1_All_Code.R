@@ -20,9 +20,13 @@
 
 # Okay the higher pauses in altered for low levels of
 # are all in A(1) which is altered! 
-
 # Try Scenario 1 on 10 different seed values (then plot grouped by whether they
 # A(1) is a vs. n)...
+# Did this. Yes, pattern is repeated depending on if A1 is a vs. n
+# THE REASON WHY is that when they start in A1, there are OTHER energy benefits
+# to pausing! Remember, that when move 0 can eat more and spend the least energy.
+# SO I'm pretty sure that's why then only move to N at higher relative foraging gain
+# and energy refugia levels...? Still a bit confusing.
 
 #..........................................................................................................................................
 # Load libraries and set settings ----
@@ -82,7 +86,7 @@ A1_h <- c("a", "a", "a", "n", "n", "n")
 df <- data.frame(yn = seq(0.65, 1, length.out = 6),  # originally seq(0.1, 1, length.out = 6) but causing unrealistic outmigration behavior.
                  Bn = seq(0.7, 1, length.out = 6),
                  ka = seq(0.9, 1.3, length.out = 6),
-                 dn0 = seq(0.1, 1, length.out = 6),
+                 dn0 = seq(0.5, 1, length.out = 6),
                  seeds = seeds)
 
 df_iters <- expand.grid(df) %>% as_tibble() %>%# expand grid to all combinations.
@@ -132,13 +136,13 @@ write.csv(DF.SUM.1, "results//Manuscript V4/scenario1_summary-trunc_wseeds.csv")
 write.csv(DF.TRACKS.1, "results//Manuscript V4/scenario1_tracks-trunc_wseeds.csv") 
 
 # Read in saved output files
-DF.SUM.1 <- read.csv("results//Manuscript V4/scenario1_summary.csv")
-DF.TRACKS.1 <- read.csv("results//Manuscript V4/scenario1_tracks.csv")
+DF.SUM.1 <- read.csv("results//Manuscript V4/scenario1_summary-trunc_wseeds.csv")
+DF.TRACKS.1 <- read.csv("results//Manuscript V4/scenario1_tracks-trunc_wseeds.csv")
 
 # Check for realistic outmigration behavior
 ggplot(data=DF.SUM.1, aes(x=dur)) + geom_histogram()
 DF.SUM.1 %>% filter(dur == 59) %>% select(dur, yn:dn0) %>% distinct()
-# remaining problem parameter: yn = 0.7 and 0.76
+# remaining problem parameter: yn = 0.79 (maybe try only varying 1-0.8?)
 
 
 ## Figure: Scenario 1 ----
@@ -154,9 +158,10 @@ fig_sc1_df <- DF.SUM.1 %>%
                               ifelse(yn ==1 & Bn == 1 & dn0 == 1, "ka",
                                      ifelse(yn == 1 & dn0 == 1 & ka == 1.3, "Bn",
                                             "yn")))) %>% 
-  group_by(Beh, h, iter_var, nat_benefit) %>% 
-  summarise(mean.p.tot = mean(p.tot))  # calculate average total proportion of behaviors by groups
-
+  group_by(Beh, h, iter_var, nat_benefit, seeds) %>% 
+  summarise(mean.p.tot = mean(p.tot)) %>%   # calculate average total proportion of behaviors by groups
+  mutate(seeds_cat = ifelse(seeds <=3, "A1a", "A1n"))
+  
 # re-order and re-name factor levels
 fig_sc1_df$iter_var <- factor(fig_sc1_df$iter_var, levels = c("yn", "Bn", "ka", "dn0"))
 levels(fig_sc1_df$iter_var) <- c("(a) Predator abundance", "(b) Salmon escape ability", 
@@ -166,7 +171,8 @@ fig_sc1_df$h <- factor(fig_sc1_df$h)
 levels(fig_sc1_df$h) <- c("Altered", "Natural")
 
 # Make the figure
-fig_sc1 <- ggplot(filter(fig_sc1_df, Beh == 0), aes(x=nat_benefit, y=mean.p.tot, color=h)) +
+fig_sc1 <- ggplot(filter(fig_sc1_df, Beh == 0 & seeds > 3), aes(x=nat_benefit, y=mean.p.tot, color=h, #color=h
+                                                    linetype = as.factor(seeds))) +
   geom_line(size=1, alpha=0.7) + geom_point(size=2, alpha=1) + theme_classic() +
   facet_wrap(~iter_var, scales = "free_x") +
   scale_color_manual(values = c("mediumpurple", "forestgreen")) +
@@ -554,7 +560,7 @@ ggplot(filter(p_moves_dat2, Beh == 0), aes(x=N, y=mean.p.tot, color=h)) +
 # and are going to the ocean the very last time step (is this because we )
 
 # Ah-ha! Fit is simply the fitness as defined exactly by size, but
-# The model is drive by both size at T=60 AND cumulative survival to the end
+# The model is driven by both size at T=60 AND cumulative survival to the end
 # of the simulation. So If I plot...
 
 ggplot(data=sum_dat, aes(x = N, y = S.cum_times_Fit)) + theme_classic() +
@@ -562,7 +568,7 @@ ggplot(data=sum_dat, aes(x = N, y = S.cum_times_Fit)) + theme_classic() +
 
 #... then they all go UP!!! Except for when there are more predators in natural (which makes sense).
 
-# SO, they must be not going to the ocean becuase I made the river too "safe" relative
+# SO, they must be not going to the ocean because I made the river too "safe" relative
 # to the ocean.
 
 
