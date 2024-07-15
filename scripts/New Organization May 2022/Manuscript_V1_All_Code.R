@@ -397,13 +397,15 @@ Wstart_setup[1] <- 7.1 # needs to be start at 7.1
 
 # Make data frame of parameters to iterate over
 df <- data.frame(N = c(0, 0.25, 0.5, 0.75, 1),
-                 yn = c(1, 0.7, NA, NA, NA),
-                 ya = c(1, 0.7, NA, NA, NA))
+                 yn = c(1, 0.8, NA, NA, NA),
+                 ya = c(1, 0.8, NA, NA, NA),
+                 seeds = c(1, 4, NA, NA, NA))
 
 df_iters <- expand.grid(df) %>% as_tibble() %>% distinct() %>%       # expand grid to all combinations.
   filter(yn == 1 & ya == 1 |
-           yn == 0.7 & ya == 1 |
-           yn == 1 & ya == 0.7) %>% 
+           yn == 0.8 & ya == 1 |
+           yn == 1 & ya == 0.8) %>% 
+  filter(!(is.na(seeds))) %>% 
   group_by(N, ya, yn) %>%
   mutate(iter_id = cur_group_id()) %>% ungroup()
 
@@ -421,7 +423,7 @@ for(i in 1:length(df_iters[,1])) {
   OUT <- MAIN_FUN(Wc=Wc, A=A, t=t, U=U, Wmax=Wmax, Amax=Amax, # state vars, constraints & beh choice (vars we will for loop over)
                   E=E, a=a, Alpha=Alpha, d=d, v=v, f=f, g=g, c=c, j=j, Bu=Bu, Bw=Bw, M=M, m=m, P=P, z=z, # vars in functions
                   ya=df_iters[i,3], yn=df_iters[i,2], yo=yo, dn0=dn0, Ba=Ba, Bn=Bn, Bo=Bo, ka=ka, kn=kn, # vars that vary by habitat (h.vec)
-                  seeds=seeds, F.vec=F.vec, N=df_iters[i,1],
+                  seeds=df_iters[i,4], F.vec=F.vec, N=df_iters[i,1],
                   Wstep.n=Wstep.n, Wstep=Wstep, Wstart_setup=Wstart_setup, tmax=tmax,
                   Ws=Ws, r=r, Smax=Smax)
   
@@ -441,8 +443,8 @@ DF.SUM.3 <- bind_rows(OUT.SUM)
 DF.TRACKS.3 <- bind_rows(OUT.TRACKS)
 
 # Save output files
-write.csv(DF.SUM.3, "results//Manuscript V4/scenario3_summary.csv")
-write.csv(DF.TRACKS.3, "results//Manuscript V4/scenario3_tracks.csv")
+write.csv(DF.SUM.3, "results//Manuscript V4/scenario3_summary_30percent_2seeds.csv")
+write.csv(DF.TRACKS.3, "results//Manuscript V4/scenario3_tracks_30percent_2seeds.csv")
 
 # Read in saved output files
 DF.SUM.3 <- read.csv("results//Manuscript V4/scenario3_summary.csv")
