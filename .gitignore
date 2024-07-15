@@ -3,5 +3,5 @@
 .RData
 .Ruserdata
 "*.png"
-"results/Manuscript V4/scenario3_summary_30percent_2seeds.csv"
-"results/Manuscript V4/scenario3_tracks_30percent_2seeds.csv"
+"/results/Manuscript V4/scenario3_summary_30percent_2seeds.csv"
+"/results/Manuscript V4/scenario3_tracks_30percent_2seeds.csv"
