@@ -132,14 +132,15 @@ DF.SUM.1 <- bind_rows(OUT.SUM)
 DF.TRACKS.1 <- bind_rows(OUT.TRACKS)
 
 # Save output files
-write.csv(DF.SUM.1, "results//Manuscript V4/scenario1_summary-trunc_wseeds.csv") 
-write.csv(DF.TRACKS.1, "results//Manuscript V4/scenario1_tracks-trunc_wseeds.csv") 
+write.csv(DF.SUM.1, "results//Manuscript V4/scenario1_summary-0.5_wseeds.csv") 
+write.csv(DF.TRACKS.1, "results//Manuscript V4/scenario1_tracks-0.5_wseeds.csv") 
 
 # Read in saved output files
-DF.SUM.1 <- read.csv("results//Manuscript V4/scenario1_summary-trunc_wseeds.csv")
-DF.TRACKS.1 <- read.csv("results//Manuscript V4/scenario1_tracks-trunc_wseeds.csv")
+DF.SUM.1 <- read.csv("results//Manuscript V4/scenario1_summary-0.5_wseeds.csv")
+DF.TRACKS.1 <- read.csv("results//Manuscript V4/scenario1_tracks-0.5_wseeds.csv")
 
-# Check for realistic outmigration behavior
+# Check for realistic outmigration behavior (duration != 59)
+# okay for some this scenario, but note in results!
 ggplot(data=DF.SUM.1, aes(x=dur)) + geom_histogram()
 DF.SUM.1 %>% filter(dur == 59) %>% select(dur, yn:dn0) %>% distinct()
 # remaining problem parameter: yn = 0.79 (maybe try only varying 1-0.8?)
@@ -147,24 +148,39 @@ DF.SUM.1 %>% filter(dur == 59) %>% select(dur, yn:dn0) %>% distinct()
 
 ## Figure: Scenario 1 ----
 
-fig_sc1_df <- DF.SUM.1 %>%
-  # next calcuate the relative natural benefit to the baseline param value; logged so 0 would indicate baseline values.
-  mutate(nat_benefit = ifelse(yn == 1 & Bn == 1 & ka == 1.3, abs(log(1/dn0)),     
-                              ifelse(yn ==1 & Bn == 1 & dn0 == 1, abs(log(1.3/ka)),
-                                     ifelse(yn == 1 & dn0 == 1 & ka == 1.3, abs(log(1/Bn)),
-                                            abs(log(1/yn)))))) %>% 
-  # next make a category for which variable is changing
-  mutate(iter_var = ifelse(yn == 1 & Bn == 1 & ka == 1.3, "dn0",     
-                              ifelse(yn ==1 & Bn == 1 & dn0 == 1, "ka",
-                                     ifelse(yn == 1 & dn0 == 1 & ka == 1.3, "Bn",
-                                            "yn")))) %>% 
+fig_sc1_df <- DF.SUM.1 %>% as_tibble() %>% 
+  mutate(nat_benefit = ifelse(yn == 1 & Bn == 1 & ka == 1.3, (1-dn0)/1*100, 
+                              ifelse(yn ==1 & Bn == 1 & dn0 == 1,  (1.3-ka)/1.3*100, 
+                                     ifelse(yn == 1 & dn0 == 1 & ka == 1.3, (1-Bn)/1*100, (1-yn)/1*100  )))) %>% 
+# next make a category for which variable is changing
+mutate(iter_var = ifelse(yn == 1 & Bn == 1 & ka == 1.3, "dn0",     
+                         ifelse(yn ==1 & Bn == 1 & dn0 == 1, "ka",
+                                ifelse(yn == 1 & dn0 == 1 & ka == 1.3, "Bn",
+                                       "yn")))) %>% 
   group_by(Beh, h, iter_var, nat_benefit, seeds) %>% 
   summarise(mean.p.tot = mean(p.tot)) %>%   # calculate average total proportion of behaviors by groups
   mutate(seeds_cat = ifelse(seeds <=3, "A1a", "A1n"))
   
+  
+  
+# fig_sc1_df <- DF.SUM.1 %>%
+#   # next calcuate the relative natural benefit to the baseline param value; logged so 0 would indicate baseline values.
+#   mutate(nat_benefit = ifelse(yn == 1 & Bn == 1 & ka == 1.3, abs(log(1/dn0)),     
+#                               ifelse(yn ==1 & Bn == 1 & dn0 == 1, abs(log(1.3/ka)),
+#                                      ifelse(yn == 1 & dn0 == 1 & ka == 1.3, abs(log(1/Bn)),
+#                                             abs(log(1/yn)))))) %>% 
+#   # next make a category for which variable is changing
+#   mutate(iter_var = ifelse(yn == 1 & Bn == 1 & ka == 1.3, "dn0",     
+#                               ifelse(yn ==1 & Bn == 1 & dn0 == 1, "ka",
+#                                      ifelse(yn == 1 & dn0 == 1 & ka == 1.3, "Bn",
+#                                             "yn")))) %>% 
+#   group_by(Beh, h, iter_var, nat_benefit, seeds) %>% 
+#   summarise(mean.p.tot = mean(p.tot)) %>%   # calculate average total proportion of behaviors by groups
+#   mutate(seeds_cat = ifelse(seeds <=3, "A1a", "A1n"))
+#   
 # re-order and re-name factor levels
 fig_sc1_df$iter_var <- factor(fig_sc1_df$iter_var, levels = c("yn", "Bn", "ka", "dn0"))
-levels(fig_sc1_df$iter_var) <- c("(a) Predator abundance", "(b) Salmon escape ability", 
+levels(fig_sc1_df$iter_var) <- c("(a) Predator abundance", "(b) Salmon vulnerability", 
                                "(c) Foraging gain", "(d) Energy refugia")
 
 fig_sc1_df$h <- factor(fig_sc1_df$h)
@@ -173,11 +189,11 @@ levels(fig_sc1_df$h) <- c("Altered", "Natural")
 # Make the figure
 fig_sc1 <- ggplot(filter(fig_sc1_df, Beh == 0 & seeds > 3), aes(x=nat_benefit, y=mean.p.tot, color=h, #color=h
                                                     linetype = as.factor(seeds))) +
-  geom_line(size=1, alpha=0.7) + geom_point(size=2, alpha=1) + theme_classic() +
+  geom_line(linewidth=1, alpha=0.7) + geom_point(size=2, alpha=1) + theme_classic() +
   facet_wrap(~iter_var, scales = "free_x") +
   scale_color_manual(values = c("mediumpurple", "forestgreen")) +
   ylab("Proportion of pauses\n(move 0)") + 
-  xlab("Relative benefit in \nnatural habitats index") +
+  xlab("Percent relative benefit in \nnatural habitats") +
   theme(strip.text.x = element_text(size=11),
         legend.title = element_blank()) +
   ylim(c(0,1)); fig_sc1
