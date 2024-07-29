@@ -92,7 +92,7 @@ df <- data.frame(yn = seq(0.5, 1, length.out = 6),  # originally seq(0.1, 1, len
 df_iters <- expand.grid(df) %>% as_tibble() %>%# expand grid to all combinations.
   filter(!(yn < 1 & Bn < 1 | yn < 1 & ka < 1.3 | yn < 1 & dn0 < 1 |
            Bn < 1 & ka < 1.3 | Bn < 1 & dn0 < 1 | ka < 1.3 & dn0 < 1)) %>%  # only keep rows where one factor is varied at a time
-  filter(!(yn == 1 & Bn == 1 & ka == 1.3 & dn0 == 1)) %>% # drop one row where all are at baseline values
+  #filter(!(yn == 1 & Bn == 1 & ka == 1.3 & dn0 == 1)) %>% # drop one row where all are at baseline values
   # make unique iteration id (doesn't matter the order of the numbers)
   group_by(yn, Bn, ka, dn0, seeds) %>%
   mutate(iter_id = cur_group_id()) %>% ungroup()
@@ -148,47 +148,38 @@ DF.SUM.1 %>% filter(dur == 59) %>% select(dur, yn:dn0) %>% distinct()
 
 ## Figure: Scenario 1 ----
 
-fig_sc1_df <- DF.SUM.1 %>% as_tibble() %>% 
+fig1_dat <- DF.SUM.1 %>% as_tibble() %>% 
   mutate(nat_benefit = ifelse(yn == 1 & Bn == 1 & ka == 1.3, (1-dn0)/1*100, 
                               ifelse(yn ==1 & Bn == 1 & dn0 == 1,  (1.3-ka)/1.3*100, 
-                                     ifelse(yn == 1 & dn0 == 1 & ka == 1.3, (1-Bn)/1*100, (1-yn)/1*100  )))) %>% 
+                                     ifelse(yn == 1 & dn0 == 1 & ka == 1.3, (1-Bn)/1*100, (1-yn)/1*100  )))) 
+
+base_dat <- fig1_dat %>% filter(nat_benefit == 0) %>% mutate(iter_var = "dn0") %>% 
+  bind_rows(fig1_dat %>% filter(nat_benefit == 0) %>% mutate(iter_var = "ka")) %>% 
+  bind_rows(fig1_dat %>% filter(nat_benefit == 0) %>% mutate(iter_var = "Bn")) %>% 
+  bind_rows(fig1_dat %>% filter(nat_benefit == 0) %>% mutate(iter_var = "yn"))
+
+
 # next make a category for which variable is changing
-mutate(iter_var = ifelse(yn == 1 & Bn == 1 & ka == 1.3, "dn0",     
-                         ifelse(yn ==1 & Bn == 1 & dn0 == 1, "ka",
-                                ifelse(yn == 1 & dn0 == 1 & ka == 1.3, "Bn",
-                                       "yn")))) %>% 
+fig1_dat <- fig1_dat %>% filter(nat_benefit != 0) %>% 
+  mutate(iter_var = ifelse(yn == 1 & Bn == 1 & ka == 1.3, "dn0",     
+                                                ifelse(yn ==1 & Bn == 1 & dn0 == 1, "ka",
+                                                    ifelse(yn == 1 & dn0 == 1 & ka == 1.3, "Bn",
+                                                        "yn")))) %>% 
+  bind_rows(base_dat) %>% 
   group_by(Beh, h, iter_var, nat_benefit, seeds) %>% 
   summarise(mean.p.tot = mean(p.tot)) %>%   # calculate average total proportion of behaviors by groups
   mutate(seeds_cat = ifelse(seeds <=3, "A1a", "A1n"))
   
-  
-  
-# fig_sc1_df <- DF.SUM.1 %>%
-#   # next calcuate the relative natural benefit to the baseline param value; logged so 0 would indicate baseline values.
-#   mutate(nat_benefit = ifelse(yn == 1 & Bn == 1 & ka == 1.3, abs(log(1/dn0)),     
-#                               ifelse(yn ==1 & Bn == 1 & dn0 == 1, abs(log(1.3/ka)),
-#                                      ifelse(yn == 1 & dn0 == 1 & ka == 1.3, abs(log(1/Bn)),
-#                                             abs(log(1/yn)))))) %>% 
-#   # next make a category for which variable is changing
-#   mutate(iter_var = ifelse(yn == 1 & Bn == 1 & ka == 1.3, "dn0",     
-#                               ifelse(yn ==1 & Bn == 1 & dn0 == 1, "ka",
-#                                      ifelse(yn == 1 & dn0 == 1 & ka == 1.3, "Bn",
-#                                             "yn")))) %>% 
-#   group_by(Beh, h, iter_var, nat_benefit, seeds) %>% 
-#   summarise(mean.p.tot = mean(p.tot)) %>%   # calculate average total proportion of behaviors by groups
-#   mutate(seeds_cat = ifelse(seeds <=3, "A1a", "A1n"))
-#   
 # re-order and re-name factor levels
-fig_sc1_df$iter_var <- factor(fig_sc1_df$iter_var, levels = c("yn", "Bn", "ka", "dn0"))
-levels(fig_sc1_df$iter_var) <- c("(a) Predator abundance", "(b) Salmon vulnerability", 
+fig1_dat$iter_var <- factor(fig1_dat$iter_var, levels = c("yn", "Bn", "ka", "dn0"))
+levels(fig1_dat$iter_var) <- c("(a) Predator abundance", "(b) Salmon vulnerability", 
                                "(c) Foraging gain", "(d) Energy refugia")
 
-fig_sc1_df$h <- factor(fig_sc1_df$h)
-levels(fig_sc1_df$h) <- c("Altered", "Natural")
+fig1_dat$h <- factor(fig1_dat$h)
+levels(fig1_dat$h) <- c("Altered", "Natural")
 
-# Make the figure
-fig_sc1 <- ggplot(filter(fig_sc1_df, Beh == 0 & seeds > 3), aes(x=nat_benefit, y=mean.p.tot, color=h, #color=h
-                                                    linetype = as.factor(seeds))) +
+# Make the figure with A1 h=n (main text)
+fig_sc1_A1N <- ggplot(filter(fig1_dat, Beh == 0 & seeds == 6), aes(x=nat_benefit, y=mean.p.tot, color=h)) + #linetype = as.factor(seeds)
   geom_line(linewidth=1, alpha=0.7) + geom_point(size=2, alpha=1) + theme_classic() +
   facet_wrap(~iter_var, scales = "free_x") +
   scale_color_manual(values = c("mediumpurple", "forestgreen")) +
@@ -196,14 +187,31 @@ fig_sc1 <- ggplot(filter(fig_sc1_df, Beh == 0 & seeds > 3), aes(x=nat_benefit, y
   xlab("Percent relative benefit in \nnatural habitats") +
   theme(strip.text.x = element_text(size=11),
         legend.title = element_blank()) +
-  ylim(c(0,1)); fig_sc1
+  ylim(c(0,1)); fig_sc1_A1N
 
 # Save Figure for scenario 1
 pdf.options(reset = TRUE, onefile = FALSE)
-pdf("results//Manuscript V4/figures/Figure_sc1.pdf", width=6, height=4)
-fig_sc1
+pdf("results//Manuscript V4/figures/Figure_sc1_A1N.pdf", width=6, height=4)
+fig_sc1_A1N
 dev.off()
 
+
+# Make the figure with A1 h=a (appendix)
+fig_sc1_A1A <- ggplot(filter(fig1_dat, Beh == 0 & seeds == 1), aes(x=nat_benefit, y=mean.p.tot, color=h)) + #linetype = as.factor(seeds)
+  geom_line(linewidth=1, alpha=0.7) + geom_point(size=2, alpha=1) + theme_classic() +
+  facet_wrap(~iter_var, scales = "free_x") +
+  scale_color_manual(values = c("mediumpurple", "forestgreen")) +
+  ylab("Proportion of pauses\n(move 0)") + 
+  xlab("Percent relative benefit in \nnatural habitats") +
+  theme(strip.text.x = element_text(size=11),
+        legend.title = element_blank()) +
+  ylim(c(0,1)); fig_sc1_A1A
+
+# Save Figure for scenario 1
+pdf.options(reset = TRUE, onefile = FALSE)
+pdf("results//Manuscript V4/figures/Figure_sc1_A1A.pdf", width=6, height=4)
+fig_sc1_A1A
+dev.off()
 
 
 #..........................................................................................................................................
