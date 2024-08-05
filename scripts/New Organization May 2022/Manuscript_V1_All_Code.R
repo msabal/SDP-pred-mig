@@ -246,21 +246,26 @@ Wstep.n         <- ((Wmax-Wmin)/Wstep) # number of increments
 Wstart_setup    <- seq(7, 10, length.out = 6) # starting sizes to simulate
 Wstart_setup[1] <- 7.1 # needs to be start at 7.1
 
+# Seeds
+seeds <- c(1, 4)
+A1_h <- c("a", "n")
+
 
 # Make data frame of parameters to iterate over
-df <- data.frame(yn = 0.7,
-                 Bn = seq(0.1, 1, length.out = 6),
+df <- data.frame(ya = (1-(1*0.15)),    # reduce by 0.15 (15%)
+                 Bn = seq(0.5, 1, length.out = 6),
                  ka = seq(0.9, 1.3, length.out = 6),
-                 dn0 = seq(0.1, 1, length.out = 6))
+                 dn0 = seq(0.5, 1, length.out = 6),
+                 seeds = seeds)
 
 df_iters <- expand.grid(df) %>% as_tibble() %>% distinct() %>%  # expand grid to all combinations.
-  filter(!(yn == 0.7 & Bn == 1 & ka == 1.3 & dn0 == 1)) %>%          # drop one row where Bn, ka, and dn0 are all at baseline values
+  #filter(!(yn == 0.7 & Bn == 1 & ka == 1.3 & dn0 == 1)) %>%          # drop one row where Bn, ka, and dn0 are all at baseline values
   # make unique iteration id (doesn't matter the order of the numbers)
-  group_by(yn, Bn, ka, dn0) %>%
+  group_by(ya, Bn, ka, dn0, seeds) %>%
   mutate(iter_id = cur_group_id()) %>% ungroup()
   
   # 215 total parameter combinations
-length(df_iters$yn) # check if 215
+length(df_iters$ya) # check if 215
 df_iters <- as.data.frame(df_iters) # needs to be a dataframe for indexing to work properly without using pull()
 
 # Start simulation
@@ -272,8 +277,8 @@ for(i in 1:length(df_iters[,1])) {
   
   OUT <- MAIN_FUN(Wc=Wc, A=A, t=t, U=U, Wmax=Wmax, Amax=Amax, # state vars, constraints & beh choice (vars we will for loop over)
                   E=E, a=a, Alpha=Alpha, d=d, v=v, f=f, g=g, c=c, j=j, Bu=Bu, Bw=Bw, M=M, m=m, P=P, z=z, # vars in functions
-                  ya=ya, yn=df_iters[i,1], yo=yo, dn0=df_iters[i,4], Ba=Ba, Bn=df_iters[i,2], Bo=Bo, ka=df_iters[i,3], kn=kn, # vars that vary by habitat (h.vec)
-                  seeds=seeds, F.vec=F.vec, N=N,
+                  ya=df_iters[i,1], yn=yn, yo=yo, dn0=df_iters[i,4], Ba=Ba, Bn=df_iters[i,2], Bo=Bo, ka=df_iters[i,3], kn=kn, # vars that vary by habitat (h.vec)
+                  seeds=df_iters[i,5], F.vec=F.vec, N=N,
                   Wstep.n=Wstep.n, Wstep=Wstep, Wstart_setup=Wstart_setup, tmax=tmax,
                   Ws=Ws, r=r, Smax=Smax)
   
@@ -293,12 +298,12 @@ DF.SUM.2 <- bind_rows(OUT.SUM)
 DF.TRACKS.2 <- bind_rows(OUT.TRACKS)
 
 # Save output files
-write.csv(DF.SUM.2, "results//Manuscript V4/scenario2_summary.csv")
-write.csv(DF.TRACKS.2, "results//Manuscript V4/scenario2_tracks.csv")
+write.csv(DF.SUM.2, "results//Manuscript V4/scenario2_summary_15per_2seeds.csv")
+write.csv(DF.TRACKS.2, "results//Manuscript V4/scenario2_tracks_15per_2seeds.csv")
 
 # Read in saved output files
-DF.SUM.2 <- read.csv("results//Manuscript V4/scenario2_summary.csv")
-DF.TRACKS.2 <- read.csv("results//Manuscript V4/scenario2_tracks.csv")
+DF.SUM.2 <- read.csv("results//Manuscript V4/scenario2_summary_15per_2seeds.csv")
+DF.TRACKS.2 <- read.csv("results//Manuscript V4/scenario2_tracks_15per_2seeds.csv")
 
 ## Figure: Scenario 2 ----
 
@@ -307,29 +312,33 @@ fig_sc2_df <- DF.SUM.2 %>%  mutate(more_nat_preds_cat = ifelse(ka == 1.3 & Bn ==
                                         ka == 1.3 & dn0 == 1 |
                                         Bn == 1 & dn0 == 1, 1, 
                                         ifelse(ka != 1.3 & Bn != 1 & dn0 != 1,
-                                          3, 2)))
+                                          3, 2))) %>% 
+  filter(!(ka == 1.3 & dn0 == 1 & Bn == 1))  # drop scenarios where all other mechanisms are at baseline values.
 
-nat_preds_cat_N <- fig_sc2_df %>% dplyr::select(Bn, ka, dn0, more_nat_preds_cat) %>% distinct() %>% 
+nat_preds_cat_N <- fig_sc2_df %>% dplyr::select(Bn, ka, dn0, seeds, more_nat_preds_cat) %>% distinct() %>% 
   group_by(more_nat_preds_cat) %>% count()  # this returns the number of iterations in categories: 1, 2, or 3 mechanisms varied at a time.
 
 
 # Contour plots for every parameter combination
+#sub_dat <- fig_sc2_df %>% filter(seeds == 4)  # seeds == 1 is altered A1, seeds == 4 is natural A1
+sub_dat <- fig_sc2_df  # plot all parameters combos including both seeds values together.
 
-cont_dat <- fig_sc2_df %>% filter(h != "o" & Beh == "0") %>%    # get rid of ocean time steps and focus only on pauses.
+cont_dat <- sub_dat %>% filter(h != "o" & Beh == "0") %>%    # get rid of ocean time steps and focus only on pauses.
   group_by(h, iter_id) %>% summarise(mean = mean(p.tot)) %>%    # get average proportion of pauses by habitat for each iteration.
   pivot_wider(id_cols = iter_id, names_from = h, values_from = mean) %>%
   left_join(df_iters) %>% # maybe don't need?
   mutate(more_n = n - a) %>% 
   mutate(more_n_cat = ifelse(more_n > 0, "more_n", "more_a")) %>% # 1 indicates more natural, 2 indicates more altered
-  left_join(fig_sc2_df %>% dplyr::select(iter_id, more_nat_preds_cat) %>% distinct()) #
+  left_join(sub_dat %>% dplyr::select(iter_id, more_nat_preds_cat) %>% distinct()) #
 
 
 cont_dat$dn0 <- as.factor(cont_dat$dn0)
 cont_dat$Bn <- as.factor(cont_dat$Bn)
 cont_dat$ka <- as.factor(cont_dat$ka)
 
-
-eg1 <- cont_dat %>% filter(iter_id %in% c(1:35)) # example data where Bn and ka vary but dn0 is at baseline value
+# COME BACK HERE AND UPDATE OR CHANGE THIS.
+eg1 <- cont_dat %>% 
+  filter(dn0 == 0.7 & seeds == 4) # example data: across all Bn and ka and one dn0 and seeds value.
 
 
 # This figure shows one example panel of dn0 values while Bn and ka vary.
@@ -338,7 +347,7 @@ fig_sc2_ex <- ggplot(data=eg1, aes(x=Bn, y=ka, fill=(more_n))) + geom_tile(width
   scale_fill_gradient2(high = "#208B20", low = "#936EDB", name = "Difference in mean proportion\nof pauses (natural - altered)") +
   theme(legend.position = "bottom") + 
   ylab(expression("Foraging gain in altered habitats (k "[a]*")")) + 
-  xlab(expression("Salmon escape ability ("* beta[n] *")")) +
+  xlab(expression("Salmon vulnerability ("* beta[n] *")")) +
   ggtitle(label = "(a)") + theme(plot.title = element_text(size=20)); fig_sc2_ex
 
 # This figure shows the proportion of simulations where pauses are greater in
@@ -349,9 +358,9 @@ tally_dat <- cont_dat %>% group_by(more_nat_preds_cat, more_n_cat) %>% count() %
   left_join(nat_preds_cat_N) %>% mutate(p_by_h = n_by_h / n)
   
 # Get summary data for results for text:...
-cont_dat %>% group_by(more_n_cat) %>% count() %>% mutate(p = n / 215)
-# 51.6 % of all simulations more pauses in altered
-# 48.4 % of all simulations more pauses in natural!!!!
+cont_dat %>% group_by(more_n_cat) %>% count() %>% mutate(p = n / 430)
+# 39.8 % of all simulations more pauses in altered
+# 60.2 % of all simulations more pauses in natural!!!!
 
 fig_sc2_bar <- ggplot(data=tally_dat, aes(x=more_nat_preds_cat, y=p_by_h, fill=more_n_cat)) + 
   geom_bar(stat = "identity", color="black") + theme_classic() +
@@ -376,7 +385,7 @@ fig_sc2_supp <- ggplot(data=cont_dat, aes(x=Bn, y=ka, fill=(more_n))) + geom_til
   scale_fill_gradient2(high = "#208B20", low = "#936EDB", name = "Difference in mean proportion\nof pauses (natural - altered)") +
   theme(legend.position = "bottom") + 
   ylab(expression("Foraging gain in altered habitats (k "[a]*")")) + 
-  xlab(expression("Salmon escape ability ("* beta[n] *")")); fig_sc2_supp
+  xlab(expression("Salmon vulnerability ("* beta[n] *")")); fig_sc2_supp
 
 # Save Figure
 pdf.options(reset = TRUE, onefile = FALSE)
