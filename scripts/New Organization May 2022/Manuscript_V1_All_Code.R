@@ -817,6 +817,20 @@ fig_sc3_gs
 dev.off()
 
 
+# Scenario 3 summary stats ----
+# When more predators in natural
+
+sc3_dat_w %>% left_join(select(df_iters, iter_id, iter_name)) %>% 
+  filter(iter_name == "more_preds_in_natural" &
+         metric == "size_g" & hab_cat == "river")
+
+sc3_dat_l %>% select(mean_dur, N)
+
+# percent difference in fitness from baseline (0% natural) to 100% natural.
+temp <- sc3_dat_l %>% select(Fit_cumsurv, N)
+((temp$Fit_cumsurv[5] - temp$Fit_cumsurv[1]) / temp$Fit_cumsurv[1] ) * 100
+
+
 # For the SI: When more predators in altered ----
 
 p_moves_dat2 <- p_moves_dat %>% filter(iter_name == "more_preds_in_altered")
@@ -952,6 +966,12 @@ dev.off()
 # Note: the scenario with more preds in altered results in natural river habitats
 # being so much better than river altered and the ocean, that it results in 
 # unrealistic outmigration behavior.
+
+
+
+
+
+
 
 
 
