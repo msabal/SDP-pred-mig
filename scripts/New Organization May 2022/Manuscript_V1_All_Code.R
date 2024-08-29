@@ -10,24 +10,6 @@
 ## Scenario 3: How does natural habitat quantity affect behavior and fitness?
 
 
-## TO TRY AND CHECK
-
-# Scenario 1 with limits on Bn and yn of 0.7; then check summary output to see
-# if any have dur == 59. - DONE. yes pretty good, yn = 0.7 still causes 59 duration in river.
-
-# Scenario 3 try with 30% decreases in other parameters & update how
-# Fitness is portrayed/explained!
-
-# Okay the higher pauses in altered for low levels of
-# are all in A(1) which is altered! 
-# Try Scenario 1 on 10 different seed values (then plot grouped by whether they
-# A(1) is a vs. n)...
-# Did this. Yes, pattern is repeated depending on if A1 is a vs. n
-# THE REASON WHY is that when they start in A1, there are OTHER energy benefits
-# to pausing! Remember, that when move 0 can eat more and spend the least energy.
-# SO I'm pretty sure that's why then only move to N at higher relative foraging gain
-# and energy refugia levels...? Still a bit confusing.
-
 #..........................................................................................................................................
 # Load libraries and set settings ----
 library(abind); library(ggplot2); library(plyr); library(reshape2);library(colorRamps); library(ggpubr)
@@ -430,19 +412,24 @@ Wstart_setup[1] <- 7.1 # needs to be start at 7.1
 
 # Make data frame of parameters to iterate over
 df <- data.frame(N = c(0, 0.25, 0.5, 0.75, 1),
-                 yn = c(1, 0.8, NA, NA, NA),
-                 ya = c(1, 0.8, NA, NA, NA),
-                 seeds = c(1, 4, NA, NA, NA))
+                 yn = c(1, 0.85, NA, NA, NA),
+                 ya = c(1, 0.85, NA, NA, NA),
+                 seeds = 4,
+                 dn0 = 0.7,
+                 ka = 0.9,
+                 Bn = 0.7)
 
 df_iters <- expand.grid(df) %>% as_tibble() %>% distinct() %>%       # expand grid to all combinations.
-  filter(yn == 1 & ya == 1 |
-           yn == 0.8 & ya == 1 |
-           yn == 1 & ya == 0.8) %>% 
-  filter(!(is.na(seeds))) %>% 
+  filter(yn == 1 & ya == 1 |                # get only the three predator abundance scenarios i care about
+           yn == 0.85 & ya == 1 |
+           yn == 1 & ya == 0.85) %>%
   group_by(N, ya, yn) %>%
-  mutate(iter_id = cur_group_id()) %>% ungroup()
+  mutate(iter_id = cur_group_id()) %>% ungroup() %>% 
+  mutate(iter_name = ifelse(yn == 1 & ya == 1, "equal_preds",
+                            ifelse(yn == 0.85, "more_preds_in_altered",
+                                   "more_preds_in_natural")))
 
-# 5 total parameter combinations
+# 15 total parameter combinations
 length(df_iters$N)  # 5 habitat levels * 3 predator abundance levels
 df_iters <- as.data.frame(df_iters) # needs to be a dataframe for indexing to work properly without using pull()
 
@@ -455,7 +442,7 @@ for(i in 1:length(df_iters[,1])) {
   
   OUT <- MAIN_FUN(Wc=Wc, A=A, t=t, U=U, Wmax=Wmax, Amax=Amax, # state vars, constraints & beh choice (vars we will for loop over)
                   E=E, a=a, Alpha=Alpha, d=d, v=v, f=f, g=g, c=c, j=j, Bu=Bu, Bw=Bw, M=M, m=m, P=P, z=z, # vars in functions
-                  ya=df_iters[i,3], yn=df_iters[i,2], yo=yo, dn0=dn0, Ba=Ba, Bn=Bn, Bo=Bo, ka=ka, kn=kn, # vars that vary by habitat (h.vec)
+                  ya=df_iters[i,3], yn=df_iters[i,2], yo=yo, dn0=df_iters[i,5], Ba=Ba, Bn=df_iters[i,7], Bo=Bo, ka=df_iters[i,6], kn=kn, # vars that vary by habitat (h.vec)
                   seeds=df_iters[i,4], F.vec=F.vec, N=df_iters[i,1],
                   Wstep.n=Wstep.n, Wstep=Wstep, Wstart_setup=Wstart_setup, tmax=tmax,
                   Ws=Ws, r=r, Smax=Smax)
@@ -476,12 +463,12 @@ DF.SUM.3 <- bind_rows(OUT.SUM)
 DF.TRACKS.3 <- bind_rows(OUT.TRACKS)
 
 # Save output files
-write.csv(DF.SUM.3, "results//Manuscript V4/scenario3_summary_30percent_2seeds.csv")
-write.csv(DF.TRACKS.3, "results//Manuscript V4/scenario3_tracks_30percent_2seeds.csv")
+write.csv(DF.SUM.3, "results//Manuscript V4/scenario3_summary_30percent_1seed.csv")
+write.csv(DF.TRACKS.3, "results//Manuscript V4/scenario3_tracks_30percent_1seed.csv")
 
 # Read in saved output files
-DF.SUM.3 <- read.csv("results//Manuscript V4/scenario3_summary_30percent_2seeds.csv")
-DF.TRACKS.3 <- read.csv("results//Manuscript V4/scenario3_tracks_30percent_2seeds.csv")
+DF.SUM.3 <- read.csv("results//Manuscript V4/scenario3_summary_30percent_1seed.csv")
+DF.TRACKS.3 <- read.csv("results//Manuscript V4/scenario3_tracks_30percent_1seed.csv")
 
 ## Figures: Scenario 3 ----
 
@@ -502,9 +489,11 @@ DF.TRACKS.3 <- read.csv("results//Manuscript V4/scenario3_tracks_30percent_2seed
 # fitness at T=60 (equivalent to size at T=60)
 
 
+# proportion of moves (not habitat-specific)
+
 p_moves_dat <- DF.TRACKS.3 %>% as_tibble() %>% 
-  group_by(iter_id, Beh, h) %>% filter(h != "o") %>% 
-  summarise(count_moves = n()) %>%   # number of movements in the river between 0, 1, 2.
+  group_by(iter_id, Beh) %>% filter(h != "o") %>% 
+  tally(name = "count_moves") %>%    # number of movements in the river between 0, 1, 2.
   ungroup() %>% group_by(iter_id) %>% 
   mutate(tot_moves = sum(count_moves)) %>% 
   mutate(p_moves = count_moves/tot_moves) %>%   # Behavior metric: proportion of moves
@@ -512,106 +501,62 @@ p_moves_dat <- DF.TRACKS.3 %>% as_tibble() %>%
 
 p_moves_dat
 
-# maybe use this instead because mirrors earlier figure?
-p_moves_dat2 <- DF.SUM.3 %>% as_tibble() %>% 
-  group_by(Beh, h, iter_id) %>% 
-  summarise(mean.p.tot = mean(p.tot)) %>% 
-  left_join(df_iters) %>% 
-  mutate(yn_ya_cat = str_c(yn, ya, sep = "-"))
-
-# Summarize a lot of data
-
-sum_dat <- DF.SUM.3 %>% group_by(iter_id) %>% summarise(mean_dur = mean(dur),
-                                                    mean_G_riv = mean(G.riv),
-                                                    mean_S_cum = mean(S.cum.riv),
-                                                    mean_Fit = mean(Fit),
-                                                    mean_G_riv_d = mean(G.riv/dur),
-                                                    mean_G_ocean_d = mean(G.ocean/(60-dur))) %>% 
+# Get...
+sum_dat <- DF.SUM.3 %>% group_by(iter_id) %>% 
+  summarise(mean_dur = mean(dur),                         # duration
+            mean_G_riv = mean(G.riv),                     # total growth in river
+            mean_S_cum = mean(S.cum.riv),                 # cum surv to ocean entry
+            mean_Fit = mean(Fit),                         # Fitness from T60
+            mean_G_riv_d = mean(G.riv/dur),               # growth rate in river
+            mean_G_ocean_d = mean(G.ocean/(60-dur))) %>%  # growth rate in ocean
   left_join(df_iters)
+
+# Get more...
 
 sum_dat <- DF.TRACKS.3 %>% as_tibble() %>% group_by(iter_id, Wstart) %>% 
   filter(h == "o") %>% slice(1) %>% 
   mutate(SOE = W) %>% 
-  mutate(G.d.river = ((SOE - Wstart) / Time)) %>% 
+  #mutate(G.d.river = ((SOE - Wstart) / Time)) %>% 
   ungroup() %>% group_by(iter_id) %>% 
-  summarise(size_oe = mean(SOE)) %>% 
-  select(size_oe) %>% 
-  bind_cols(sum_dat) %>% relocate(iter_id, .before = size_oe)
+  summarise(size_oe = mean(SOE)) %>%                  # mean size (g) at ocean entry
+  left_join(sum_dat)
 
-
+# Get more...
 sum_dat <- DF.TRACKS.3 %>% as_tibble() %>% group_by(Wstart, iter_id) %>%
-  filter(Time == 59) %>% select(Wstart, iter_id, S.cum) %>% 
-  group_by(iter_id) %>% summarize(S.cum.T60 = mean(S.cum)) %>% 
-  select(S.cum.T60) %>% 
-  bind_cols(sum_dat) %>% relocate(iter_id, .before = S.cum.T60)
+  filter(Time == 59) %>% select(Wstart, W, iter_id, S.cum) %>% 
+  group_by(iter_id) %>% summarize(S.cum.T60 = mean(S.cum),    # cum survival to end of simulation (t=59)
+                                  W.T60 = mean(W)) %>%        # size at end of simulation (t=59)
+  left_join(sum_dat)
 
-
-sum_dat <- DF.TRACKS.3 %>% as_tibble() %>% group_by(Wstart, iter_id) %>%
-  filter(Time == 60) %>% select(Wstart, iter_id, W) %>% 
-  group_by(iter_id) %>% summarize(W.t60 = mean(W)) %>% 
-  select(W.t60) %>% 
-  bind_cols(sum_dat) %>% relocate(iter_id, .before = W.t60)
 
 sum_dat <- DF.TRACKS.3 %>% mutate(riv_cat = ifelse(h != "o", "river", "ocean")) %>% 
-  group_by(iter_id, riv_cat, Wstart) %>% 
-  summarize(mean_S_d = mean(S.day, na.rm=T)) %>% 
-  summarize(mean_S_d = mean(mean_S_d, na.rm=T)) %>% 
+  group_by(iter_id, riv_cat) %>%
+  summarize(mean_S_d = mean(S.day, na.rm = T)) %>%              # FYI NaN values for iter_ids (5, 8, 11, 14) are all more preds in altered and its because they say in the river until the last possible time step bc natural river is just too good. probably don't show these in the paper because then not realistic outmigration behavior.
   pivot_wider(names_from = riv_cat, values_from = mean_S_d) %>% 
-  rename(mean_S_riv_d = river, mean_S_ocean_d = ocean) %>% 
-  mutate(iter_id = iter_id*100) %>% 
-  ungroup() %>% select(-iter_id) %>% 
-  bind_cols(sum_dat) %>% relocate(iter_id, .before = mean_S_ocean_d)
+  rename(mean_S_riv_d = river,          # mean survival rate in river
+         mean_S_ocean_d = ocean) %>%    # mean survival rate in ocean
+  left_join(sum_dat)
+  
+# And finally...
 
-
-sum_dat
-
-sum_dat <- sum_dat %>% mutate(S.cum_times_Fit = S.cum.T60*mean_Fit)
-
-ggplot(data=sum_dat, aes(x = N, y = S.cum_times_Fit)) +
-  geom_line() + facet_wrap(~yn+ya, scales = "free")
-
+sum_dat <- sum_dat %>% 
+  mutate(mean_G_ocean = (W.T60 - size_oe),        # mean ocean growth (g)
+         Fit_cumsurv = mean_Fit * S.cum.T60) %>%  # "true" fitness: fit at t60 * cumsurv to t59
+  left_join(sum_dat)
 
 
 
-# Make another style of pmoves figure
-ggplot(filter(p_moves_dat2, Beh == 0), aes(x=N, y=mean.p.tot, color=h)) +
-  geom_line(size=1, alpha=0.7) + geom_point(size=2, alpha=1) + theme_classic() +
-  facet_wrap(~yn_ya_cat, scales = "free_x") +
-  scale_color_manual(values = c("mediumpurple", "forestgreen")) +
-  ylab("Proportion of pauses\n(move 0)") + 
-  xlab("Proportion of natural habitat") +
-  theme(strip.text.x = element_text(size=11),
-        legend.title = element_blank()) +
-  ylim(c(0,1))
+# For SI: when equal_preds between altered and natural
 
-# Troubleshooting notes: why higher fitness with 0% natural habitat? this should be
-# wrong because if optimal to go fast they should just do the SAME thing and get
-# the SAME fitness...why different? Something must be off in the model?
-
-# Pattern is the same across all Wstart values
-# Pattern is the same across different summary stats of Fit
-
-# Okay, for some reason once N > 0, then the salmon are pausing basically the whole time
-# and are going to the ocean the very last time step (is this because we )
-
-# Ah-ha! Fit is simply the fitness as defined exactly by size, but
-# The model is driven by both size at T=60 AND cumulative survival to the end
-# of the simulation. So If I plot...
-
-ggplot(data=sum_dat, aes(x = N, y = S.cum_times_Fit)) + theme_classic() +
-  geom_line() + facet_wrap(~yn+ya, scales = "free")
-
-#... then they all go UP!!! Except for when there are more predators in natural (which makes sense).
-
-# SO, they must be not going to the ocean because I made the river too "safe" relative
-# to the ocean.
+p_moves_dat2 <- p_moves_dat %>% filter(iter_name == "equal_preds")
+sc3_dat_l <- sum_dat %>% filter(iter_name == "equal_preds")  # in long format
 
 
-### Figure: behavior and fitness ----
+# Figure #: behavior and fitness ----
 
-fig_sc3_beh <- ggplot(data=sc3_moves_dat, aes(x=as.factor(N*100), y=p_moves, fill=as.factor(Beh))) + 
+fig_sc3_beh <- ggplot(data=p_moves_dat2, 
+                      aes(x=as.factor(N*100), y=p_moves, fill=as.factor(Beh))) + 
   geom_bar(stat="identity", color="black") + 
-  facet_wrap(~yn + ya) +
   theme_classic() +
   scale_fill_brewer(palette = "Blues", labels = c("0", "1", "2")) + 
   scale_y_continuous(expand = c(0,0), limits=c(0,1), breaks = seq(0,1,by=0.2)) +
@@ -620,216 +565,135 @@ fig_sc3_beh <- ggplot(data=sc3_moves_dat, aes(x=as.factor(N*100), y=p_moves, fil
   theme(legend.position = "top") +
   ggtitle(label = "(a)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_beh
 
-group_by(Beh, h, iter_var, nat_benefit) %>% 
-  summarise(mean.p.tot = mean(p.tot))
-
-
-
-
-sc3_sum_dat <- DF.SUM.3 %>%
-  mutate(iter_cat = str_c(yn, ya, sep = "-")) %>% 
-  group_by(iter_cat, N) %>% 
-  summarise(mean_Fit = mean(Fit))
-
-
-fig_sc3_fit <- ggplot(data=sc3_sum_dat, aes(x=N, y=mean_Fit, color = iter_cat)) +
+# (b) Fitness
+fig_sc3_fit <- ggplot(data=sc3_dat_l, aes(x=(N*100), y=Fit_cumsurv)) +
   geom_line(size=1, alpha=0.7) + geom_point(size=2, alpha=1) + 
   theme_classic() +
   ylab("Fitness") +
   xlab("Percent of natural habitat") +
-  ggtitle(label="(g)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_fit
+  ggtitle(label="(b)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_fit
 
   
-ggplot(data=DF.SUM.3, aes(x= N, y = Fit, color = Wstart)) +
-  geom_line() + facet_wrap(~yn+ya)
+# Together
+ggarrange(fig_sc3_beh, fig_sc3_fit, ncol = 1)
 
-
-### Figure: growth and survival ----
-
-sc3_g_dat <- DF.SUM.3 %>%
-  mutate(iter_cat = str_c(yn, ya, sep = "-")) %>% 
-  group_by(iter_cat, N) %>% 
-  summarise(mean_G_riv = mean(G.riv),
-            mean_G_riv_d = mean(G.riv/dur),
-            mean_G_ocean_d = mean(G.ocean/(60-dur)))
+# Save Figure for scenario 3
+pdf.options(reset = TRUE, onefile = FALSE)
+pdf("results//Manuscript V4/figures/Figure_sc3_equal_preds.pdf", width=4, height=6)
+ggarrange(fig_sc3_beh, fig_sc3_fit, ncol = 1, align = "hv")
+dev.off()
 
 
 
-# Set habitat hypotheses parameters
 
-# Load parameters
-param_dat <- read.csv("P://REDD//Personal//Sabal//GIT Repositories//SDP-pred-mig//raw-data//Parameter_Iterations_Tracking.csv")
-#param_dat <- read.csv("Parameter_Iterations_Tracking.csv")
-row.names(param_dat) <- param_dat$baseline
+### Figure #: growth and survival ----
 
-# Parameters: Habitat-hypothesized Differences
+# growth rate
+sc3_dat_w1 <- sc3_dat_l %>% select(iter_id, N, 
+                                  mean_G_riv_d, mean_G_ocean_d) %>% 
+  pivot_longer(cols = c(mean_G_riv_d, mean_G_ocean_d),
+               names_to = "hab_cat") %>% 
+  mutate(hab_cat = ifelse(hab_cat == "mean_G_riv_d", "river", "ocean"),
+         metric = "growth_rate")
 
-# seeds for h.vec
-seeds <- param_dat['habitat_hypoth','seeds']
-N <- param_dat['habitat_hypoth','N'] 
+# growth
+sc3_dat_w2 <- sc3_dat_l %>% select(iter_id, N, 
+                                   mean_G_riv, mean_G_ocean) %>% 
+  pivot_longer(cols = c(mean_G_riv, mean_G_ocean),
+               names_to = "hab_cat") %>% 
+  mutate(hab_cat = ifelse(hab_cat == "mean_G_riv", "river", "ocean"),
+         metric = "growth_g")
 
-# W: salmon weight (g)
-Wmin <- param_dat['habitat_hypoth','Wmin']
-Wmax <- param_dat['habitat_hypoth','Wmax'] 
-Wstep <- param_dat['habitat_hypoth','Wstep']
-Wstep.n <- ((Wmax-Wmin)/Wstep)
-Wstart_setup <- seq(7, 10, length.out = 6); Wstart_setup[1] <- 7.1 # needs to be start at 7.1
+# size
+sc3_dat_w3 <- sc3_dat_l %>% select(iter_id, N, 
+                                   size_oe, W.T60) %>% 
+  pivot_longer(cols = c(size_oe, W.T60),
+               names_to = "hab_cat") %>% 
+  mutate(hab_cat = ifelse(hab_cat == "size_oe", "river", "ocean"),
+         metric = "size_g")
 
-# A: salmon area
-Amin <- param_dat['habitat_hypoth','Amin']
-Amax <- param_dat['habitat_hypoth','Amax']
+# cumulative survival
+sc3_dat_w4 <- sc3_dat_l %>% select(iter_id, N, 
+                                   mean_S_cum, S.cum.T60) %>% 
+  pivot_longer(cols = c(mean_S_cum, S.cum.T60),
+               names_to = "hab_cat") %>% 
+  mutate(hab_cat = ifelse(hab_cat == "mean_S_cum", "river", "ocean"),
+         metric = "cum_surv")
 
-# t: time
-tmin <- param_dat['habitat_hypoth','tmin']
-tmax <- param_dat['habitat_hypoth','tmax']
-# Behavioral choice
-U <- c(0, 1, 2)
+# survival rate
+sc3_dat_w5 <- sc3_dat_l %>% select(iter_id, N, 
+                                   mean_S_riv_d, mean_S_ocean_d) %>% 
+  pivot_longer(cols = c(mean_S_riv_d, mean_S_ocean_d),
+               names_to = "hab_cat") %>% 
+  mutate(hab_cat = ifelse(hab_cat == "mean_S_riv_d", "river", "ocean"),
+         metric = "surv_rate")
 
-# Terminal fitness
-Ws    <- param_dat['habitat_hypoth','Ws']
-r     <- param_dat['habitat_hypoth','r']
-Smax  <- param_dat['habitat_hypoth','Smax']
-
-# Growth
-E     <- param_dat['habitat_hypoth','E']
-a     <- param_dat['habitat_hypoth','a']
-Alpha <- param_dat['habitat_hypoth','Alpha']
-d     <- param_dat['habitat_hypoth','d']
-dn0   <- param_dat['habitat_hypoth','dn0']
-v     <- param_dat['habitat_hypoth','v']
-
-#river growth by speed
-z     <- param_dat['habitat_hypoth','z']
-ka    <- param_dat['habitat_hypoth','ka']
-kn    <- param_dat['habitat_hypoth','kn']
-
-# ocean growth
-f     <- param_dat['habitat_hypoth','f']
-g     <- param_dat['habitat_hypoth','g']
-c     <- param_dat['habitat_hypoth','c']
-j     <- param_dat['habitat_hypoth','j']
-
-# Risk
-Bu    <- c(0.7, 1, 0.7) # B0, B1, B2 (can concatenate because we will loop over behavior choices?)
-Ba    <- param_dat['habitat_hypoth','Ba']
-Bn    <- param_dat['habitat_hypoth','Bn']
-Bo    <- param_dat['habitat_hypoth','Bo']
-Bw    <- param_dat['habitat_hypoth','Bw']
-M     <- param_dat['habitat_hypoth','M']
-m     <- param_dat['habitat_hypoth','m']
-ya    <- param_dat['habitat_hypoth','ya']
-yn    <- param_dat['habitat_hypoth','yn']
-yo    <- param_dat['habitat_hypoth','yo']
-P     <- param_dat['habitat_hypoth','P']
+# Put all long data together: raw metric values!
+sc3_dat_w <- sc3_dat_w1 %>% bind_rows(sc3_dat_w2) %>% bind_rows(sc3_dat_w3) %>% 
+  bind_rows(sc3_dat_w4) %>% bind_rows(sc3_dat_w5)
 
 
+# Now make a dataset with the value all relative to 0% natural habitat.
 
-# 
-## Amount of natural habitat (N) ##
+base_values <- sc3_dat_w %>% filter(N == 0) %>% ungroup() %>% 
+  mutate(base_value = value) %>% select(hab_cat, base_value, metric) %>% ungroup()
 
-
-# Set iterations
-df_iters <- data.frame(N = c(0, 0.25, 0.5, 0.75, 1))
-
-
-# Start simulation
-OUT.SUM <- list() # make object to save function output
-
-# Start looping MAIN_FUN over different qa values
-for(i in 1:length(df_iters[,1])) {
-  
-  OUT <- MAIN_FUN(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-                  ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
-                  Ws, r, Smax, W, # vars for Terminal fitness function
-                  Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N=df_iters[i,1])
-  
-  colnames(OUT) <- c("Wstart", "Beh", "p", "h", "p.tot", "S.cum.riv", "G.riv", "G.ocean", "dur", "Fit")
-  
-  OUT$iter_val <- rep(df_iters[i,(length(colnames(df_iters)))], length(OUT$Wstart)) # add column with seeds value for that iteration.
-  
-  OUT.SUM[[i]] <- OUT
-  
-} # end loop.
-
-DF.SUM<-ldply(OUT.SUM, as.vector)
-
-DF.SUM <- DF.SUM %>% as_tibble() %>% mutate(iter_var = "N")
+df_percent <- sc3_dat_w %>% ungroup() %>%
+  left_join(base_values) %>% 
+  #filter(N != 0) %>%  # Keep only the rows with N > 0
+  mutate(per_change = ((value - base_value)/base_value) * 100) %>%
+  select(N, hab_cat, per_change, metric) %>%
+  ungroup()
 
 
-# Save all data from scenario 4
+# Figure #: Growth, size, and survival ----
 
-write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario4.csv") # UPDATE SAVE LOCATION!
-DF4 <- read.csv("C://Users//sabalm//Desktop//scenario4.csv")
+# Reorder the factor levels
+df_percent$metric <- factor(df_percent$metric, 
+                            levels = c("growth_g", "growth_rate",
+                                       "size_g", "cum_surv", "surv_rate"))
 
-DF4 <- read.csv("P://REDD//Personal//Sabal//GIT Repositories//SDP-pred-mig//results//Manuscript V1//scenario4.csv")
+# with percent change relative to baseline 0% natural
+fig_sc3_gs <- ggplot(data = df_percent, aes(x = (N*100), y = per_change)) +
+  geom_point(aes(color = hab_cat)) + geom_line(aes(color = hab_cat)) +
+  facet_wrap(~metric, ncol = 1, scales = "free",
+             labeller = labeller(
+               metric = c(
+                 "cum_surv" = "Cumulative survival",
+                 "growth_g" = "Total growth (g)",
+                 "growth_rate" = "Growth rate (g/d)",
+                 "size_g" = "Size (g)",
+                 "surv_rate" = "Survival rate (S/d)"
+               )
+             )) +
+  geom_hline(yintercept = 0, color = "black", linetype = "dashed") +
+  scale_color_manual(values = c("royalblue", "forestgreen")) +
+  theme_bw() +
+  theme(strip.text = element_text(size = 10),  # Adjust the text size
+        strip.background = element_rect(fill = "white", color = NA),
+        legend.title = element_blank()) +  # Adjust margin around text
+  xlab("Percent natural habitat") +
+  ylab("Percent change relative\nto 0% natural habitat"); fig_sc3_gs 
+
+
+# Save Figure for scenario 3
+pdf.options(reset = TRUE, onefile = FALSE)
+pdf("results//Manuscript V4/figures/Figure_sc3_equal_preds_GS.pdf", width=4, height=9)
+fig_sc3_gs
+dev.off()
 
 
 
-## Run again but get the tracks
+# For main text! When more predators in natural ----
 
-# Set iterations
-df_iters <- data.frame(N = c(0, 0.25, 0.5, 0.75, 1))
-
-
-# Start simulation
-OUT.SUM <- list() # make object to save function output
-
-# Start looping MAIN_FUN over different qa values
-for(i in 1:length(df_iters[,1])) {
-  
-  OUT <- MAIN_FUN_TRACKS(Wc, A, t, U, Wmax, Wmin, Amax, # state vars, constraints & beh choice (vars we will for loop over)
-                  E, q, a, Alpha, d, v, f, g, c, j, Bu, Bw, M, m, y, P, z, # vars in functions
-                  ya, yn, yo, dn0, Ba, Bn, Bo, ka, kn, # vars that vary by habitat (h.vec)
-                  Ws, r, Smax, W, # vars for Terminal fitness function
-                  Wstep.n, Wstep, Wstart_setup, tmax, seeds, F.vec, N=df_iters[i,1])
-  
-  OUT$iter_val <- rep(df_iters[i,(length(colnames(df_iters)))], length(OUT$Wstart)) # add column with seeds value for that iteration.
-  
-  OUT.SUM[[i]] <- OUT
-  
-} # end loop.
-
-DF.SUM<-ldply(OUT.SUM, as.vector)
-
-DF.SUM <- DF.SUM %>% as_tibble() %>% mutate(iter_var = "N")
+p_moves_dat2 <- p_moves_dat %>% filter(iter_name == "more_preds_in_natural")
+sc3_dat_l <- sum_dat %>% filter(iter_name == "more_preds_in_natural")  # in long format
 
 
-# Save all data from scenario 4
+# Figure #: behavior and fitness ----
 
-write.csv(DF.SUM, "C://Users//sabalm//Desktop//scenario4_tracks.csv") # UPDATE SAVE LOCATION!
-#DF4_tracks <- read.csv("C://Users//sabalm//Desktop//scenario4_tracks.csv")
-#DF4_tracks <- read.csv("G://My Drive//Professional//GIT Repositories//SDP-pred-mig//results//Manuscript V1//scenario4_tracks.csv")
-DF4_tracks <- read.csv("P://REDD//Personal//Sabal//GIT Repositories//SDP-pred-mig//results//Manuscript V1//scenario4_tracks.csv")
-
-
-## Figure 5 ----
-
-# a - proportion of moves
-# b - river growth rate
-# c - river survival rate
-# d - duration
-# e - size at ocean entry
-# f - cumulative survial to the ocean
-# g - fitness
-# h - size at t=60
-# i - cumulative survival to t = 60
-
-# SI figure
-# a - ocean growth rate
-# b - ocean survival rate
-
-#..................................
-# a - proportion of moves ----
-
-moves_dat <- DF4_tracks %>% as_tibble() %>% group_by(iter_val, Beh) %>% filter(h != "o") %>% 
-  summarise(count_moves = n()) %>%   # number of movements in teh river between 0, 1, 2.
-  ungroup() %>% group_by(iter_val) %>% 
-  mutate(tot_moves = sum(count_moves)) %>% 
-  mutate(p_moves = count_moves/tot_moves,
-         iter_val = iter_val*100)
-
-fig_pmoves <- ggplot(data=moves_dat, aes(x=as.factor(iter_val), y=p_moves, fill=as.factor(Beh))) + 
+fig_sc3_beh <- ggplot(data=p_moves_dat2, 
+                      aes(x=as.factor(N*100), y=p_moves, fill=as.factor(Beh))) + 
   geom_bar(stat="identity", color="black") + 
   theme_classic() +
   scale_fill_brewer(palette = "Blues", labels = c("0", "1", "2")) + 
@@ -837,189 +701,257 @@ fig_pmoves <- ggplot(data=moves_dat, aes(x=as.factor(iter_val), y=p_moves, fill=
   ylab("Proportion of moves") + xlab("Percent of natural habitat") +
   theme(legend.title = element_blank()) +
   theme(legend.position = "top") +
-  ggtitle(label = "(a)") + theme(plot.title = element_text(size=14, face = "bold")); fig_pmoves
+  ggtitle(label = "(a)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_beh
 
-
-# Summarize metrics over starting salmon weights.
-
-sub_dat <- DF4 %>% group_by(iter_val) %>% summarise(mean_dur = mean(dur),
-                                                    mean_G_riv = mean(G.riv),
-                                                    mean_S_cum = mean(S.cum.riv),
-                                                    mean_Fit = mean(Fit),
-                                                    mean_G_riv_d = mean(G.riv/dur),
-                                                    mean_G_ocean_d = mean(G.ocean/(60-dur))) %>% 
-  mutate(iter_val = iter_val*100)
-
-
-sub_dat <- DF4_tracks %>% as_tibble() %>% group_by(iter_val, Wstart) %>% 
-  filter(h == "o") %>% slice(1) %>% 
-  mutate(SOE = W) %>% 
-  mutate(G.d.river = ((SOE - Wstart) / Time)) %>% 
-  ungroup() %>% group_by(iter_val) %>% 
-  summarise(size_oe = mean(SOE)) %>% 
-  select(size_oe) %>% 
-  bind_cols(sub_dat) %>% relocate(iter_val, .before = size_oe)
-
-
-sub_dat <- DF4_tracks %>% as_tibble() %>% group_by(Wstart, iter_val) %>%
-  filter(Time == 59) %>% select(Wstart, iter_val, S.cum) %>% 
-  group_by(iter_val) %>% summarize(S.cum.T60 = mean(S.cum)) %>% 
-  select(S.cum.T60) %>% 
-  bind_cols(sub_dat) %>% relocate(iter_val, .before = S.cum.T60)
-
-
-sub_dat <- DF4_tracks %>% as_tibble() %>% group_by(Wstart, iter_val) %>%
-  filter(Time == 60) %>% select(Wstart, iter_val, W) %>% 
-  group_by(iter_val) %>% summarize(W.t60 = mean(W)) %>% 
-  select(W.t60) %>% 
-  bind_cols(sub_dat) %>% relocate(iter_val, .before = W.t60)
-
-sub_dat <- DF4_tracks %>% mutate(riv_cat = ifelse(h != "o", "river", "ocean")) %>% 
-  group_by(iter_val, riv_cat, Wstart) %>% 
-  summarize(mean_S_d = mean(S.day, na.rm=T)) %>% 
-  summarize(mean_S_d = mean(mean_S_d, na.rm=T)) %>% 
-  pivot_wider(names_from = riv_cat, values_from = mean_S_d) %>% 
-  rename(mean_S_riv_d = river, mean_S_ocean_d = ocean) %>% 
-  mutate(iter_val = iter_val*100) %>% 
-  ungroup() %>% select(-iter_val) %>% 
-  bind_cols(sub_dat) %>% relocate(iter_val, .before = mean_S_ocean_d)
-
-
-sub_dat # look at all summary values by percent natural habitat.
-
-
-# b - river growth rate ----
-fig_rg <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_G_riv_d)) +
-  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
-  theme_classic() +
-  ylab("River growth rate (g/d)") +
-  xlab("Percent of natural habitat") +
-  ggtitle(label="(b)") + theme(plot.title = element_text(size=14, face = "bold")); fig_rg
-
-
-# c - river survival rate ----
-fig_rs <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_S_riv_d)) +
-  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
-  theme_classic() +
-  ylab("River survival rate") +
-  xlab("Percent of natural habitat") +
-  ggtitle(label="(c)") + theme(plot.title = element_text(size=14, face = "bold")); fig_rs
-
-
-# d - duration ----
-fig_dur <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_dur)) +
-  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
-  theme_classic() +
-  ylab("Duration (d)") +
-  xlab("Percent of natural habitat") +
-  ggtitle(label="(d)") + theme(plot.title = element_text(size=14, face = "bold")); fig_dur
-
-
-# e - size at ocean entry ----
-fig_Woe <- ggplot(data=sub_dat, aes(x=iter_val, y=size_oe)) +
-  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
-  theme_classic() +
-  ylab("Size at ocean entry (g)") +
-  xlab("Percent of natural habitat") +
-  ggtitle(label="(e)") + theme(plot.title = element_text(size=14, face = "bold")); fig_Woe
-
-
-# f - cumulative survival to the ocean ----
-fig_cumS_o <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_S_cum)) +
-  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
-  theme_classic() +
-  ylab("Cumulative survival to ocean") +
-  xlab("Percent of natural habitat") +
-  ggtitle(label="(f)") + theme(plot.title = element_text(size=14, face = "bold")); fig_cumS_o
-
-
-# g - fitness ----
-fig_fit <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_Fit)) +
-  geom_line(size=2, alpha=0.7, color="gray24") + geom_point(size=4, alpha=1, color="gray24") + 
+# (b) Fitness
+fig_sc3_fit <- ggplot(data=sc3_dat_l, aes(x=(N*100), y=Fit_cumsurv)) +
+  geom_line(size=1, alpha=0.7) + geom_point(size=2, alpha=1) + 
   theme_classic() +
   ylab("Fitness") +
   xlab("Percent of natural habitat") +
-  ggtitle(label="(g)") + theme(plot.title = element_text(size=14, face = "bold")); fig_fit
+  ggtitle(label="(b)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_fit
 
 
-# h - size at t=60 ----
-fig_W60 <- ggplot(data=sub_dat, aes(x=iter_val, y=W.t60)) +
-  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
-  theme_classic() +
-  ylab("Size at T=60 (g)") +
-  xlab("Percent of natural habitat") +
-  ggtitle(label="(h)") + theme(plot.title = element_text(size=14, face = "bold")); fig_W60
+# Together
+ggarrange(fig_sc3_beh, fig_sc3_fit, ncol = 1)
+
+# Save Figure for scenario 2
+pdf.options(reset = TRUE, onefile = FALSE)
+pdf("results//Manuscript V4/figures/Figure_sc3_more_preds_nat.pdf", width=4, height=6)
+ggarrange(fig_sc3_beh, fig_sc3_fit, ncol = 1, align = "hv")
+dev.off()
+
+### Figure #: growth and survival ----
+
+# growth rate
+sc3_dat_w1 <- sc3_dat_l %>% select(iter_id, N, 
+                                   mean_G_riv_d, mean_G_ocean_d) %>% 
+  pivot_longer(cols = c(mean_G_riv_d, mean_G_ocean_d),
+               names_to = "hab_cat") %>% 
+  mutate(hab_cat = ifelse(hab_cat == "mean_G_riv_d", "river", "ocean"),
+         metric = "growth_rate")
+
+# growth
+sc3_dat_w2 <- sc3_dat_l %>% select(iter_id, N, 
+                                   mean_G_riv, mean_G_ocean) %>% 
+  pivot_longer(cols = c(mean_G_riv, mean_G_ocean),
+               names_to = "hab_cat") %>% 
+  mutate(hab_cat = ifelse(hab_cat == "mean_G_riv", "river", "ocean"),
+         metric = "growth_g")
+
+# size
+sc3_dat_w3 <- sc3_dat_l %>% select(iter_id, N, 
+                                   size_oe, W.T60) %>% 
+  pivot_longer(cols = c(size_oe, W.T60),
+               names_to = "hab_cat") %>% 
+  mutate(hab_cat = ifelse(hab_cat == "size_oe", "river", "ocean"),
+         metric = "size_g")
+
+# cumulative survival
+sc3_dat_w4 <- sc3_dat_l %>% select(iter_id, N, 
+                                   mean_S_cum, S.cum.T60) %>% 
+  pivot_longer(cols = c(mean_S_cum, S.cum.T60),
+               names_to = "hab_cat") %>% 
+  mutate(hab_cat = ifelse(hab_cat == "mean_S_cum", "river", "ocean"),
+         metric = "cum_surv")
+
+# survival rate
+sc3_dat_w5 <- sc3_dat_l %>% select(iter_id, N, 
+                                   mean_S_riv_d, mean_S_ocean_d) %>% 
+  pivot_longer(cols = c(mean_S_riv_d, mean_S_ocean_d),
+               names_to = "hab_cat") %>% 
+  mutate(hab_cat = ifelse(hab_cat == "mean_S_riv_d", "river", "ocean"),
+         metric = "surv_rate")
+
+# Put all long data together: raw metric values!
+sc3_dat_w <- sc3_dat_w1 %>% bind_rows(sc3_dat_w2) %>% bind_rows(sc3_dat_w3) %>% 
+  bind_rows(sc3_dat_w4) %>% bind_rows(sc3_dat_w5)
 
 
-# i - cumulative survival to t = 60 ----
-fig_cumS_60 <- ggplot(data=sub_dat, aes(x=iter_val, y=S.cum.T60)) +
-  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
-  theme_classic() +
-  ylab("Cumulative survival to T=60") +
-  xlab("Percent of natural habitat") +
-  ggtitle(label="(i)") + theme(plot.title = element_text(size=14, face = "bold")); fig_cumS_60
+# Now make a dataset with the value all relative to 0% natural habitat.
+
+base_values <- sc3_dat_w %>% filter(N == 0) %>% ungroup() %>% 
+  mutate(base_value = value) %>% select(hab_cat, base_value, metric) %>% ungroup()
+
+df_percent <- sc3_dat_w %>% ungroup() %>%
+  left_join(base_values) %>% 
+  #filter(N != 0) %>%  # Keep only the rows with N > 0
+  mutate(per_change = ((value - base_value)/base_value) * 100) %>%
+  select(N, hab_cat, per_change, metric) %>%
+  ungroup()
 
 
-# Save Figure 5
-theme_transparent <- theme(
-  panel.background = element_rect(fill = "transparent",colour = NA),
-  panel.grid.minor = element_blank(), 
-  panel.grid.major = element_blank(),
-  plot.background = element_rect(fill = "transparent",colour = NA),
-  legend.background = element_rect(fill = "transparent", color = NA))
+# Figure #: Growth, size, and survival ----
 
+# Reorder the factor levels
+df_percent$metric <- factor(df_percent$metric, 
+                            levels = c("growth_g", "growth_rate",
+                                       "size_g", "cum_surv", "surv_rate"))
 
-# With transparent backgrounds!
-ggsave(
-  plot = ggarrange(fig_pmoves + theme_transparent, 
-                   fig_rg + theme_transparent, 
-                   fig_rs + theme_transparent,
-                   fig_dur + theme_transparent, 
-                   fig_Woe + theme_transparent, 
-                   fig_cumS_o + theme_transparent,
-                   fig_fit + theme_transparent, 
-                   fig_W60 + theme_transparent, 
-                   fig_cumS_60 + theme_transparent,
-                   ncol = 3, nrow = 3),
-  filename = "Figure5.png",
-  bg = "transparent",
-  width = 8, height = 7, units = "in",
-  dpi = 500
-)
+# with percent change relative to baseline 0% natural
+fig_sc3_gs <- ggplot(data = df_percent, aes(x = (N*100), y = per_change)) +
+  geom_point(aes(color = hab_cat)) + geom_line(aes(color = hab_cat)) +
+  facet_wrap(~metric, ncol = 1, scales = "free",
+             labeller = labeller(
+               metric = c(
+                 "cum_surv" = "Cumulative survival",
+                 "growth_g" = "Total growth (g)",
+                 "growth_rate" = "Growth rate (g/d)",
+                 "size_g" = "Size (g)",
+                 "surv_rate" = "Survival rate (S/d)"
+               )
+             )) +
+  geom_hline(yintercept = 0, color = "black", linetype = "dashed") +
+  scale_color_manual(values = c("royalblue", "forestgreen")) +
+  theme_bw() +
+  theme(strip.text = element_text(size = 10),  # Adjust the text size
+        strip.background = element_rect(fill = "white", color = NA),
+        legend.title = element_blank()) +  # Adjust margin around text
+  xlab("Percent natural habitat") +
+  ylab("Percent change relative\nto 0% natural habitat"); fig_sc3_gs
 
-
-
-
-# SI figure 4 ----
-# a - ocean growth rate
-fig_g.d.ocean <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_G_ocean_d)) +
-  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
-  theme_classic() +
-  ylab("Ocean growth rate (g/d)") +
-  xlab("Percent of natural habitat") +
-  ggtitle(label="(a)") + theme(plot.title = element_text(size=14, face = "bold")); fig_g.d.ocean 
-
-# b - ocean survival rate
-fig_s.d.ocean <- ggplot(data=sub_dat, aes(x=iter_val, y=mean_S_ocean_d)) +
-  geom_line(size=1, alpha=0.7, color="gray24") + geom_point(size=2, alpha=1, color="gray24") + 
-  theme_classic() +
-  ylab("Ocean survival rate") +
-  xlab("Percent of natural habitat") +
-  ggtitle(label="(b)") + theme(plot.title = element_text(size=14, face = "bold")); fig_s.d.ocean
-
-# Save SI Figure 4
-pdf("Figure_S4.pdf", width=6, height=2.5)
-ggarrange(fig_g.d.ocean, fig_s.d.ocean, ncol=2)
+# Save Figure for scenario 3
+pdf.options(reset = TRUE, onefile = FALSE)
+pdf("results//Manuscript V4/figures/Figure_sc3_more_preds_nat_GS.pdf", width=4, height=9)
+fig_sc3_gs
 dev.off()
 
 
+# For the SI: When more predators in altered ----
+
+p_moves_dat2 <- p_moves_dat %>% filter(iter_name == "more_preds_in_altered")
+sc3_dat_l <- sum_dat %>% filter(iter_name == "more_preds_in_altered")  # in long format
+
+
+# Figure #: behavior and fitness ----
+
+fig_sc3_beh <- ggplot(data=p_moves_dat2, 
+                      aes(x=as.factor(N*100), y=p_moves, fill=as.factor(Beh))) + 
+  geom_bar(stat="identity", color="black") + 
+  theme_classic() +
+  scale_fill_brewer(palette = "Blues", labels = c("0", "1", "2")) + 
+  scale_y_continuous(expand = c(0,0), limits=c(0,1), breaks = seq(0,1,by=0.2)) +
+  ylab("Proportion of moves") + xlab("Percent of natural habitat") +
+  theme(legend.title = element_blank()) +
+  theme(legend.position = "top") +
+  ggtitle(label = "(a)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_beh
+
+# (b) Fitness
+fig_sc3_fit <- ggplot(data=sc3_dat_l, aes(x=(N*100), y=Fit_cumsurv)) +
+  geom_line(size=1, alpha=0.7) + geom_point(size=2, alpha=1) + 
+  theme_classic() +
+  ylab("Fitness") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(b)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_fit
+
+
+# Together
+ggarrange(fig_sc3_beh, fig_sc3_fit, ncol = 1)
+
+# Save Figure for scenario 2
+pdf.options(reset = TRUE, onefile = FALSE)
+pdf("results//Manuscript V4/figures/Figure_sc3_more_preds_alt.pdf", width=4, height=6)
+ggarrange(fig_sc3_beh, fig_sc3_fit, ncol = 1, align = "hv")
+dev.off()
+
+### Figure #: growth and survival ----
+
+# growth rate
+sc3_dat_w1 <- sc3_dat_l %>% select(iter_id, N, 
+                                   mean_G_riv_d, mean_G_ocean_d) %>% 
+  pivot_longer(cols = c(mean_G_riv_d, mean_G_ocean_d),
+               names_to = "hab_cat") %>% 
+  mutate(hab_cat = ifelse(hab_cat == "mean_G_riv_d", "river", "ocean"),
+         metric = "growth_rate")
+
+# growth
+sc3_dat_w2 <- sc3_dat_l %>% select(iter_id, N, 
+                                   mean_G_riv, mean_G_ocean) %>% 
+  pivot_longer(cols = c(mean_G_riv, mean_G_ocean),
+               names_to = "hab_cat") %>% 
+  mutate(hab_cat = ifelse(hab_cat == "mean_G_riv", "river", "ocean"),
+         metric = "growth_g")
+
+# size
+sc3_dat_w3 <- sc3_dat_l %>% select(iter_id, N, 
+                                   size_oe, W.T60) %>% 
+  pivot_longer(cols = c(size_oe, W.T60),
+               names_to = "hab_cat") %>% 
+  mutate(hab_cat = ifelse(hab_cat == "size_oe", "river", "ocean"),
+         metric = "size_g")
+
+# cumulative survival
+sc3_dat_w4 <- sc3_dat_l %>% select(iter_id, N, 
+                                   mean_S_cum, S.cum.T60) %>% 
+  pivot_longer(cols = c(mean_S_cum, S.cum.T60),
+               names_to = "hab_cat") %>% 
+  mutate(hab_cat = ifelse(hab_cat == "mean_S_cum", "river", "ocean"),
+         metric = "cum_surv")
+
+# survival rate
+sc3_dat_w5 <- sc3_dat_l %>% select(iter_id, N, 
+                                   mean_S_riv_d, mean_S_ocean_d) %>% 
+  pivot_longer(cols = c(mean_S_riv_d, mean_S_ocean_d),
+               names_to = "hab_cat") %>% 
+  mutate(hab_cat = ifelse(hab_cat == "mean_S_riv_d", "river", "ocean"),
+         metric = "surv_rate")
+
+# Put all long data together: raw metric values!
+sc3_dat_w <- sc3_dat_w1 %>% bind_rows(sc3_dat_w2) %>% bind_rows(sc3_dat_w3) %>% 
+  bind_rows(sc3_dat_w4) %>% bind_rows(sc3_dat_w5)
+
+
+# Now make a dataset with the value all relative to 0% natural habitat.
+
+base_values <- sc3_dat_w %>% filter(N == 0) %>% ungroup() %>% 
+  mutate(base_value = value) %>% select(hab_cat, base_value, metric) %>% ungroup()
+
+df_percent <- sc3_dat_w %>% ungroup() %>%
+  left_join(base_values) %>% 
+  #filter(N != 0) %>%  # Keep only the rows with N > 0
+  mutate(per_change = ((value - base_value)/base_value) * 100) %>%
+  select(N, hab_cat, per_change, metric) %>%
+  ungroup()
+
+
+# Figure #: Growth, size, and survival ----
+
+# Reorder the factor levels
+df_percent$metric <- factor(df_percent$metric, 
+                            levels = c("growth_g", "growth_rate",
+                                       "size_g", "cum_surv", "surv_rate"))
+
+# with percent change relative to baseline 0% natural
+fig_sc3_gs <- ggplot(data = df_percent, aes(x = (N*100), y = per_change)) +
+  geom_point(aes(color = hab_cat)) + geom_line(aes(color = hab_cat)) +
+  facet_wrap(~metric, ncol = 1, scales = "free",
+             labeller = labeller(
+               metric = c(
+                 "cum_surv" = "Cumulative survival",
+                 "growth_g" = "Total growth (g)",
+                 "growth_rate" = "Growth rate (g/d)",
+                 "size_g" = "Size (g)",
+                 "surv_rate" = "Survival rate (S/d)"
+               )
+             )) +
+  geom_hline(yintercept = 0, color = "black", linetype = "dashed") +
+  scale_color_manual(values = c("royalblue", "forestgreen")) +
+  theme_bw() +
+  theme(strip.text = element_text(size = 10),  # Adjust the text size
+        strip.background = element_rect(fill = "white", color = NA),
+        legend.title = element_blank()) +  # Adjust margin around text
+  xlab("Percent natural habitat") +
+  ylab("Percent change relative\nto 0% natural habitat"); fig_sc3_gs
+
+# Save Figure for scenario 3
+pdf.options(reset = TRUE, onefile = FALSE)
+pdf("results//Manuscript V4/figures/Figure_sc3_more_preds_alt_GS.pdf", width=4, height=9)
+fig_sc3_gs
+dev.off()
+
+# Note: the scenario with more preds in altered results in natural river habitats
+# being so much better than river altered and the ocean, that it results in 
+# unrealistic outmigration behavior.
 
 
 
-
-# Potential SI figure plots ...............................................................................................................
-
-# plot Terminal Fitness function
-
-
-curve(TERM.FUN(W, Ws=Ws , r=r, Smax=Smax), xname="W", xlim=c(7,80), ylim=c(0,0.31), ylab="adult marine survival (to age 3)")
