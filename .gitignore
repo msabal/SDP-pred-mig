@@ -6,7 +6,8 @@
 .Ruserdata
 
 
-# Ignore all .png and .csv files everywhere in the repo
+# Ignore all figure and .csv files everywhere in the repo
+*.pdf
 *.png
 *.csv
 
