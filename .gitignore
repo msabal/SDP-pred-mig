@@ -1,7 +1,15 @@
+
+# RStudio project files
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
-"*.png"
-"/results/Manuscript V4/scenario3_summary_30percent_2seeds.csv"
-"/results/Manuscript V4/scenario3_tracks_30percent_2seeds.csv"
+
+
+# Ignore all .png and .csv files everywhere in the repo
+*.png
+*.csv
+
+
+# Example, to un-ignore a specific file, you can do:
+# !/results/Manuscript V4/scenario3_summary_30percent_2seeds.csv

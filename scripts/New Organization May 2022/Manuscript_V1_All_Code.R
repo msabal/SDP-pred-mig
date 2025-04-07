@@ -173,7 +173,7 @@ fig_sc1_A1N <- ggplot(filter(fig1_dat, Beh == 0 & seeds == 6), aes(x=nat_benefit
 
 # Save Figure for scenario 1
 pdf.options(reset = TRUE, onefile = FALSE)
-pdf("results//Manuscript V4/figures/Figure_sc1_A1N.pdf", width=6, height=4)
+pdf("results//Manuscript V5/figures/Figure_S5.pdf", width=6, height=4)
 fig_sc1_A1N
 dev.off()
 
@@ -191,7 +191,7 @@ fig_sc1_A1A <- ggplot(filter(fig1_dat, Beh == 0 & seeds == 1), aes(x=nat_benefit
 
 # Save Figure for scenario 1
 pdf.options(reset = TRUE, onefile = FALSE)
-pdf("results//Manuscript V4/figures/Figure_sc1_A1A.pdf", width=6, height=4)
+pdf("results//Manuscript V4/figures/Figure_2.pdf", width=6, height=4)
 fig_sc1_A1A
 dev.off()
 
@@ -318,7 +318,7 @@ cont_dat$dn0 <- as.factor(cont_dat$dn0)
 cont_dat$Bn <- as.factor(cont_dat$Bn)
 cont_dat$ka <- as.factor(cont_dat$ka)
 
-# COME BACK HERE AND UPDATE OR CHANGE THIS.
+#Single example for Figure 3 from full Figure S6
 eg1 <- cont_dat %>% 
   filter(dn0 == 0.7 & seeds == 4) # example data: across all Bn and ka and one dn0 and seeds value.
 
@@ -356,7 +356,7 @@ ggarrange(fig_sc2_ex, fig_sc2_bar, align = "hv")
 
 # Save Figure for scenario 2
 pdf.options(reset = TRUE, onefile = FALSE)
-pdf("results//Manuscript V4/figures/Figure_sc2.pdf", width=7, height=4.5)
+pdf("results//Manuscript V5/figures/Figure_3.pdf", width=7, height=4.5)
 ggarrange(fig_sc2_ex, fig_sc2_bar, align = "hv")
 dev.off()
 
@@ -371,7 +371,7 @@ fig_sc2_supp <- ggplot(data=cont_dat, aes(x=Bn, y=ka, fill=(more_n))) + geom_til
 
 # Save Figure
 pdf.options(reset = TRUE, onefile = FALSE)
-pdf("results//Manuscript V4/figures/Figure_sc2_supp.pdf", width=7, height=6)
+pdf("results//Manuscript V5/figures/Figure_S6.pdf", width=7, height=6)
 fig_sc2_supp
 dev.off()
 
@@ -565,22 +565,30 @@ fig_sc3_beh <- ggplot(data=p_moves_dat2,
   theme(legend.position = "top") +
   ggtitle(label = "(a)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_beh
 
-# (b) Fitness
+# (b) Migration duration
+fig_sc3_dur<- ggplot(data=sc3_dat_l, aes(x=(N*100), y=mean_dur)) +
+  geom_line(size=1, alpha=0.7) + geom_point(size=2, alpha=1) + 
+  theme_classic() +
+  ylab("Migration duration (days)") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(b)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_dur
+
+# (c) Fitness
 fig_sc3_fit <- ggplot(data=sc3_dat_l, aes(x=(N*100), y=Fit_cumsurv)) +
   geom_line(size=1, alpha=0.7) + geom_point(size=2, alpha=1) + 
   theme_classic() +
   ylab("Fitness") +
   xlab("Percent of natural habitat") +
-  ggtitle(label="(b)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_fit
+  ggtitle(label="(c)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_fit
 
   
 # Together
-ggarrange(fig_sc3_beh, fig_sc3_fit, ncol = 1)
+ggarrange(fig_sc3_beh, fig_sc3_dur, fig_sc3_fit, ncol = 1)
 
 # Save Figure for scenario 3
 pdf.options(reset = TRUE, onefile = FALSE)
-pdf("results//Manuscript V4/figures/Figure_sc3_equal_preds.pdf", width=4, height=6)
-ggarrange(fig_sc3_beh, fig_sc3_fit, ncol = 1, align = "hv")
+pdf("results//Manuscript V5/figures/Figure_S7.pdf", width=4, height=8)
+ggarrange(fig_sc3_beh, fig_sc3_dur, fig_sc3_fit, ncol = 1, align = "hv")
 dev.off()
 
 
@@ -659,17 +667,17 @@ fig_sc3_gs <- ggplot(data = df_percent, aes(x = (N*100), y = per_change)) +
   facet_wrap(~metric, ncol = 1, scales = "free",
              labeller = labeller(
                metric = c(
-                 "cum_surv" = "Cumulative survival",
-                 "growth_g" = "Total growth (g)",
-                 "growth_rate" = "Growth rate (g/d)",
-                 "size_g" = "Size (g)",
-                 "surv_rate" = "Survival rate (S/d)"
+                 "cum_surv" = "(d)    Cumulative survival",
+                 "growth_g" = " (a)    Total growth (g)",
+                 "growth_rate" = "(b)    Growth rate (g/d)",
+                 "size_g" = "(c)    Size (g)",
+                 "surv_rate" = "(e)    Survival rate (S/d)"
                )
              )) +
   geom_hline(yintercept = 0, color = "black", linetype = "dashed") +
   scale_color_manual(values = c("royalblue", "forestgreen")) +
   theme_bw() +
-  theme(strip.text = element_text(size = 10),  # Adjust the text size
+  theme(strip.text = element_text(size = 10, hjust = 0),  # Adjust the text size
         strip.background = element_rect(fill = "white", color = NA),
         legend.title = element_blank()) +  # Adjust margin around text
   xlab("Percent natural habitat") +
@@ -678,9 +686,14 @@ fig_sc3_gs <- ggplot(data = df_percent, aes(x = (N*100), y = per_change)) +
 
 # Save Figure for scenario 3
 pdf.options(reset = TRUE, onefile = FALSE)
-pdf("results//Manuscript V4/figures/Figure_sc3_equal_preds_GS.pdf", width=4, height=9)
+pdf("results//Manuscript V5/figures/Figure_S8.pdf", width=4, height=9)
 fig_sc3_gs
 dev.off()
+
+
+# percent difference in fitness from baseline (0% natural) to 100% natural.
+temp <- sc3_dat_l %>% select(Fit_cumsurv, N)
+((temp$Fit_cumsurv[5] - temp$Fit_cumsurv[1]) / temp$Fit_cumsurv[1] ) * 100
 
 
 
@@ -703,23 +716,33 @@ fig_sc3_beh <- ggplot(data=p_moves_dat2,
   theme(legend.position = "top") +
   ggtitle(label = "(a)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_beh
 
-# (b) Fitness
+# (b) Migration duration
+fig_sc3_dur<- ggplot(data=sc3_dat_l, aes(x=(N*100), y=mean_dur)) +
+  geom_line(size=1, alpha=0.7) + geom_point(size=2, alpha=1) + 
+  theme_classic() +
+  ylab("Migration duration (days)") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(b)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_dur
+
+
+# (c) Fitness
 fig_sc3_fit <- ggplot(data=sc3_dat_l, aes(x=(N*100), y=Fit_cumsurv)) +
   geom_line(size=1, alpha=0.7) + geom_point(size=2, alpha=1) + 
   theme_classic() +
   ylab("Fitness") +
   xlab("Percent of natural habitat") +
-  ggtitle(label="(b)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_fit
+  ggtitle(label="(c)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_fit
 
 
 # Together
-ggarrange(fig_sc3_beh, fig_sc3_fit, ncol = 1)
+ggarrange(fig_sc3_beh, fig_sc3_dur, fig_sc3_fit, ncol = 1)
 
 # Save Figure for scenario 2
 pdf.options(reset = TRUE, onefile = FALSE)
-pdf("results//Manuscript V4/figures/Figure_sc3_more_preds_nat.pdf", width=4, height=6)
-ggarrange(fig_sc3_beh, fig_sc3_fit, ncol = 1, align = "hv")
+pdf("results//Manuscript V5/figures/Figure_4.pdf", width=4, height=8)
+ggarrange(fig_sc3_beh, fig_sc3_dur, fig_sc3_fit, ncol = 1, align = "hv")
 dev.off()
+
 
 ### Figure #: growth and survival ----
 
@@ -794,17 +817,17 @@ fig_sc3_gs <- ggplot(data = df_percent, aes(x = (N*100), y = per_change)) +
   facet_wrap(~metric, ncol = 1, scales = "free",
              labeller = labeller(
                metric = c(
-                 "cum_surv" = "Cumulative survival",
-                 "growth_g" = "Total growth (g)",
-                 "growth_rate" = "Growth rate (g/d)",
-                 "size_g" = "Size (g)",
-                 "surv_rate" = "Survival rate (S/d)"
+                 "cum_surv" = "(d)    Cumulative survival",
+                 "growth_g" = "(a)    Total growth (g)",
+                 "growth_rate" = "(b)    Growth rate (g/d)",
+                 "size_g" = "(c)    Size (g)",
+                 "surv_rate" = "(e)    Survival rate (S/d)"
                )
              )) +
   geom_hline(yintercept = 0, color = "black", linetype = "dashed") +
   scale_color_manual(values = c("royalblue", "forestgreen")) +
   theme_bw() +
-  theme(strip.text = element_text(size = 10),  # Adjust the text size
+  theme(strip.text = element_text(size = 10, hjust = 0),  # Adjust the text size
         strip.background = element_rect(fill = "white", color = NA),
         legend.title = element_blank()) +  # Adjust margin around text
   xlab("Percent natural habitat") +
@@ -812,7 +835,7 @@ fig_sc3_gs <- ggplot(data = df_percent, aes(x = (N*100), y = per_change)) +
 
 # Save Figure for scenario 3
 pdf.options(reset = TRUE, onefile = FALSE)
-pdf("results//Manuscript V4/figures/Figure_sc3_more_preds_nat_GS.pdf", width=4, height=9)
+pdf("results//Manuscript V5/figures/Figure_5.pdf", width=4, height=9)
 fig_sc3_gs
 dev.off()
 
@@ -831,7 +854,7 @@ temp <- sc3_dat_l %>% select(Fit_cumsurv, N)
 ((temp$Fit_cumsurv[5] - temp$Fit_cumsurv[1]) / temp$Fit_cumsurv[1] ) * 100
 
 
-# For the SI: When more predators in altered ----
+# Not in paper: When more predators in altered ----
 
 p_moves_dat2 <- p_moves_dat %>% filter(iter_name == "more_preds_in_altered")
 sc3_dat_l <- sum_dat %>% filter(iter_name == "more_preds_in_altered")  # in long format
@@ -850,23 +873,32 @@ fig_sc3_beh <- ggplot(data=p_moves_dat2,
   theme(legend.position = "top") +
   ggtitle(label = "(a)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_beh
 
-# (b) Fitness
+# (b) Migration duration
+fig_sc3_dur<- ggplot(data=sc3_dat_l, aes(x=(N*100), y=mean_dur)) +
+  geom_line(size=1, alpha=0.7) + geom_point(size=2, alpha=1) + 
+  theme_classic() +
+  ylab("Migration duration (days)") +
+  xlab("Percent of natural habitat") +
+  ggtitle(label="(b)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_dur
+
+
+# (c) Fitness
 fig_sc3_fit <- ggplot(data=sc3_dat_l, aes(x=(N*100), y=Fit_cumsurv)) +
   geom_line(size=1, alpha=0.7) + geom_point(size=2, alpha=1) + 
   theme_classic() +
   ylab("Fitness") +
   xlab("Percent of natural habitat") +
-  ggtitle(label="(b)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_fit
+  ggtitle(label="(c)") + theme(plot.title = element_text(size=14, face = "bold")); fig_sc3_fit
 
 
 # Together
-ggarrange(fig_sc3_beh, fig_sc3_fit, ncol = 1)
+ggarrange(fig_sc3_beh, fig_sc3_dur, fig_sc3_fit, ncol = 1)
 
-# Save Figure for scenario 2
-pdf.options(reset = TRUE, onefile = FALSE)
-pdf("results//Manuscript V4/figures/Figure_sc3_more_preds_alt.pdf", width=4, height=6)
-ggarrange(fig_sc3_beh, fig_sc3_fit, ncol = 1, align = "hv")
-dev.off()
+# # Save Figure for scenario 2
+# pdf.options(reset = TRUE, onefile = FALSE)
+# pdf("results//Manuscript V5/figures/Figure_sc3_more_preds_alt.pdf", width=4, height=8)
+# ggarrange(fig_sc3_beh, fig_sc3_dur, fig_sc3_fit, ncol = 1, align = "hv")
+# dev.off()
 
 ### Figure #: growth and survival ----
 
@@ -941,27 +973,27 @@ fig_sc3_gs <- ggplot(data = df_percent, aes(x = (N*100), y = per_change)) +
   facet_wrap(~metric, ncol = 1, scales = "free",
              labeller = labeller(
                metric = c(
-                 "cum_surv" = "Cumulative survival",
-                 "growth_g" = "Total growth (g)",
-                 "growth_rate" = "Growth rate (g/d)",
-                 "size_g" = "Size (g)",
-                 "surv_rate" = "Survival rate (S/d)"
+                 "cum_surv" = "(d)    Cumulative survival",
+                 "growth_g" = "(a)    Total growth (g)",
+                 "growth_rate" = "(b)    Growth rate (g/d)",
+                 "size_g" = "(c)    Size (g)",
+                 "surv_rate" = "(e)    Survival rate (S/d)"
                )
              )) +
   geom_hline(yintercept = 0, color = "black", linetype = "dashed") +
   scale_color_manual(values = c("royalblue", "forestgreen")) +
   theme_bw() +
-  theme(strip.text = element_text(size = 10),  # Adjust the text size
+  theme(strip.text = element_text(size = 10, hjust = 0),  # Adjust the text size
         strip.background = element_rect(fill = "white", color = NA),
         legend.title = element_blank()) +  # Adjust margin around text
   xlab("Percent natural habitat") +
   ylab("Percent change relative\nto 0% natural habitat"); fig_sc3_gs
 
-# Save Figure for scenario 3
-pdf.options(reset = TRUE, onefile = FALSE)
-pdf("results//Manuscript V4/figures/Figure_sc3_more_preds_alt_GS.pdf", width=4, height=9)
-fig_sc3_gs
-dev.off()
+# # Save Figure for scenario 3
+# pdf.options(reset = TRUE, onefile = FALSE)
+# pdf("results//Manuscript V5/figures/Figure_sc3_more_preds_alt_GS.pdf", width=4, height=9)
+# fig_sc3_gs
+# dev.off()
 
 # Note: the scenario with more preds in altered results in natural river habitats
 # being so much better than river altered and the ocean, that it results in 
