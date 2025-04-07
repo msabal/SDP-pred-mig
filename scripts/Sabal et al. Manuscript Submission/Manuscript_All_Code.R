@@ -1,4 +1,14 @@
-# Title: Risks and rewards of habitats shape optimal migration behavior 
+# Title: Habitat restoration shapes risk-reward tradeoffs, movement behavior,
+# and fitness in migrating juvenile salmon
+
+# Authors:
+# Megan C. Sabal (code creator)
+# Suzanne H. Alonzo
+# Steven T. Lindley
+# Joseph E. Merz
+# Paul Carvalho
+# Eric P. Palkovacs
+
 
 # All analyses for manuscript draft
 
@@ -6,7 +16,7 @@
 # Outline ----
 ## Load libraries, functions, and set settings
 ## Scenario 1: Which ecological factor is most influential affecting the frequency of pauses?
-## Scenario 2: What if there were 30% more predators along natural shorelines?
+## Scenario 2: What if there were 15% more predators along natural shorelines?
 ## Scenario 3: How does natural habitat quantity affect behavior and fitness?
 
 
@@ -22,14 +32,14 @@ options(scipen=999)
 options(pillar.width = Inf)
 
 # load needed functions from other R script
-source(file = "scripts/New Organization May 2022/Manuscript_All_Functions.R")
+source(file = "scripts/Sabal et al. Manuscript Submission/Manuscript_All_Functions.R")
 
 
 #..........................................................................................................................................
 # Scenario 1: Which mechanism most affects the frequency of pauses? ----
 
 # Set scenario parameters
-param_dat <- read.csv("raw-data//Parameter_Iterations_Tracking.csv")
+param_dat <- read.csv("input files//Parameter_Iterations_Tracking.csv")
 
 # Parameters: Assign null parameter values
 
@@ -125,7 +135,7 @@ DF.TRACKS.1 <- read.csv("results//Manuscript V4/scenario1_tracks-0.5_wseeds.csv"
 # okay for some this scenario, but note in results!
 ggplot(data=DF.SUM.1, aes(x=dur)) + geom_histogram()
 DF.SUM.1 %>% filter(dur == 59) %>% select(dur, yn:dn0) %>% distinct()
-# remaining problem parameter: yn = 0.79 (maybe try only varying 1-0.8?)
+
 
 
 ## Figure: Scenario 1 ----
@@ -200,7 +210,7 @@ dev.off()
 # Scenario 2: What if 30% more predators? ----
 
 # Set scenario parameters
-param_dat <- read.csv("raw-data//Parameter_Iterations_Tracking.csv")
+param_dat <- read.csv("input files//Parameter_Iterations_Tracking.csv")
 
 # Choose which "scenario" parameter values you need here: scenario 2
 scenario_data <- param_dat %>% filter(scenario == "2")
@@ -381,7 +391,7 @@ dev.off()
 # Scenario 3: How does natural habitat quantity affect behavior and fitness? ----
 
 # Set scenario parameters
-param_dat <- read.csv("raw-data//Parameter_Iterations_Tracking.csv")
+param_dat <- read.csv("input files//Parameter_Iterations_Tracking.csv")
 
 # Choose which "scenario" parameter values you need here: scenario 2
 scenario_data <- param_dat %>% filter(scenario == "3")
