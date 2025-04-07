@@ -6,12 +6,16 @@
 .Ruserdata
 
 
+# Ignore results folder because files inside are too large
+results/
+
+
 # Ignore all figure and .csv files everywhere in the repo
-*.pdf
-*.png
-*.csv
+#*.pdf
+#*.png
+#*.csv
 
 
 # Example, to un-ignore a specific file, you can do:
-!/Parameter_Iterations_Tracking.csv
+#!/Parameter_Iterations_Tracking.csv
 
