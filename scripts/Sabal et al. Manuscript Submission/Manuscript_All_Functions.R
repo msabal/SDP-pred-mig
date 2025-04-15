@@ -30,7 +30,7 @@ options(scipen=999)
 
 # Load parameters ----
 #param_dat <- read.csv("P://REDD//Personal//Sabal//GIT Repositories//SDP-pred-mig//raw-data//Parameter_Iterations_Tracking.csv")
-param_dat <- read.csv("raw-data//Parameter_Iterations_Tracking.csv")
+param_dat <- read.csv("scripts/Sabal et al. Manuscript Submission/Parameters_Scenarios.csv")
 
 # Parameters: Assign null parameter values
 

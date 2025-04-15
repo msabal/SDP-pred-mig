@@ -39,12 +39,12 @@ source(file = "scripts/Sabal et al. Manuscript Submission/Manuscript_All_Functio
 # Scenario 1: Which mechanism most affects the frequency of pauses? ----
 
 # Set scenario parameters
-param_dat <- read.csv("input files//Parameter_Iterations_Tracking.csv")
+param_dat <- read.csv("scripts/Sabal et al. Manuscript Submission/Parameters_Scenarios.csv")
 
 # Parameters: Assign null parameter values
 
 # Choose which "scenario" parameter values you need here: baseline.
-scenario_data <- param_dat %>% filter(scenario == "baseline")
+scenario_data <- param_dat %>% filter(scenario == 1)
 
 # Convert the filtered row to a list
 scenario_list <- as.list(scenario_data)
@@ -210,10 +210,10 @@ dev.off()
 # Scenario 2: What if 30% more predators? ----
 
 # Set scenario parameters
-param_dat <- read.csv("input files//Parameter_Iterations_Tracking.csv")
+param_dat <- read.csv("scripts/Sabal et al. Manuscript Submission/Parameters_Scenarios.csv")
 
 # Choose which "scenario" parameter values you need here: scenario 2
-scenario_data <- param_dat %>% filter(scenario == "2")
+scenario_data <- param_dat %>% filter(scenario == 2)
 
 # Convert the filtered row to a list
 scenario_list <- as.list(scenario_data)
@@ -391,10 +391,10 @@ dev.off()
 # Scenario 3: How does natural habitat quantity affect behavior and fitness? ----
 
 # Set scenario parameters
-param_dat <- read.csv("input files//Parameter_Iterations_Tracking.csv")
+param_dat <- read.csv("scripts/Sabal et al. Manuscript Submission/Parameters_Scenarios.csv")
 
 # Choose which "scenario" parameter values you need here: scenario 2
-scenario_data <- param_dat %>% filter(scenario == "3")
+scenario_data <- param_dat %>% filter(scenario == 3)
 
 # Convert the filtered row to a list
 scenario_list <- as.list(scenario_data)
