@@ -6,7 +6,7 @@
 # Suzanne H. Alonzo
 # Steven T. Lindley
 # Joseph E. Merz
-# Paul Carvalho
+# Paul G. Carvalho
 # Eric P. Palkovacs
 
 

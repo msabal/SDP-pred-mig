@@ -35,7 +35,7 @@ param_dat <- read.csv("scripts/Sabal et al. Manuscript Submission/Parameters_Sce
 # Parameters: Assign null parameter values
 
 # Choose which "scenario" parameter values you need here: baseline.
-scenario_data <- param_dat %>% filter(scenario == "baseline")
+scenario_data <- param_dat %>% filter(scenario == 1)
 
 # Convert the filtered row to a list
 scenario_list <- as.list(scenario_data)
