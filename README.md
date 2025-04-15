@@ -10,6 +10,17 @@ Risk-reward dynamics are critical drivers of animal migrations. However, it is o
 Models, analyses, and figures were generated using R software - R Core Team (2023). _R: A Language and Environment for Statistical Computing_. R Foundation for Statistical Computing, Vienna, Austria.
   <https://www.R-project.org/>
 
+Some parameter symbols differ between the R script and the current manuscript draft.
+
+| R Script Symbol | Manuscript Symbol | Description                      |
+|-----------------|-------------------|----------------------------------|
+| `A[]`; `A_max`  | `L`; `L_h`        | Location                         |
+| `U`             | `B`               | Movement behavior                |
+| `R0`            | `R₀`              | Initial recruitment              |
+| `alpha`         | `α`               | Stock-recruit parameter          |
+| `beta`          | `β`               | Stock-recruit density term       |
+
+
 ### 1. Manuscript_V1_All_Code.R
 
 The [Manuscript_V1_All_Code.R](https://github.com/msabal/SDP-pred-mig/blob/main/scripts/New%20Organization%20May%202022/Manuscript_V1_All_Code.R) script contains all of the code to run stochastic dynamic programming (SDP) models and generate figures in the manuscript. This script will run SDP models, but output tracks from the main model scenarios can be found in the [Manuscript V1](https://github.com/msabal/SDP-pred-mig/tree/main/results/Manuscript%20V1) folder.
