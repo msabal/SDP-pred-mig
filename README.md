@@ -16,8 +16,8 @@ Some parameter symbols differ between the R script and the current manuscript dr
 |-----------------|-------------------|----------------------------------|
 | `A[]`; `A_max`  | `L`; `L_h`        | Location                         |
 | `U`             | `B`               | Movement behavior                |
-| `R0`            | `R₀`              | Initial recruitment              |
-| `alpha`         | `α`               | Stock-recruit parameter          |
+| `Bu`            | `delta_B`         | Mortality from movement behavior |
+| `Bw`            | `rho`             | Mortality coef for salmon weight |
 | `beta`          | `β`               | Stock-recruit density term       |
 
 
