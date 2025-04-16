@@ -14,13 +14,26 @@ Some parameter symbols differ between the R script and the current manuscript dr
 
 | R Script Symbol | Manuscript Symbol | Description                      |
 |-----------------|-------------------|----------------------------------|
-| `A[]`; `A_max`  | `L`; `L_h`        | Location                         |
-| `U`             | `B`               | Movement behavior                |
-| `Bu`            | `delta_B`         | Mortality from movement behavior |
-| `Bw`            | `rho`             | Mortality coef for salmon weight |
-| `beta`          | `β`               | Stock-recruit density term       |
+| `A[]`; `A_max`  | L; L<sub>h</sub>     | Location                         |
+| `U`             | B                    | Movement behavior                |
+| `Bu`            | &delta;<sub>B</sub>  | Mortality contribution from movement behavior |
+| `Bw`            | &rho;                | Mortality coefficient for salmon weight |
+| `N`          | P<sub>n</sub>           | Proportion of natural habitat       |
+| `a`          | &alpha;<sub>1</sub>     | Metabolic coefficient       |
+| `b`          | &alpha;<sub>2</sub>     | Metabolic coefficient      |
+| `c`          | i                       | Time of peak ocean growth potential
+| `dn0`          | d<sub>1</sub>         | Metabolic scaling parameter       | 
+| `d`          | d<sub>2</sub>           | Metabolic scaling parameter      | 
 
 
-### 1. Manuscript_V1_All_Code.R
+### 1. Manuscript_All_Code.R
 
-The [Manuscript_V1_All_Code.R](https://github.com/msabal/SDP-pred-mig/blob/main/scripts/New%20Organization%20May%202022/Manuscript_V1_All_Code.R) script contains all of the code to run stochastic dynamic programming (SDP) models and generate figures in the manuscript. This script will run SDP models, but output tracks from the main model scenarios can be found in the [Manuscript V1](https://github.com/msabal/SDP-pred-mig/tree/main/results/Manuscript%20V1) folder.
+The [Manuscript_All_Code.R]([https://github.com/msabal/SDP-pred-mig/blob/main/scripts/New%20Organization%20May%202022/Manuscript_V1_All_Code.R](https://github.com/msabal/SDP-pred-mig/blob/main/scripts/Sabal%20et%20al.%20Manuscript%20Submission/Manuscript_All_Code.R) script contains all of the code to run stochastic dynamic programming (SDP) models and generate figures in the manuscript. This script will run SDP models, but output tracks from the main model scenarios can be found in the [Manuscript V1](https://github.com/msabal/SDP-pred-mig/tree/main/results/Manuscript%20V1) folder.
+
+### 2. Manuscript_All_Functions.R
+
+The [Manuscript_All_Functions.R]([https://github.com/msabal/SDP-pred-mig/blob/main/scripts/New%20Organization%20May%202022/Manuscript_V1_All_Code.R](https://github.com/msabal/SDP-pred-mig/blob/main/scripts/Sabal%20et%20al.%20Manuscript%20Submission/Manuscript_All_Functions.R) script contains all of the code that defines the custom functions, which are called on in Manuscript_All_Code.R.
+
+### 3. Parameters_Scenarios.csv
+
+The [Parameters_Scenarios.csv](https://github.com/msabal/SDP-pred-mig/blob/main/scripts/Sabal%20et%20al.%20Manuscript%20Submission/Parameters_Scenarios.csv) file contains the parameter values used for each scenario.
