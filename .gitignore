@@ -7,7 +7,7 @@
 
 
 # Ignore results folder because files inside are too large
-results/
+#results/
 
 
 # Ignore all figure and .csv files everywhere in the repo
