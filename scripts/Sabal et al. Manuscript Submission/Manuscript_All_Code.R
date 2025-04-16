@@ -124,12 +124,13 @@ DF.SUM.1 <- bind_rows(OUT.SUM)
 DF.TRACKS.1 <- bind_rows(OUT.TRACKS)
 
 # Save output files
-write.csv(DF.SUM.1, "results//Manuscript V4/scenario1_summary-0.5_wseeds.csv") 
-write.csv(DF.TRACKS.1, "results//Manuscript V4/scenario1_tracks-0.5_wseeds.csv") 
+write.csv(DF.SUM.1, "P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario1_summary-0.5_wseeds.csv") 
+write.csv(DF.TRACKS.1, "P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario1_tracks-0.5_wseeds.csv") 
+
 
 # Read in saved output files
-DF.SUM.1 <- read.csv("results//Manuscript V4/scenario1_summary-0.5_wseeds.csv")
-DF.TRACKS.1 <- read.csv("results//Manuscript V4/scenario1_tracks-0.5_wseeds.csv")
+DF.SUM.1 <- read.csv("P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario1_summary-0.5_wseeds.csv")
+DF.TRACKS.1 <- read.csv("P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario1_tracks-0.5_wseeds.csv")
 
 # Check for realistic outmigration behavior (duration != 59)
 # okay for some this scenario, but note in results!
@@ -290,12 +291,12 @@ DF.SUM.2 <- bind_rows(OUT.SUM)
 DF.TRACKS.2 <- bind_rows(OUT.TRACKS)
 
 # Save output files
-write.csv(DF.SUM.2, "results//Manuscript V4/scenario2_summary_15per_2seeds.csv")
-write.csv(DF.TRACKS.2, "results//Manuscript V4/scenario2_tracks_15per_2seeds.csv")
+write.csv(DF.SUM.2, "P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario2_summary_15per_2seeds.csv")
+write.csv(DF.TRACKS.2, "P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario2_tracks_15per_2seeds.csv")
 
 # Read in saved output files
-DF.SUM.2 <- read.csv("results//Manuscript V4/scenario2_summary_15per_2seeds.csv")
-DF.TRACKS.2 <- read.csv("results//Manuscript V4/scenario2_tracks_15per_2seeds.csv")
+DF.SUM.2 <- read.csv("P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario2_summary_15per_2seeds.csv")
+DF.TRACKS.2 <- read.csv("P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario2_tracks_15per_2seeds.csv")
 
 ## Figure: Scenario 2 ----
 
@@ -473,12 +474,12 @@ DF.SUM.3 <- bind_rows(OUT.SUM)
 DF.TRACKS.3 <- bind_rows(OUT.TRACKS)
 
 # Save output files
-write.csv(DF.SUM.3, "results//Manuscript V4/scenario3_summary_30percent_1seed.csv")
-write.csv(DF.TRACKS.3, "results//Manuscript V4/scenario3_tracks_30percent_1seed.csv")
+write.csv(DF.SUM.3, "P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario3_summary_30percent_1seed.csv")
+write.csv(DF.TRACKS.3, "P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario3_tracks_30percent_1seed.csv")
 
 # Read in saved output files
-DF.SUM.3 <- read.csv("results//Manuscript V4/scenario3_summary_30percent_1seed.csv")
-DF.TRACKS.3 <- read.csv("results//Manuscript V4/scenario3_tracks_30percent_1seed.csv")
+DF.SUM.3 <- read.csv("P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario3_summary_30percent_1seed.csv")
+DF.TRACKS.3 <- read.csv("P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario3_tracks_30percent_1seed.csv")
 
 ## Figures: Scenario 3 ----
 
