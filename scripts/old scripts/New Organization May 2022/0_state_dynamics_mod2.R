@@ -22,11 +22,25 @@ curve(TERM.FUN(W, Ws=Ws , r=r, Smax=Smax), xname="W", xlim=c(7,80), ylim=c(0,0.3
 z     <- -0.01
 ka    <- 0.9 # can vary btw 0.9 and 1.3
 kn    <- 1.2 # can vary btw 0.9 and 1.3
+U_vals <- c(0, 20, 40)
+
 
 RIVER.Q <- function(U, z, kh) { z*U+kh }
-curve(RIVER.Q(U, z=z, kh=ka), xname="U", xlim=c(0,40), ylim=c(0,1.5))
+
+png("C:/Users/sabalm/OneDrive - Oregon/Personal/Projects - discrete/SDP-predation-migration/Results Files/results/Plots/river_q_plot.png",
+    width = 4, height = 4, units = "in", res = 500)
+
+curve(RIVER.Q(U, z=z, kh=ka), xname="U", xlim=c(0,40), ylim=c(0,1.5),
+      xlab = "Travel speed (km/d)\n(corresponds with behavior B)",
+      ylab = "River growth potential (q)")
 curve(RIVER.Q(U, z=z, kh=kn), xname="U", add=T, col="mediumpurple")
 abline(h=0.5, col="gray24", lty="dashed")
+points(U_vals, RIVER.Q(U_vals, z=z, kh=ka), pch=16)
+points(U_vals, RIVER.Q(U_vals, z=z, kh=kn), 
+       pch=16, col="mediumpurple")
+
+dev.off()
+
 
 RIVER.Q(U=0, z=-0.01, kh=ka)
 RIVER.Q(U=20, z=-0.01, kh=ka)
@@ -40,10 +54,18 @@ c     <- 40
 j     <- 0.05
 
 OCEAN.Q <-    function(t, f, g, c, j) { f + g*exp(-(t-c)^2/2*j^2) }
-curve(OCEAN.Q(t,f=f, g=g, c=c, j=j), xlim=c(0, 60), ylab="q (ocean)",
-      xlab="Time (days)", xname = "t", ylim=c(0,2))
+
+png("C:/Users/sabalm/OneDrive - Oregon/Personal/Projects - discrete/SDP-predation-migration/Results Files/results/Plots/ocean_q_plot.png",
+    width = 4, height = 4, units = "in", res = 500)
+
+curve(OCEAN.Q(t,f=f, g=g, c=c, j=j), xlim=c(0, 60),
+      xlab="Time (days)", xname = "t", ylim=c(0,2),
+      ylab ="Growth potential", col = "blue")
 abline(h=1.1, col="gray24", lty="dashed") #river value max (paused in natural)
-abline(h=0.5, col="gray24", lty="dashed") #river value min (fast in altered)
+abline(h=0.5, col="gray24", lty="solid") #river value min (fast in altered)
+
+dev.off()
+
 
 
 # Total Growth

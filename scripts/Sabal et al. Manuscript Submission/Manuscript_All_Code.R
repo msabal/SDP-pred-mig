@@ -124,13 +124,13 @@ DF.SUM.1 <- bind_rows(OUT.SUM)
 DF.TRACKS.1 <- bind_rows(OUT.TRACKS)
 
 # Save output files
-write.csv(DF.SUM.1, "P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario1_summary-0.5_wseeds.csv") 
-write.csv(DF.TRACKS.1, "P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario1_tracks-0.5_wseeds.csv") 
+write.csv(DF.SUM.1, "C:/Users/sabalm/OneDrive - Oregon/Personal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario1_summary-0.5_wseeds.csv") 
+write.csv(DF.TRACKS.1, "C:/Users/sabalm/OneDrive - Oregon/Personal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario1_tracks-0.5_wseeds.csv") 
 
 
 # Read in saved output files
-DF.SUM.1 <- read.csv("P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario1_summary-0.5_wseeds.csv")
-DF.TRACKS.1 <- read.csv("P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario1_tracks-0.5_wseeds.csv")
+DF.SUM.1 <- read.csv("C:/Users/sabalm/OneDrive - Oregon/Personal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario1_summary-0.5_wseeds.csv")
+DF.TRACKS.1 <- read.csv("C:/Users/sabalm/OneDrive - Oregon/Personal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario1_tracks-0.5_wseeds.csv")
 
 # Check for realistic outmigration behavior (duration != 59)
 # okay for some this scenario, but note in results!
@@ -160,7 +160,8 @@ fig1_dat <- fig1_dat %>% filter(nat_benefit != 0) %>%
                                                         "yn")))) %>% 
   bind_rows(base_dat) %>% 
   group_by(Beh, h, iter_var, nat_benefit, seeds) %>% 
-  summarise(mean.p.tot = mean(p.tot)) %>%   # calculate average total proportion of behaviors by groups
+  summarise(mean.p.tot = mean(p.tot),
+            sd.p.tot = sd(p.tot)) %>%   # calculate average total proportion of behaviors by groups
   mutate(seeds_cat = ifelse(seeds <=3, "A1a", "A1n"))
   
 # re-order and re-name factor levels
@@ -202,7 +203,7 @@ fig_sc1_A1A <- ggplot(filter(fig1_dat, Beh == 0 & seeds == 1), aes(x=nat_benefit
 
 # Save Figure for scenario 1
 pdf.options(reset = TRUE, onefile = FALSE)
-pdf("results//Manuscript V4/figures/Figure_2.pdf", width=6, height=4)
+pdf("C:/Users/sabalm/OneDrive - Oregon/Personal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V5/figures/Figure_2.pdf", width=6, height=4)
 fig_sc1_A1A
 dev.off()
 
@@ -291,12 +292,12 @@ DF.SUM.2 <- bind_rows(OUT.SUM)
 DF.TRACKS.2 <- bind_rows(OUT.TRACKS)
 
 # Save output files
-write.csv(DF.SUM.2, "P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario2_summary_15per_2seeds.csv")
-write.csv(DF.TRACKS.2, "P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario2_tracks_15per_2seeds.csv")
+write.csv(DF.SUM.2, "C:/Users/sabalm/OneDrive - Oregon/Personal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario2_summary_15per_2seeds.csv")
+write.csv(DF.TRACKS.2, "C:/Users/sabalm/OneDrive - Oregon/Personal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario2_tracks_15per_2seeds.csv")
 
 # Read in saved output files
-DF.SUM.2 <- read.csv("P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario2_summary_15per_2seeds.csv")
-DF.TRACKS.2 <- read.csv("P:/REDD/Personal/Sabal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario2_tracks_15per_2seeds.csv")
+DF.SUM.2 <- read.csv("C:/Users/sabalm/OneDrive - Oregon/Personal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario2_summary_15per_2seeds.csv")
+DF.TRACKS.2 <- read.csv("C:/Users/sabalm/OneDrive - Oregon/Personal/Projects - discrete/SDP-predation-migration/Results Files/results/Manuscript V4/scenario2_tracks_15per_2seeds.csv")
 
 ## Figure: Scenario 2 ----
 
@@ -331,7 +332,7 @@ cont_dat$ka <- as.factor(cont_dat$ka)
 
 #Single example for Figure 3 from full Figure S6
 eg1 <- cont_dat %>% 
-  filter(dn0 == 0.7 & seeds == 4) # example data: across all Bn and ka and one dn0 and seeds value.
+  filter(dn0 == 0.7) # example data: across all Bn and ka and one dn0 and seeds value. & seeds == 4
 
 
 # This figure shows one example panel of dn0 values while Bn and ka vary.
