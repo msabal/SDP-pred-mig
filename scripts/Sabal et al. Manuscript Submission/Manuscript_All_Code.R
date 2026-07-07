@@ -1,6 +1,8 @@
 # Title: Habitat restoration shapes risk-reward tradeoffs, movement behavior,
 # and fitness in migrating juvenile salmon
 
+# Journal: Ecological Applications
+
 # Authors:
 # Megan C. Sabal (code creator)
 # Suzanne H. Alonzo
@@ -10,7 +12,7 @@
 # Eric P. Palkovacs
 
 
-# All analyses for manuscript draft
+# All analyses for manuscript
 
 
 # Outline ----
@@ -181,7 +183,15 @@ fig_sc1_A1N <- ggplot(filter(fig1_dat, Beh == 0 & seeds == 6), aes(x=nat_benefit
   xlab("Percent relative benefit in \nnatural habitats") +
   theme(strip.text.x = element_text(size=11),
         legend.title = element_blank()) +
-  ylim(c(0,1)); fig_sc1_A1N
+  ylim(c(0,1)) +
+  labs(tag = "Figure 2") +
+  theme(
+    strip.text.x = element_text(size = 11),
+    legend.title = element_blank(),
+    plot.tag = element_text(size = 12, face = "bold", hjust = 0, vjust = 1),
+    plot.tag.position = c(-0.06, 1.08),
+    plot.margin = margin(t = 20, r = 5, b = 5, l = 25)
+  ); fig_sc1_A1N
 
 # Save Figure for scenario 1
 pdf.options(reset = TRUE, onefile = FALSE)
